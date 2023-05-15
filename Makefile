@@ -12,3 +12,7 @@ build: $(SRCS)
 %.o : %.cpp
 	@ echo $@
 	@ $(COMP) -c $(CXXFLAGS) $< -o $@
+
+clean:
+	@ rm -rf ./src/*.o
+	
