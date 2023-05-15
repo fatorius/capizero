@@ -1,10 +1,7 @@
 #include "init.h"
-
-void set_bits(){
-
-}
-
+#include "bitboard.h"
 
 void init(){
-    set_bits();
+    init_bits();
+    init_board();
 }
