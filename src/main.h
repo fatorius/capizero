@@ -1,2 +1,3 @@
 #include "bitboard.h"
-#include "init.h"
+#include "gen.h"
+#include "eval.h"

@@ -93,6 +93,10 @@
 #define BRANCAS 0
 #define PRETAS 1
 
+#define CASAS_DO_TABULEIRO 64
+#define LADOS 2
+#define TIPOS_DE_PIECES 6
+
 #define MAX_PLY 64
 
 const char piece_char[6] = 
@@ -100,9 +104,16 @@ const char piece_char[6] =
 	'P', 'C', 'B', 'T', 'D', 'R'
 };
 
+#define VALOR_PEAO 100
+#define VALOR_CAVALO 300
+#define VALOR_BISPO 300
+#define VALOR_TORRE 500
+#define VALOR_DAMA 900
+#define VALOR_REI 10000
+
 const int pieces_valor[6] = 
 {
-	100, 300, 300, 500, 900, 10000
+	VALOR_PEAO, VALOR_CAVALO, VALOR_BISPO, VALOR_TORRE, VALOR_DAMA, VALOR_REI
 };
 
 const int cor_inicial[64] = 
