@@ -1,6 +1,15 @@
 #ifndef CONSTS
 #define CONSTS
 
+#define COLUNA_A 0
+#define COLUNA_B 1
+#define COLUNA_C 2
+#define COLUNA_D 3
+#define COLUNA_E 4
+#define COLUNA_F 5
+#define COLUNA_G 6
+#define COLUNA_H 7
+
 #define A1	0
 #define B1	1
 #define C1	2

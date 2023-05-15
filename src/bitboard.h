@@ -9,9 +9,14 @@ typedef uint64_t u64;
 
 extern u64 mask[CASAS_DO_TABULEIRO];
 extern u64 not_mask[CASAS_DO_TABULEIRO];
+extern u64 mask_isolados[CASAS_DO_TABULEIRO];
+
+extern u64 mask_passados[LADOS][CASAS_DO_TABULEIRO];
+extern u64 mask_path[LADOS][CASAS_DO_TABULEIRO];
 
 void init_bits();
 void init_board();
+void init_vetores();
 
 void set_bit(u64 &bitboard, int bit);
 
@@ -20,6 +25,9 @@ int bitscan(u64 b);
 extern u64 bit_pieces[LADOS][TIPOS_DE_PIECES];
 extern u64 bit_lados[LADOS];
 extern u64 bit_total;
+
+extern int fileiras[LADOS][CASAS_DO_TABULEIRO];
+
 extern int tabuleiro[CASAS_DO_TABULEIRO];
 
 extern int lado;

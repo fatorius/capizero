@@ -4,13 +4,28 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <cstdlib>
 
 u64 mask[CASAS_DO_TABULEIRO];
 u64 not_mask[CASAS_DO_TABULEIRO];
 
+u64 mask_cols[CASAS_DO_TABULEIRO];
+u64 mask_isolados[CASAS_DO_TABULEIRO];
+
+u64 mask_ala_do_rei;
+u64 mask_ala_da_dama;
+
+u64 mask_passados[LADOS][CASAS_DO_TABULEIRO];
+u64 mask_path[LADOS][CASAS_DO_TABULEIRO];
+
+u64 not_coluna_a;
+u64 not_coluna_h;
+
 u64 bit_pieces[LADOS][TIPOS_DE_PIECES];
 u64 bit_lados[LADOS];
 u64 bit_total;
+
+int fileiras[LADOS][CASAS_DO_TABULEIRO];
 
 int tabuleiro[CASAS_DO_TABULEIRO];
 
@@ -31,7 +46,51 @@ void init_bits(){
     for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
         set_bit(mask[x], x);
         not_mask[x] = ~mask[x];
+
+        for (int y = 0; y < CASAS_DO_TABULEIRO; y++){
+            if (colunas[x] == colunas[y]){
+                set_bit(mask_cols[x], y);
+
+                if (linhas[x] < linhas[y]){
+                    set_bit(mask_path[BRANCAS][x], y);
+                }
+                if (linhas[x] > linhas[y]){
+                    set_bit(mask_path[PRETAS][x], y);
+                }
+            }
+
+            if (abs(colunas[x] - colunas[y]) < 2){
+                if (linhas[x] < linhas[y] && linhas[y] < COLUNA_H){
+                    set_bit(mask_passados[BRANCAS][x], y);
+                }
+                if (linhas[x] > linhas[y] && linhas[x] > COLUNA_A){
+                    set_bit(mask_passados[BRANCAS][x], y);
+                }
+            }
+
+            if (abs(colunas[x] - colunas[y]) == 1){
+                set_bit(mask_isolados[x], y);
+            }
+        }
+
+        fileiras[BRANCAS][x] = linhas[x];
+        fileiras[PRETAS][x] = 7 - linhas[x];
+
+        if (colunas[x] < COLUNA_D){
+            set_bit(mask_ala_da_dama, x);
+        }
+
+        if (colunas[x] > COLUNA_E){
+            set_bit(mask_ala_do_rei, x);
+        }
     }
+
+    not_coluna_a = ~mask_cols[COLUNA_A];
+    not_coluna_h = ~mask_cols[COLUNA_H];
+}
+
+void init_vetores(){
+
 }
 
 int bitscan(u64 b){

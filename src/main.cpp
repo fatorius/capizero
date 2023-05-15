@@ -11,6 +11,7 @@ void init(){
     init_board();
     init_eval_tables();
     init_lookup_tables();
+    init_vetores();
 }
 
 int main(){
