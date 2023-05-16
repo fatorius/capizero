@@ -11,7 +11,7 @@ u64 chaveAtual, lockAtual;
 
 hashp *hashpos[LADOS];
 
-void iniciarHash(){
+void iniciar_hash(){
     int piece, casa;
 
     for (piece = 0; piece < TIPOS_DE_PIECES; piece++){
@@ -31,7 +31,7 @@ int aleatorio(const int x){
     return rand() % x;
 }
 
-void adicionarChave(const int lado, const int piece, const int casa){
+void adicionar_chave(const int lado, const int piece, const int casa){
     chaveAtual ^= hash[lado][piece][casa];
     lockAtual ^= lock[lado][piece][casa];
 }

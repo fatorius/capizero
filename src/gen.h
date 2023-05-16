@@ -11,5 +11,6 @@ extern u64 bit_moves_dama[CASAS_DO_TABULEIRO];
 extern u64 bit_moves_rei[CASAS_DO_TABULEIRO];
 
 void init_lookup_tables();
+void gerar_lances(const int lado, const int contraLado);
 
 #endif
