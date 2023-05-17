@@ -1,5 +1,0 @@
-#include "bitboard.h"
-#include "gen.h"
-#include "eval.h"
-#include "game.h"
-#include "hash.h"

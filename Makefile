@@ -1,29 +1,29 @@
 # Initial variables
-
 .DEFAULT_GOAL = default
 CXXFLAGS = -Wall -std=c++11
 EXE := capizero
 COMP = g++
-
+EPOCH = $(shell date +%s)
 
 # Source objects
-
 SRCS = ./src/bitboard.o ./src/main.o  \
 		./src/update.o ./src/gen.o \
 		./src/eval.o ./src/hash.o \
-		./src/game.o ./src/search.o
+		./src/game.o ./src/search.o \
+		./src/xboard.o
 
 
 # Aditional flag configuration
-
 ifeq ($(DEBUG), TRUE)
 CXXFLAGS += -g
 EXE := $(EXE)_debug
 endif
 
+# Set compilation variables
+CXXFLAGS += -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
+
 
 # Recepies
-
 build: $(SRCS)
 	@ $(COMP) $(CXXFLAGS) -o $(EXE) $(SRCS)
 	@ echo "================="

@@ -1,10 +1,13 @@
 #include <iostream>
 
-#include "main.h"
+#include "bitboard.h"
+#include "gen.h"
+#include "eval.h"
+#include "game.h"
+#include "hash.h"
+#include "xboard.h"
 
 using namespace std;
-
-#define __CAPIZERO__VERSION__ "0.1.0"
 
 void init(){
     init_bits();
@@ -19,16 +22,22 @@ void init(){
     jogador[PRETAS] = 0;
     tempo_maximo = 1 << 25;
     profundidade_maxima = 4;
+
+    novo_jogo();
 }
 
 int main(){
-    cout<<"capizero "<<__CAPIZERO__VERSION__<<" por Hugo Souza"<<endl;
+    cout<<"capizero "<<CAPIZERO_VERSION<<" por Hugo Souza"<<endl;
+    cout<<"build "<<BUILDNO<<endl;
+    cout<<"compilado em "<<__TIMESTAMP__<<endl;
+    cout<<"=================================="<<endl;
 
     init();
 
+    cout<<"\n"<<endl;
     cout<<"Programa iniciado"<<endl;
 
-    novo_jogo();
+    while (ler_comando()){}
 
     return 0;
 }
