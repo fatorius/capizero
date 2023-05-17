@@ -91,6 +91,8 @@
 #define OESTE 6
 #define NO 7
 
+#define AVANÇO_DUPLO 16
+
 #define P 0
 #define C 1
 #define B 2
@@ -108,6 +110,16 @@
 
 #define MAX_PLY 64
 
+#define PILHA_DE_LANCES 4000
+#define PILHA_DO_JOGO 2000
+
+#define SCORE_DE_CAPTURA 10000000
+
+#define BRANCAS_ROQUE_MENOR 1
+#define BRANCAS_ROQUE_MAIOR 2
+#define PRETAS_ROQUE_MENOR 4
+#define PRETAS_ROQUE_MAIOR 8
+
 const char piece_char[6] = 
 {
 	'P', 'C', 'B', 'T', 'D', 'R'
@@ -119,6 +131,15 @@ const char piece_char[6] =
 #define VALOR_TORRE 500
 #define VALOR_DAMA 900
 #define VALOR_REI 10000
+
+#define EN_PASSANT_SCORE 10
+
+const int px[6] = {0,10,20,30,40,0};
+const  int cx[6] = {-3,7,17,27,37,0};
+const int bx[6] = {-3,7,17,27,37,0};
+const int tx[6] = {-5,5,15,25,35,0};
+const int dx[6] = {-9,1,11,21,31,0};
+const int rx[6] = {0,10,20,30,40,0};
 
 const int pieces_valor[6] = 
 {

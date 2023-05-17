@@ -22,18 +22,12 @@ extern u64 bit_pieces[LADOS][TIPOS_DE_PIECES];
 extern u64 bit_lados[LADOS];
 extern u64 bit_total;
 
+extern u64 not_coluna_a;
+extern u64 not_coluna_h;
+
 extern int fileiras[LADOS][CASAS_DO_TABULEIRO];
 
 extern int tabuleiro[CASAS_DO_TABULEIRO];
-
-extern int lado;
-extern int xlado;
-extern int cinquenta;
-extern int roque;
-extern int ply;
-extern int hply;
-extern int primeiro_lance[MAX_PLY];
-extern int jogada;
 
 void init_bits();
 void init_board();

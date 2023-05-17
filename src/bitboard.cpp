@@ -4,10 +4,8 @@
 
 #include <string.h>
 #include <stdint.h>
-#include <iostream>
 #include <cstdlib>
 
-using namespace std;
 
 u64 mask[CASAS_DO_TABULEIRO];
 u64 not_mask[CASAS_DO_TABULEIRO];
@@ -35,15 +33,6 @@ u64 mask_vetores[CASAS_DO_TABULEIRO][8];
 int fileiras[LADOS][CASAS_DO_TABULEIRO];
 
 int tabuleiro[CASAS_DO_TABULEIRO];
-
-int lado;
-int xlado;
-int cinquenta;
-int roque;
-int ply;
-int hply;
-int primeiro_lance[MAX_PLY];
-int jogada;
 
 void init_bits(){
     for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
@@ -209,15 +198,6 @@ void init_board(){
             adicionar_piece(cor_inicial[x], tabuleiro_inicial[x], x);
         }
     }
-
-    lado = 0;
-    xlado = 1;
-    cinquenta = 0;
-    roque = 15;
-    ply = 0;
-    hply = 0;
-    primeiro_lance[0] = 0;
-    jogada = 0;
 }
 
 void set_bit(u64 &bitboard, int bit){

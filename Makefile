@@ -11,7 +11,7 @@ COMP = g++
 SRCS = ./src/bitboard.o ./src/main.o  \
 		./src/update.o ./src/gen.o \
 		./src/eval.o ./src/hash.o \
-		./src/game.o
+		./src/game.o ./src/search.o
 
 
 # Aditional flag configuration
