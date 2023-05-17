@@ -205,8 +205,8 @@ void init_board(){
     for (int x = 0; x < CASAS_DO_TABULEIRO; ++x) {
         tabuleiro[x] = VAZIO;
 
-        if(tabuleiro_inicial[x]<6){
-            adicionar_piece(tabuleiro_inicial[x], cor_inicial[x], x);
+        if(tabuleiro_inicial[x] < 6){
+            adicionar_piece(cor_inicial[x], tabuleiro_inicial[x], x);
         }
     }
 

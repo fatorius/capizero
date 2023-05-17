@@ -11,5 +11,5 @@ int jogador[2];
 
 void novo_jogo(){
     init_board();
-    gerar_lances(lado, xlado);
+    //gerar_lances(lado, xlado);
 }
