@@ -11,6 +11,10 @@ u64 chaveAtual, lockAtual;
 
 hashp *hashpos[LADOS];
 
+int aleatorio(const int x){
+    return rand() % x;
+}
+
 void iniciar_hash(){
     int piece, casa;
 
@@ -25,10 +29,6 @@ void iniciar_hash(){
 
     hashpos[BRANCAS] = new hashp[MAXHASH];
     hashpos[PRETAS] = new hashp[MAXHASH];
-}
-
-int aleatorio(const int x){
-    return rand() % x;
 }
 
 void adicionar_chave(const int lado, const int piece, const int casa){

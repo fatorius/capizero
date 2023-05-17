@@ -4,7 +4,10 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <iostream>
 #include <cstdlib>
+
+using namespace std;
 
 u64 mask[CASAS_DO_TABULEIRO];
 u64 not_mask[CASAS_DO_TABULEIRO];
@@ -94,8 +97,8 @@ void init_vetores(){
     int z;
 
     for (x = 0; x < CASAS_DO_TABULEIRO; x++){
-        for (y = 0; x < CASAS_DO_TABULEIRO; y++){
-            if (linhas[x] == linhas[x]){
+        for (y = 0; y < CASAS_DO_TABULEIRO; y++){
+            if (linhas[x] == linhas[y]){
                 if (y > x){
                     for (z = x + 1; z < y; z++){
                         set_bit(bit_entre[x][y], z);
@@ -135,7 +138,7 @@ void init_vetores(){
 
             if (no_diag[x] == no_diag[y]){
                 if (y > x){
-                    for (z = x + 7; z < y; x += 7){
+                    for (z = x + 7; z < y; z += 7){
                         set_bit(bit_entre[x][y], z);
                     }
                     for (z = x + 7; z <= y; z += 7){
@@ -151,7 +154,7 @@ void init_vetores(){
                     }
                 }
             }
-
+            
             if (ne_diag[x] == ne_diag[y]){
                 if (y > x){
                     for (z = x + 9; z < y; z += 9){
