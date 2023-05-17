@@ -39,5 +39,9 @@ int main(){
 
     while (ler_comando()){}
 
+    cout<<endl<<"encerrando programa"<<endl;
+
+    liberar_memoria();
+
     return 0;
 }

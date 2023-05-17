@@ -134,6 +134,17 @@ const char piece_char[6] =
 
 #define EN_PASSANT_SCORE 10
 
+#define PROMOCAO 4
+
+#define FILEIRA_8 7
+#define FILEIRA_7 6
+#define FILEIRA_6 5
+#define FILEIRA_5 4
+#define FILEIRA_4 3
+#define FILEIRA_3 2
+#define FILEIRA_2 1
+#define FILEIRA_1 0
+
 const int px[6] = {0,10,20,30,40,0};
 const  int cx[6] = {-3,7,17,27,37,0};
 const int bx[6] = {-3,7,17,27,37,0};

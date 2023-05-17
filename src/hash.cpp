@@ -11,6 +11,11 @@ u64 chaveAtual, lockAtual;
 
 hashp *hashpos[LADOS];
 
+void liberar_memoria(){
+    delete hashpos[BRANCAS];
+    delete hashpos[PRETAS];
+}
+
 int aleatorio(const int x){
     return rand() % x;
 }
