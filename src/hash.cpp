@@ -31,7 +31,7 @@ void iniciar_hash(){
     hashpos[PRETAS] = new hashp[MAXHASH];
 }
 
-void adicionar_chave(const int lado, const int piece, const int casa){
-    chaveAtual ^= hash[lado][piece][casa];
-    lockAtual ^= lock[lado][piece][casa];
+void adicionar_chave(const int l, const int piece, const int casa){
+    chaveAtual ^= hash[l][piece][casa];
+    lockAtual ^= lock[l][piece][casa];
 }

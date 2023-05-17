@@ -16,6 +16,6 @@ struct hashp{
 extern u64 chaveAtual, lockAtual;
 
 void iniciar_hash();
-void adicionar_chave(const int lado, const int piece, const int casa);
+void adicionar_chave(const int l, const int piece, const int casa);
 
 #endif
