@@ -91,7 +91,7 @@
 #define OESTE 6
 #define NO 7
 
-#define AVANÇO_DUPLO 16
+#define AVANCO_DUPLO 16
 
 #define P 0
 #define C 1

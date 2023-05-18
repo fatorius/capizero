@@ -261,7 +261,7 @@ void adicionar_lance(const int x, const int casa){
 void gerar_en_passant(){
     int ep = lista_do_jogo[hply - 1].destino;
 
-    if (tabuleiro[ep] == P && abs(lista_do_jogo[hply - 1].inicio - ep) == AVANÇO_DUPLO){
+    if (tabuleiro[ep] == P && abs(lista_do_jogo[hply - 1].inicio - ep) == AVANCO_DUPLO){
         if (colunas[ep] > COLUNA_A && mask[ep-1] & bit_pieces[lado][P]){
             adicionar_captura(ep-1, peao_uma_casa[lado][ep], EN_PASSANT_SCORE);
         }
