@@ -34,7 +34,6 @@ int main(){
 
     init();
 
-    cout<<"\n"<<endl;
     cout<<"Programa iniciado"<<endl;
 
     while (ler_comando()){}
