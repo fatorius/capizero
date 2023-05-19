@@ -5,7 +5,7 @@
 #include "eval.h"
 #include "game.h"
 #include "hash.h"
-#include "xboard.h"
+#include "interface.h"
 
 using namespace std;
 

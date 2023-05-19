@@ -10,7 +10,8 @@ SRCS = ./src/bitboard.o ./src/main.o  \
 		./src/update.o ./src/gen.o \
 		./src/eval.o ./src/hash.o \
 		./src/game.o ./src/search.o \
-		./src/xboard.o ./src/attacks.o
+		./src/interface.o ./src/attacks.o \
+		./src/xboard.o ./src/help.o
 
 
 # Aditional flag configuration
