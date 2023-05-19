@@ -36,7 +36,11 @@ int main(){
 
     cout<<"Programa iniciado"<<endl;
 
-    while (ler_comando()){}
+    while (ler_comando()){
+        if (lado_do_computador == lado){
+            lance_computador();
+        }
+    }
 
     cout<<endl<<"encerrando programa"<<endl;
 

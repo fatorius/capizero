@@ -3,6 +3,7 @@
 #include "gen.h"
 
 int lado_do_computador;
+
 int tempo_maximo;
 int profundidade_maxima;
 

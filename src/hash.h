@@ -14,9 +14,17 @@ struct hashp{
 };
 
 extern u64 chaveAtual, lockAtual;
+extern int hash_inicio, hash_destino;
+
+extern uint64_t colisoes;
 
 void iniciar_hash();
 void liberar_memoria();
 void adicionar_chave(const int l, const int piece, const int casa);
+
+bool hash_lookup(const int l);
+
+u64 obter_lock();
+u64 obter_chave();
 
 #endif

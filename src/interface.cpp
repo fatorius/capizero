@@ -1,18 +1,272 @@
 #include "interface.h"
 
+#include <cstdio>
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
+#include <sys/timeb.h>
 
 #include "game.h"
 #include "gen.h"
 #include "update.h"
 #include "xboard.h"
 #include "help.h"
+#include "search.h"
+#include "hash.h"
+#include "eval.h"
+#include "attacks.h"
 
 using namespace std;
 
+int no_lances = 0;
+
+int lookup;
+
+int nps;
+
 int lance_usuario;
+int tabuleiro_invertido = 0;
+
+int lance_inicio, lance_destino;
+
+int tempo_fixo, profundidade_fixa;
+
+int obter_tempo(){
+    struct timeb timebuffer;
+    ftime(&timebuffer);
+    return (timebuffer.time * SEGUNDO) + timebuffer.millitm;
+}
+
+void display_tabuleiro() {
+    printf("\n");
+
+    int i;
+    int c;
+
+    for (int j = 0; j < 64; ++j) {
+        if (tabuleiro_invertido == 0){
+            i = flip[j];
+        }
+        else{
+            i = 63 - flip[j];
+        }
+        
+        c = VAZIO;
+        
+        if (bit_lados[BRANCAS] & mask[i]){ 
+            c = BRANCAS;
+        }
+        if (bit_lados[PRETAS] & mask[i]){
+            c = PRETAS;
+        }
+
+        switch (c) {
+            case VAZIO:
+                printf("  ");
+                break;
+            case BRANCAS:
+                printf(" %c", piece_char[tabuleiro[i]]);
+                break;
+            case PRETAS:
+                printf(" %c", piece_char[tabuleiro[i]] + ('a' - 'A'));
+                break;
+            default:
+                printf(" %d.", c);
+                break;
+        }
+
+        if (tabuleiro_invertido == 0) {
+            if ((j + 1) % 8 == 0 && j != 63){
+                printf("\n");
+            }
+        } else {
+            if ((j + 1) % 8 == 0 && colunas[i] != COLUNA_H){
+                printf("\n");
+            }
+        }
+    }
+
+    printf("\n\n");
+}
+
+char *lance_para_string(int inicio, int destino, int promove){
+    static char str[6];
+
+    char c;
+
+    if (promove > P){
+        switch (promove){
+        case C:
+            c = 'n';
+            break;
+        case B:
+            c = 'b';
+            break;
+        case R:
+            c = 'r';
+            break;
+        default:
+            c = 'q';
+            break;
+        }
+    
+    sprintf(str, "%c%d%c%d%c",
+			colunas[inicio] + 'a',
+			linhas[inicio] + 1,
+			colunas[destino] + 'a',
+			linhas[destino] + 1,
+			c);
+    }
+    else{
+        sprintf(str, "%c%d%c%d",
+			colunas[inicio] + 'a',
+			linhas[inicio] + 1,
+			colunas[destino] + 'a',
+			linhas[destino]);
+    }
+
+    return str;
+}
+
+int repeticoes(){
+    int r = 0;
+
+    for (int i = hply; i >= hply-cinquenta; i -= 2){
+        if (lista_do_jogo[i].hash == chaveAtual && lista_do_jogo[i].lock == lockAtual){
+            r++;
+        }
+    }
+
+    return r;
+}
+
+void print_resultado(){
+    int i;
+    int flag = 0;
+
+    atualizar_materiais();
+    gerar_lances(lado, xlado);
+
+    for (i = 0; i < primeiro_lance[i]; ++i){
+        if (fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
+            desfaz_lance();
+            flag = 1;
+            break;
+        }
+    }
+
+    if (peao_mat[BRANCAS] == 0 && peao_mat[PRETAS] == 0 && piece_mat[BRANCAS] <= VALOR_BISPO && piece_mat[PRETAS] <= VALOR_BISPO){
+        printf("1/2 - 1/2 {Material insuficiente} \n");
+
+        novo_jogo();
+
+        lado_do_computador = VAZIO;
+
+        return;
+    } 
+    else if (i == primeiro_lance[i] && flag == 0){
+        gerar_lances(lado, xlado);
+
+        display_tabuleiro();
+
+        printf("Fim do jogo \n");
+
+        if (casa_esta_sendo_atacada(xlado, bit_pieces[lado][R])){
+            if (lado == BRANCAS){
+                printf("0-1 {Pretas dao xeque-mate} \n");
+            }
+            else{
+                printf("1-0 {Brancas dao xeque-mate} \n");
+            }
+        }
+        else{
+            printf("1/2 - 1/2 {Empate por afogamento} \n");
+        }
+
+        novo_jogo();
+        lado_do_computador = VAZIO;
+    }
+    else if (repeticoes() >= 3){
+        printf("1/2 - 1/2 - {Empate por repeticao} \n");
+        
+        novo_jogo();
+        lado_do_computador = VAZIO;
+    }
+    else if (cinquenta >= 100){
+        printf("1/2 - 1/2 {Empate por cinquenta lances}");
+
+        novo_jogo();
+        lado_do_computador = VAZIO;
+    }
+}
+
+void lance_computador(){
+    int tempo_gasto;
+
+    jogador[lado] = 1;
+
+    pensar();
+
+    no_lances++;
+
+    chaveAtual = obter_chave();
+    lockAtual = obter_lock();
+
+    lookup = hash_lookup(lado);
+
+    if (lance_inicio != 0 || lance_destino != 0){
+        hash_inicio = lance_inicio;
+        hash_destino = lance_destino;
+    }
+    else{
+        printf("(Sem lances legais) \n");
+        lado_do_computador = VAZIO;
+
+        display_tabuleiro();
+
+        gerar_lances(lado, xlado);
+
+        return;
+    }
+
+    printf(" colisoes %d ", (int) colisoes);
+    printf("\n");
+
+    colisoes = 0;
+
+    printf("Lance do computador: %s \n", lance_para_string(hash_inicio, hash_destino, 0));
+    printf("\n");
+
+    fazer_lance(hash_inicio, hash_destino);
+
+    atualizar_materiais();
+
+    tempo_gasto = obter_tempo() - tempo_do_inicio;
+
+    printf("\n Tempo gasto: %d ms \n", tempo_gasto);
+
+    if (tempo_gasto > 0){
+        nps = (double) lances_avaliados / (double) tempo_gasto;
+    }
+    else{
+        nps = 0;
+    }
+
+    printf("\n Lances por segundo: %d \n", (int) nps);
+
+    ply = 0;
+
+    primeiro_lance[0] = 0;
+
+    gerar_lances(lado, xlado);
+
+    print_resultado();
+
+    printf("Lance ");
+    printf("%d", no_lances++);
+
+    display_tabuleiro();
+}
 
 int converter_lance(char *lnc){
     int inicio, destino, i;
@@ -96,25 +350,31 @@ bool ler_comando(){
     }
     
     else if (!strcmp(cmd, COMANDO_DISPLAY_TABULEIRO)){
-
+        display_tabuleiro();
     }
     else if (!strcmp(cmd, COMANDO_INVERTER_TABULEIRO)){
-
-    }
-    else if (!strcmp(cmd, COMANDO_COMPUTADOR_CALCULAR)){
-        
+        tabuleiro_invertido = 1 - tabuleiro_invertido;
     }
     else if (!strcmp(cmd, COMANDO_EXIBIR_AJUDA)){
         exibir_ajuda();
     }
     else if (!strcmp(cmd, COMANDO_EXIBIR_LANCES)){
+        printf("Lances legais: ");
 
+        lance *l;
+
+        for (int i = 0; i < primeiro_lance[i]; i++){
+            l = &lista_de_lances[i];
+
+            printf("%s", lance_para_string(lista_de_lances[i].inicio, lista_de_lances[i].destino, lista_de_lances[i].promove));
+            printf("\n");
+        }
     }
     else if (!strcmp(cmd, COMANDO_NOVA_PARTIDA)){
         novo_jogo();
         lado_do_computador = VAZIO;
     }
-    else if (!strcmp(cmd, COMANDO_ATIVAR_ENGINE) || !strcmp(cmd, COMANDO_FAZER_LANCE)){
+    else if (!strcmp(cmd, COMANDO_ATIVAR_ENGINE) || !strcmp(cmd, COMANDO_FAZER_LANCE) || !strcmp(cmd, COMANDO_COMPUTADOR_CALCULAR)){
         lado_do_computador = lado;
     }
     else if (!strcmp(cmd, COMANDO_DESATIVAR_ENGINE)){
@@ -124,13 +384,19 @@ bool ler_comando(){
         return false;
     }
     else if (!strcmp(cmd, COMANDO_CARREGAR_FEN)){
-
+        // todo
+        return true;
     }
     else if (!strcmp(cmd, COMANDO_CONFIGURAR_PROFUNDIDADE)){
-
+        scanf("%d", &profundidade_maxima);
+        tempo_maximo = 1 << 25;
+        profundidade_fixa = 1;
     }
     else if (!strcmp(cmd, COMANDO_CONFIGURAR_TEMPO)){
-
+        scanf("%d", &tempo_maximo);
+        tempo_maximo *= SEGUNDO;
+        profundidade_maxima = MAX_PLY;
+        tempo_fixo = 1;
     }
     else if (!strcmp(cmd, COMANDO_TROCAR_DE_LADO)){
         lado ^= 1;

@@ -20,6 +20,14 @@
 #define COMANDO_DESFAZER_LANCE "undo"
 #define COMANDO_INICIA_XBOARD "xboard"
 
+extern int tempo_fixo;
+extern int profundidade_fixa;
+
+extern int lookup;
+
+extern int lance_inicio, lance_destino;
+
 bool ler_comando();
+void lance_computador();
 
 #endif

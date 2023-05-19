@@ -104,6 +104,10 @@
 #define BRANCAS 0
 #define PRETAS 1
 
+#define SEGUNDO 1000
+
+#define MAX_PLY 64
+
 #define CASAS_DO_TABULEIRO 64
 #define LADOS 2
 #define TIPOS_DE_PIECES 6
@@ -122,7 +126,7 @@
 
 const char piece_char[6] = 
 {
-	'P', 'C', 'B', 'T', 'D', 'R'
+	'P', 'N', 'B', 'R', 'Q', 'K'
 };
 
 #define VALOR_PEAO 100
