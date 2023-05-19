@@ -110,19 +110,19 @@ char *lance_para_string(int inicio, int destino, int promove){
             break;
         }
     
-    sprintf(str, "%c%d%c%d%c",
-			colunas[inicio] + 'a',
-			linhas[inicio] + 1,
-			colunas[destino] + 'a',
-			linhas[destino] + 1,
-			c);
+        sprintf(str, "%c%d%c%d%c",
+            colunas[inicio] + 'a',
+            linhas[inicio] + 1,
+            colunas[destino] + 'a',
+            linhas[destino] + 1,
+            c);
     }
     else{
         sprintf(str, "%c%d%c%d",
 			colunas[inicio] + 'a',
 			linhas[inicio] + 1,
 			colunas[destino] + 'a',
-			linhas[destino]);
+			linhas[destino] + 1);
     }
 
     return str;
@@ -283,7 +283,7 @@ int converter_lance(char *lnc){
     inicio = lnc[0] - 'a';
     inicio += ((lnc[1] - '0') - 1) * 8;
     destino = lnc[2] - 'a';
-    destino += ((lnc[2] - '0') - 1) * 8;
+    destino += ((lnc[3] - '0') - 1) * 8;
 
     for (i = 0; i < primeiro_lance[1]; i++){
         if (lista_de_lances[i].inicio == inicio && lista_de_lances[i].destino == destino){
@@ -312,7 +312,7 @@ void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
 
     lance_usuario = converter_lance(lnc);
 
-    if (lance_usuario == -1 || fazer_lance(lista_de_lances[lance_usuario].inicio, lista_de_lances[lance_usuario].destino)){
+    if (lance_usuario == -1 || !fazer_lance(lista_de_lances[lance_usuario].inicio, lista_de_lances[lance_usuario].destino)){
         cout<<"Comando / Lance inválido"<<endl;
         cout<<"Digite 'help' para exibir uma lista de comandos válidos ou"<<endl;
         cout<<"Digite 'moves' para exibir uma lista de lances legais"<<endl<<endl;
@@ -359,11 +359,11 @@ bool ler_comando(){
         exibir_ajuda();
     }
     else if (!strcmp(cmd, COMANDO_EXIBIR_LANCES)){
-        printf("Lances legais: ");
+        printf("Lances legais: \n");
 
         lance *l;
 
-        for (int i = 0; i < primeiro_lance[i]; i++){
+        for (int i = 0; i < primeiro_lance[1]; i++){
             l = &lista_de_lances[i];
 
             printf("%s", lance_para_string(lista_de_lances[i].inicio, lista_de_lances[i].destino, lista_de_lances[i].promove));
