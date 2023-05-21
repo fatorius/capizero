@@ -27,7 +27,7 @@ int nps;
 int lance_usuario;
 int tabuleiro_invertido = 0;
 
-int lance_inicio, lance_destino;
+extern int lance_inicio, lance_destino;
 
 int tempo_fixo, profundidade_fixa;
 
