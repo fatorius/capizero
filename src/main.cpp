@@ -29,6 +29,11 @@ void init(){
 int main(){
     cout<<"capizero "<<CAPIZERO_VERSION<<" por Hugo Souza"<<endl;
     cout<<"build "<<BUILDNO<<endl;
+
+    #ifdef DEBUG_BUILD
+    cout<<"Build compilada para debug"<<endl;
+    #endif
+
     cout<<"compilado em "<<__TIMESTAMP__<<endl;
     cout<<"=================================="<<endl;
 

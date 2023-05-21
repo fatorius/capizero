@@ -29,5 +29,6 @@ extern int lance_inicio, lance_destino;
 
 bool ler_comando();
 void lance_computador();
+int obter_tempo();
 
 #endif

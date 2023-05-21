@@ -149,6 +149,12 @@ const char piece_char[6] =
 #define FILEIRA_2 1
 #define FILEIRA_1 0
 
+#define ALPHA_INICIAL -10000
+#define BETA_INICIAL 10000
+
+#define VALOR_XEQUE_MATE_BRANCAS 9000
+#define VALOR_XEQUE_MATE_PRETAS -9000
+
 const int px[6] = {0,10,20,30,40,0};
 const  int cx[6] = {-3,7,17,27,37,0};
 const int bx[6] = {-3,7,17,27,37,0};

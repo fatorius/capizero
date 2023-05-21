@@ -21,7 +21,7 @@ EXE := $(EXE)_debug
 endif
 
 # Set compilation variables
-CXXFLAGS += -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
+CXXFLAGS += -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero) -DDEBUG_BUILD
 
 
 # Recepies
