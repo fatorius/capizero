@@ -13,6 +13,12 @@ typedef struct
 
 extern lance lista_de_lances[PILHA_DE_LANCES];
 
+extern u64 bit_esquerda[LADOS][CASAS_DO_TABULEIRO];
+extern u64 bit_direita[LADOS][CASAS_DO_TABULEIRO];
+
+extern int peao_direita[LADOS][CASAS_DO_TABULEIRO];
+extern int peao_esquerda[LADOS][CASAS_DO_TABULEIRO];
+
 extern u64 bit_moves_peao[LADOS][CASAS_DO_TABULEIRO];
 extern u64 bit_moves_cavalo[CASAS_DO_TABULEIRO];
 extern u64 bit_moves_bispo[CASAS_DO_TABULEIRO];

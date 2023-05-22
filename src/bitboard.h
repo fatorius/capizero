@@ -10,6 +10,7 @@ typedef uint64_t u64;
 extern u64 mask[CASAS_DO_TABULEIRO];
 extern u64 not_mask[CASAS_DO_TABULEIRO];
 extern u64 mask_isolados[CASAS_DO_TABULEIRO];
+extern u64 mask_cols[CASAS_DO_TABULEIRO];
 
 extern u64 mask_passados[LADOS][CASAS_DO_TABULEIRO];
 extern u64 mask_path[LADOS][CASAS_DO_TABULEIRO];
@@ -24,6 +25,9 @@ extern u64 bit_total;
 
 extern u64 not_coluna_a;
 extern u64 not_coluna_h;
+
+extern u64 mask_ala_do_rei;
+extern u64 mask_ala_da_dama;
 
 extern int fileiras[LADOS][CASAS_DO_TABULEIRO];
 

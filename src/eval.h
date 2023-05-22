@@ -11,7 +11,8 @@ extern int peao_mat[2];
 extern int piece_mat[2];
 
 void init_eval_tables();
-
 void atualizar_materiais();
+
+int avaliar();
 
 #endif

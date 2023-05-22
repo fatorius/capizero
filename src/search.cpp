@@ -11,6 +11,7 @@
 #include "bitboard.h"
 #include "eval.h"
 #include "hash.h"
+#include "gen.h"
 
 int lances_avaliados;
 int tempo_do_inicio, tempo_do_fim;
@@ -24,7 +25,23 @@ int max_atual;
 int lance_inicio, lance_destino;
 
 void exibir_melhor_linha(int profundidade){
+     lance_inicio = hash_inicio;
+     lance_destino = hash_destino;
 
+     for (int x = 0; x < profundidade; x++){
+        if (hash_lookup(lado) == false){
+            break;
+        }
+
+        printf(" ");
+        print_lance_algebrico(hash_inicio, hash_destino);
+        fazer_lance(hash_inicio, hash_destino);
+     }
+
+     while (ply){
+        desfaz_lance();
+     }
+     
 }
 
 void nova_posicao(){
@@ -48,6 +65,49 @@ void nova_posicao(){
 
     chaveAtual = obter_chave();
     lockAtual = obter_lock();
+}
+
+int checar_repeticoes(){
+    for (int i = hply-4; i >= hply - cinquenta; i -=2){
+        if (lista_do_jogo[i].hash == chaveAtual && lista_do_jogo[i].lock == lockAtual){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void verificar_tempo(){
+    if (obter_tempo() >= tempo_do_fim || (tempo_maximo < 50 && ply > 1) && profundidade_fixa == 0 && ply > 1){
+        parar_pesquisa = true;
+        longjmp(env, 0);
+    }
+}
+
+void set_lance_hash(){
+    for (int x = primeiro_lance[ply]; x < primeiro_lance[ply + 1]; x++){
+        if (lista_de_lances[x].inicio == hash_inicio && lista_de_lances[x].destino == hash_destino){
+            lista_de_lances[x].score == PONTUACAO_HASH;
+            return;
+        }
+    }
+}
+
+void ordenar_lances(const int desde){
+    lance l;
+
+    int ls = lista_de_lances[desde].score;
+    int li = desde;
+
+    for (int i = desde + 1; i < primeiro_lance[ply + 1]; ++i){
+        if (lista_de_lances[i].score > ls){
+            ls = lista_de_lances[i].score;
+            li = i;
+        }
+
+        l = lista_de_lances[desde];
+        lista_de_lances[desde] = lista_de_lances[li];
+        lista_de_lances[li] = l; 
+    }
 }
 
 int pesquisa(int alpha, int beta, int profundidade){

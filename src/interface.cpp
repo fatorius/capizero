@@ -31,6 +31,22 @@ extern int lance_inicio, lance_destino;
 
 int tempo_fixo, profundidade_fixa;
 
+void converter_casa_para_algebrico(int a){
+    if(a < 0 || a > 63){
+        return;
+    }  
+
+	char c[2]="a";
+    c[0] =  96 + 1 + colunas[a];
+	
+    printf("%s%d", c, linhas[a]+1);
+}
+
+void print_lance_algebrico(int a, int b){
+    converter_casa_para_algebrico(a);
+    converter_casa_para_algebrico(b);
+}
+
 int obter_tempo(){
     struct timeb timebuffer;
     ftime(&timebuffer);

@@ -11,8 +11,8 @@ u64 bit_direita[LADOS][CASAS_DO_TABULEIRO];
 u64 bit_peao_capturas[LADOS][CASAS_DO_TABULEIRO];
 u64 bit_peao_defende[LADOS][CASAS_DO_TABULEIRO];
 
-u64 peao_direita[LADOS][CASAS_DO_TABULEIRO];
-u64 peao_esquerda[LADOS][CASAS_DO_TABULEIRO];
+int peao_direita[LADOS][CASAS_DO_TABULEIRO];
+int peao_esquerda[LADOS][CASAS_DO_TABULEIRO];
 
 u64 peao_uma_casa[LADOS][CASAS_DO_TABULEIRO];
 u64 peao_duas_casas[LADOS][CASAS_DO_TABULEIRO];
