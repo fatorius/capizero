@@ -27,6 +27,7 @@ extern int lookup;
 
 extern int lance_inicio, lance_destino;
 
+void display_tabuleiro();
 bool ler_comando();
 void lance_computador();
 void print_lance_algebrico(int a, int b);

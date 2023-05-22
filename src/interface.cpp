@@ -158,15 +158,17 @@ int repeticoes(){
 
 void print_resultado(){
     int i;
-    int flag = 0;
+    bool existem_lances_legais = false;
 
     atualizar_materiais();
     gerar_lances(lado, xlado);
 
-    for (i = 0; i < primeiro_lance[i]; ++i){
+    display_tabuleiro();
+
+    for (i = 0; i < primeiro_lance[1]; ++i){
         if (fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
             desfaz_lance();
-            flag = 1;
+            existem_lances_legais = true;
             break;
         }
     }
@@ -180,14 +182,12 @@ void print_resultado(){
 
         return;
     } 
-    else if (i == primeiro_lance[i] && flag == 0){
-        gerar_lances(lado, xlado);
-
+    else if (i == primeiro_lance[1] && !existem_lances_legais){
         display_tabuleiro();
 
         printf("Fim do jogo \n");
 
-        if (casa_esta_sendo_atacada(xlado, bit_pieces[lado][R])){
+        if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
             if (lado == BRANCAS){
                 printf("0-1 {Pretas dao xeque-mate} \n");
             }
