@@ -22,7 +22,7 @@ int menor_atacante(const int l, const int xl, const int casa){
     t1 = bit_moves_bispo[casa] & bit_pieces[xl][B];
     while (t1){
         int casa2 = bitscan(t1);
-        t1 &= not_mask[casa];
+        t1 &= not_mask[casa2];
 
         if (!(bit_entre[casa2][casa] & bit_total)){
             return casa2;
@@ -32,7 +32,7 @@ int menor_atacante(const int l, const int xl, const int casa){
     t1 = bit_moves_torre[casa] & bit_pieces[xl][T];
     while (t1){
         int casa2 = bitscan(t1);
-        t1 &= not_mask[casa];
+        t1 &= not_mask[casa2];
 
         if (!(bit_entre[casa2][casa] & bit_total)){
             return casa2;
@@ -42,7 +42,7 @@ int menor_atacante(const int l, const int xl, const int casa){
     t1 = bit_moves_dama[casa] & bit_pieces[xl][D];
     while(t1){
         int casa2 = bitscan(t1);
-        t1 &= not_mask[casa];
+        t1 &= not_mask[casa2];
 
         if (!(bit_entre[casa2][casa] & bit_total)){
             return casa2;

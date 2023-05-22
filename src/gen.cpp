@@ -392,7 +392,7 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
             // 3.2 gera diagonais sem captura
             else{
                 for (casa_destino = casa;;){
-                    casa_destino = dtb_moves[casa][direcao];
+                    casa_destino = dtb_moves[casa_destino][direcao];
 
                     if (casa_destino == -1){
                         break;
@@ -562,7 +562,7 @@ void gerar_capturas(const int lado_a_mover, const int contraLado){
         t2 = bit_moves_bispo[casa] & bit_lados[contraLado];
         while (t2){
             casa_destino = bitscan(t2);
-            t2 &= not_mask[casa];
+            t2 &= not_mask[casa_destino];
 
             if (!(bit_entre[casa][casa_destino] & bit_total)){
                 adicionar_captura(casa, casa_destino, bx[tabuleiro[casa_destino]]);
@@ -579,7 +579,7 @@ void gerar_capturas(const int lado_a_mover, const int contraLado){
         t2 = bit_moves_torre[casa] & bit_lados[contraLado];
         while (t2){
             casa_destino = bitscan(t2);
-            t2 &= not_mask[casa];
+            t2 &= not_mask[casa_destino];
 
             if (!(bit_entre[casa][casa_destino] & bit_total)){
                 adicionar_captura(casa, casa_destino, tx[tabuleiro[casa_destino]]);
@@ -596,7 +596,7 @@ void gerar_capturas(const int lado_a_mover, const int contraLado){
         t2 = bit_moves_dama[casa] & bit_lados[contraLado];
         while (t2){
             casa_destino = bitscan(t2);
-            t2 &= not_mask[casa];
+            t2 &= not_mask[casa_destino];
 
             if (!(bit_entre[casa][casa_destino] & bit_total)){
                 adicionar_captura(casa, casa_destino, dx[tabuleiro[casa_destino]]);

@@ -276,6 +276,7 @@ int pesquisa(int alpha, int beta, int profundidade){
     for (int i = primeiro_lance[ply]; i < primeiro_lance[ply + 1]; ++i){
         ordenar_lances(i);
 
+        // verifica se o lance é legal
         if (!fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
             continue;
         }
@@ -365,7 +366,7 @@ void pensar(){
 
     memset(historico, 0, sizeof(historico));
 
-    printf("ply      nodes  score  pv\n");
+    printf("ply score time nodes pv\n");
 
     for (int profundidade = 1; profundidade <= profundidade_maxima; ++profundidade){
         max_atual = profundidade;
