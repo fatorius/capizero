@@ -430,7 +430,7 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
             // 4.2 gera linhas sem captura
             else{
                 for (casa_destino = casa;;){
-                    casa_destino = dtb_moves[casa][direcao];
+                    casa_destino = dtb_moves[casa_destino][direcao];
 
                     if (casa_destino == -1){
                         break;

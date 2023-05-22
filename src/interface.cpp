@@ -163,8 +163,6 @@ void print_resultado(){
     atualizar_materiais();
     gerar_lances(lado, xlado);
 
-    display_tabuleiro();
-
     for (i = 0; i < primeiro_lance[1]; ++i){
         if (fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
             desfaz_lance();
@@ -259,16 +257,17 @@ void lance_computador(){
 
     tempo_gasto = obter_tempo() - tempo_do_inicio;
 
-    printf("\n Tempo gasto: %d ms \n", tempo_gasto);
+    printf("\nTempo gasto: %d ms \n", tempo_gasto);
 
     if (tempo_gasto > 0){
         nps = (double) lances_avaliados / (double) tempo_gasto;
+        nps *= 1000.0;
     }
     else{
         nps = 0;
     }
 
-    printf("\n Lances por segundo: %d \n", (int) nps);
+    printf("\nLances por segundo: %d \n", (int) nps);
 
     ply = 0;
 

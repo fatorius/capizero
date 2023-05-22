@@ -111,6 +111,7 @@ void ordenar_lances(const int desde){
 }
 
 int pesquisa_de_recapturas(int inicio, const int destino){
+
     int b;
     int c = 0;
     int t = 0;
@@ -134,10 +135,6 @@ int pesquisa_de_recapturas(int inicio, const int destino){
         c++;
 
         b = menor_atacante(lado, xlado, destino);
-
-        if (b > CASAS_DO_TABULEIRO - 1){
-            b = menor_atacante(lado, xlado, destino);
-        }
 
         if (b > -1){
             score[c + 1] = pieces_valor[tabuleiro[b]];
@@ -181,6 +178,7 @@ int pesquisa_de_recapturas(int inicio, const int destino){
 }
 
 int pesquisa_de_capturas(int alpha, int beta){
+    
     lances_avaliados++;
 
     int x = avaliar();
@@ -202,7 +200,7 @@ int pesquisa_de_capturas(int alpha, int beta){
 
     gerar_capturas(lado, xlado);
 
-    for (int i = 0; i < primeiro_lance[ply+1]; i++){
+    for (int i = primeiro_lance[ply]; i < primeiro_lance[ply+1]; i++){
         ordenar_lances(i);
 
         if (x + pieces_valor[tabuleiro[lista_de_lances[i].destino]] < alpha){

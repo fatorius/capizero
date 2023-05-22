@@ -206,8 +206,8 @@ void desfaz_captura(){
     lado ^= 1;
     xlado ^= 1;
 
-    ply--;
-    hply--;
+    --ply;
+    --hply;
 
     mover_piece(lado, tabuleiro[lista_do_jogo[hply].destino], lista_do_jogo[hply].destino, lista_do_jogo[hply].inicio);
     adicionar_piece(xlado, lista_do_jogo[hply].captura, lista_do_jogo[hply].destino);
@@ -218,8 +218,8 @@ int fazer_captura(const int inicio, const int destino){
     lista_do_jogo[hply].destino = destino;
     lista_do_jogo[hply].captura = tabuleiro[destino];
 
-    ply++;
-    hply++;
+    ++ply;
+    ++hply;
     
     remover_piece(xlado, tabuleiro[destino], destino);
     mover_piece(lado, tabuleiro[inicio], inicio, destino);
