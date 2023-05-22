@@ -19,13 +19,16 @@ build: clean $(SRCS)
 	@ echo "================="
 	@ echo "capizero succesfully built"
 
-debug: clean $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -DDEBUG_BUILD -g -o $(EXE)_debug $(SRCS)
+debug: clean debug_variables $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o $(EXE)_debug $(SRCS)
 	@ echo "================="
 	@ echo "capizero succesfully built for debug"
 
+debug_variables:
+	@ $(eval CXXFLAGS += -DDEBUG_BUILD -g)
+
 %.o : %.cpp
-	@ echo $@
+	@ echo building $@
 	@ $(COMP) -c $(CXXFLAGS) $< -o $@
 
 clean:
