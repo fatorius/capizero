@@ -1,9 +1,9 @@
 # Initial variables
 .DEFAULT_GOAL = default
-CXXFLAGS = -Wall -std=c++11
+EPOCH = $(shell date +%s)
+CXXFLAGS = -Wall -std=c++11 -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
 EXE := capizero
 COMP = g++
-EPOCH = $(shell date +%s)
 
 # Source objects
 SRCS = ./src/bitboard.o ./src/main.o  \
@@ -13,22 +13,16 @@ SRCS = ./src/bitboard.o ./src/main.o  \
 		./src/interface.o ./src/attacks.o \
 		./src/xboard.o ./src/help.o
 
-
-# Aditional flag configuration
-ifeq ($(DEBUG), TRUE)
-CXXFLAGS += -g
-EXE := $(EXE)_debug
-endif
-
-# Set compilation variables
-CXXFLAGS += -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero) -DDEBUG_BUILD
-
-
 # Recepies
-build: $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -o $(EXE) $(SRCS)
+build: clean $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -O3 -o $(EXE) $(SRCS)
 	@ echo "================="
 	@ echo "capizero succesfully built"
+
+debug: clean $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -DDEBUG_BUILD -g -o $(EXE)_debug $(SRCS)
+	@ echo "================="
+	@ echo "capizero succesfully built for debug"
 
 %.o : %.cpp
 	@ echo $@
@@ -39,22 +33,16 @@ clean:
 	
 help:
 	@ echo "If you want to compile capizero you must use:"
-	@ echo "make target [params]"
+	@ echo "make target"
 	@ echo ""
 	@ echo "Available targets are: "
 	@ echo "======================"
 	@ echo "build: build capizero"
 	@ echo "clean: delete all .o files"
+	@ echo "debug: build capizero with debug symbols and without optmization flags"
 	@ echo "help: shows all possible commands"
 	@ echo "credits: displays capizero creators"
 	@ echo "======================"
-	@ echo ""
-	@ echo "Usable parameters are: "
-	@ echo "======================"
-	@ echo "DEBUG: compiles with debug flags that can be used in a C++ Debugger tool"
-	@ echo "All params default value is FALSE"
-	@ echo "======================"
-	@ echo "Example: make build DEBUG=TRUE"
 	@ echo ""
 
 credits: 

@@ -201,3 +201,36 @@ void adicionar_piece(const int l, const int piece, const int casa){
     bit_pieces[l][piece] |= mask[casa];
     bit_total = bit_lados[BRANCAS] | bit_lados[PRETAS];
 }
+
+void desfaz_captura(){
+    lado ^= 1;
+    xlado ^= 1;
+
+    ply--;
+    hply--;
+
+    mover_piece(lado, tabuleiro[lista_do_jogo[hply].destino], lista_do_jogo[hply].destino, lista_do_jogo[hply].inicio);
+    adicionar_piece(xlado, lista_do_jogo[hply].captura, lista_do_jogo[hply].destino);
+}
+
+int fazer_captura(const int inicio, const int destino){
+    lista_do_jogo[hply].inicio = inicio;
+    lista_do_jogo[hply].destino = destino;
+    lista_do_jogo[hply].captura = tabuleiro[destino];
+
+    ply++;
+    hply++;
+    
+    remover_piece(xlado, tabuleiro[destino], destino);
+    mover_piece(lado, tabuleiro[inicio], inicio, destino);
+
+    lado ^= 1;
+    xlado ^= 1;
+
+    if (casa_esta_sendo_atacada(lado, bitscan(bit_pieces[xlado][R]))){
+        desfaz_captura();
+        return false;
+    }
+
+    return true;
+}

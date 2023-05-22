@@ -77,7 +77,7 @@ int checar_repeticoes(){
 }
 
 void verificar_tempo(){
-    if (obter_tempo() >= tempo_do_fim || (tempo_maximo < 50 && ply > 1) && profundidade_fixa == 0 && ply > 1){
+    if ((obter_tempo() >= tempo_do_fim || (tempo_maximo < 50 && ply > 1)) && profundidade_fixa == 0 && ply > 1){
         parar_pesquisa = true;
         longjmp(env, 0);
     }
@@ -86,7 +86,7 @@ void verificar_tempo(){
 void set_lance_hash(){
     for (int x = primeiro_lance[ply]; x < primeiro_lance[ply + 1]; x++){
         if (lista_de_lances[x].inicio == hash_inicio && lista_de_lances[x].destino == hash_destino){
-            lista_de_lances[x].score == PONTUACAO_HASH;
+            lista_de_lances[x].score = PONTUACAO_HASH;
             return;
         }
     }
@@ -110,8 +110,229 @@ void ordenar_lances(const int desde){
     }
 }
 
-int pesquisa(int alpha, int beta, int profundidade){
+int pesquisa_de_recapturas(int inicio, const int destino){
+    int b;
+    int c = 0;
+    int t = 0;
 
+    int score[12];
+
+    memset(score, 0, sizeof(score));
+
+    score[0] = pieces_valor[tabuleiro[destino]];
+    score[1] = pieces_valor[tabuleiro[inicio]];
+
+    int score_total = 0;
+
+    while (c < 10){
+        if (!fazer_captura(inicio, destino)){
+            break;
+        }
+
+        t++;
+        lances_avaliados++;
+        c++;
+
+        b = menor_atacante(lado, xlado, destino);
+
+        if (b > CASAS_DO_TABULEIRO - 1){
+            b = menor_atacante(lado, xlado, destino);
+        }
+
+        if (b > -1){
+            score[c + 1] = pieces_valor[tabuleiro[b]];
+
+            if (score[c] > (score[c - 1] + score[c + 1])){
+                c--;
+                break;
+            }
+        }
+        else{
+            break;
+        }
+
+        inicio = b;
+    }
+
+    while (c > 1){
+        if (score[c-1] >= score[c-2]){
+            c -= 2;
+        }
+        else {
+            break;
+        }
+    }
+
+    for (int x = 0; x < c; x++){
+        if (x % 2 == 0){
+            score_total += score[x];
+        }
+        else{
+            score_total -= score[x];
+        }
+    }
+
+    while (t){
+        desfaz_captura();
+        t--;
+    }
+
+    return score_total;
+}
+
+int pesquisa_de_capturas(int alpha, int beta){
+    lances_avaliados++;
+
+    int x = avaliar();
+
+    if (x > alpha){
+        if (x >= beta){
+            return beta;
+        }
+
+        alpha = x;
+    }
+    else if (x + VALOR_DAMA < alpha){
+        return alpha;
+    }
+
+    int score = 0; 
+    int melhorlance = 0;
+    int melhorscore = 0;
+
+    gerar_capturas(lado, xlado);
+
+    for (int i = 0; i < primeiro_lance[ply+1]; i++){
+        ordenar_lances(i);
+
+        if (x + pieces_valor[tabuleiro[lista_de_lances[i].destino]] < alpha){
+            continue;
+        }
+
+        score = pesquisa_de_recapturas(lista_de_lances[i].inicio, lista_de_lances[i].destino);
+
+        if (score > melhorscore){
+            melhorscore = score;
+            melhorlance = i;
+        }
+    }
+
+    if (melhorscore > 0){
+        x += melhorscore;
+    }
+
+    if (x > alpha){
+        if (x >= beta){
+            if (melhorscore > 0){
+                adicionar_hash(lado, lista_de_lances[melhorlance]);
+            }
+
+            return x;
+        }
+    }
+
+    return alpha;
+}
+
+int pesquisa(int alpha, int beta, int profundidade){
+    if (ply && checar_repeticoes()){
+        return 0;
+    }
+
+    if (profundidade < 1){
+        return pesquisa_de_capturas(alpha, beta);
+    }
+
+    lances_avaliados++;
+
+    if ((lances_avaliados & 4095) == 0){
+        verificar_tempo();
+    }
+
+    if (ply > MAX_PLY-2){
+        return avaliar();
+    }
+
+    lance melhorlance;
+
+    int melhorscore = MELHOR_SCORE_INICIAL;
+
+    int check = 0;
+
+    if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
+        check = 1;
+    }
+
+    gerar_lances(lado, xlado);
+
+    if (hash_lookup(lado)){
+        set_lance_hash();
+    }
+
+    int c = 0;
+    int x;
+    int p;
+
+    for (int i = primeiro_lance[ply]; i < primeiro_lance[ply + 1]; ++i){
+        ordenar_lances(i);
+
+        if (!fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
+            continue;
+        }
+
+        c++;
+
+        if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
+            p = profundidade;
+        }
+        else{
+            p = profundidade - 3;
+        
+            if (lista_de_lances[i].score > SCORE_DE_CAPTURA || c == 1 || check == 1){
+                p = profundidade - 1;
+            }
+            else if (lista_de_lances[i].score > 0){
+                p = profundidade - 2;
+            }
+        }
+
+        x = -pesquisa(-beta, -alpha, p);
+
+        desfaz_lance();
+
+        if (x > melhorscore){
+            melhorscore = x;
+            melhorlance = lista_de_lances[i];
+        }
+
+        if (x > alpha){
+            if (x >= beta){
+                if (!(mask[lista_de_lances[i].destino] & bit_total)){
+                    historico[lista_de_lances[i].inicio][lista_de_lances[i].destino] += profundidade;
+                }
+                adicionar_hash(lado, lista_de_lances[i]);
+                return beta;
+            }
+            alpha = x;
+        }
+    }
+
+    if (c == 0){
+        if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
+            return VALOR_XEQUE_MATE_PADRAO + ply;
+        }
+        else{
+            return 0;
+        }
+    }
+
+    if (cinquenta >= 100){
+        return 0;
+    }
+
+    adicionar_hash(lado, melhorlance);
+
+    return alpha;
 }
 
 void pensar(){

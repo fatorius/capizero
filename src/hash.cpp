@@ -45,6 +45,14 @@ void adicionar_chave(const int l, const int piece, const int casa){
     lockAtual ^= lock[l][piece][casa];
 }
 
+void adicionar_hash(const int ld, const lance lc){
+    hashp* ptr = &hashpos[ld][chaveAtual];
+
+    ptr->hashlock = lockAtual;
+    ptr->inicio = lc.inicio;
+    ptr->dest = lc.destino;
+}
+
 u64 obter_lock(){
     u64 loc = 0;
     int l;

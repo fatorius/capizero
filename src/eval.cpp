@@ -79,6 +79,8 @@ int avaliar_peao(const int l, const int casa){
 
     peao_ala_do_rei[l] = defesa_ala_do_rei[l][casa];
     peao_ala_da_dama[l] = defesa_ala_da_dama[l][casa];
+
+    return score;
 }
 
 int avaliar_torre(const int l, const int casa){

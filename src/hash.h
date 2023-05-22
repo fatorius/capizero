@@ -2,6 +2,7 @@
 #define HASH
 
 #include "bitboard.h"
+#include "gen.h"
 
 const u64 MAXHASH =  5000000;
 const u64 HASHSIZE = 5000000;
@@ -20,6 +21,7 @@ extern uint64_t colisoes;
 
 void iniciar_hash();
 void liberar_memoria();
+void adicionar_hash(const int ld, const lance lc);
 void adicionar_chave(const int l, const int piece, const int casa);
 
 bool hash_lookup(const int l);

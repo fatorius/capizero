@@ -152,6 +152,8 @@ const char piece_char[6] =
 #define ALPHA_INICIAL -10000
 #define BETA_INICIAL 10000
 
+#define VALOR_XEQUE_MATE_PADRAO -9000
+
 #define VALOR_XEQUE_MATE_BRANCAS 9000
 #define VALOR_XEQUE_MATE_PRETAS -9000
 
@@ -161,6 +163,12 @@ const char piece_char[6] =
 
 #define COLUNA_SEMI_ABERTA_BONUS 10
 #define COLUNA_ABERTA_BONUS 20
+
+#define VERIFICACAO_DE_LANCES 4095
+
+#define MELHOR_SCORE_INICIAL -10001
+
+
 
 const int defesa_ala_da_dama[LADOS][CASAS_DO_TABULEIRO]=
 {
