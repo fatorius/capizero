@@ -19,6 +19,7 @@
 #define COMANDO_TROCAR_DE_LADO "sw"
 #define COMANDO_DESFAZER_LANCE "undo"
 #define COMANDO_INICIA_XBOARD "xboard"
+#define COMANDO_REALIZAR_PERFT "perft"
 
 extern int tempo_fixo;
 extern int profundidade_fixa;
@@ -27,7 +28,7 @@ extern int lookup;
 
 extern int lance_inicio, lance_destino;
 
-void display_tabuleiro();
+char *lance_para_string(int inicio, int destino, int promove);
 bool ler_comando();
 void lance_computador();
 void print_lance_algebrico(int a, int b);

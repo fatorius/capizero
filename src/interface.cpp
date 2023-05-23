@@ -31,6 +31,8 @@ extern int lance_inicio, lance_destino;
 
 int tempo_fixo, profundidade_fixa;
 
+int profundidade_perft;
+
 void converter_casa_para_algebrico(int a){
     if(a < 0 || a > 63){
         return;
@@ -376,11 +378,7 @@ bool ler_comando(){
     else if (!strcmp(cmd, COMANDO_EXIBIR_LANCES)){
         printf("Lances legais: \n");
 
-        lance *l;
-
         for (int i = 0; i < primeiro_lance[1]; i++){
-            l = &lista_de_lances[i];
-
             printf("%s", lance_para_string(lista_de_lances[i].inicio, lista_de_lances[i].destino, lista_de_lances[i].promove));
             printf("\n");
         }
@@ -436,6 +434,30 @@ bool ler_comando(){
         xboard();
 
         return false;
+    }
+    else if (!strcmp(cmd, COMANDO_REALIZAR_PERFT)){
+        scanf("%d", &profundidade_perft);
+
+        int tempoInicial = obter_tempo();
+
+        unsigned long long perft_results = perft(profundidade_perft);
+
+        int delta = obter_tempo() - tempoInicial;
+
+        int nps_perft;
+
+        if (delta > 0){
+            nps_perft = (double) perft_results / (double) delta;
+            nps_perft *= 1000.0;
+        }
+        else{
+            nps_perft = 0;
+        }
+
+        printf("\n");
+        printf("Perft: %llu\n", perft_results);
+        printf("Tempo: %d ms\n", delta);
+        printf("Lances por segundo: %d\n", nps_perft);
     }
     else{
         processar_lance_do_usuario(cmd);

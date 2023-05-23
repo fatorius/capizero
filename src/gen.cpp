@@ -1,9 +1,12 @@
 #include "gen.h"
 
 #include <cstdlib>
+#include <stdio.h>
 
 #include "search.h"
 #include "game.h"
+#include "update.h"
+#include "interface.h"
 
 u64 bit_esquerda[LADOS][CASAS_DO_TABULEIRO];
 u64 bit_direita[LADOS][CASAS_DO_TABULEIRO];
@@ -448,7 +451,7 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         casa = bitscan(t1);
         t1 &= not_mask[casa];
 
-        for (direcao = NORTE; direcao < NO + 1; direcao += 2){
+        for (direcao = NORTE; direcao < NO + 1; direcao++){
             // 5.1 gera linhas com captura
             if (mask_vetores[casa][direcao] & bit_total){
                 for (casa_destino = casa;;){
@@ -616,4 +619,48 @@ void gerar_capturas(const int lado_a_mover, const int contraLado){
 
 
     primeiro_lance[ply + 1] = mc;
+}
+
+unsigned long long perft_node(int profunidade){
+    if (profunidade == 0){
+        return 1ULL;
+    }
+
+    unsigned long long total = 0;
+
+    gerar_lances(lado, xlado);
+
+    for (int i = primeiro_lance[ply]; i < primeiro_lance[ply+1]; i++){
+        if (!fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
+            continue;
+        }
+        total += perft_node(profunidade - 1);
+        desfaz_lance();
+    }
+
+    return total;
+}
+
+unsigned long long perft(int profunidade){
+    if (profunidade == 0){
+        return 1ULL;
+    }
+
+    unsigned long long total = 0;
+
+    gerar_lances(lado, xlado);
+
+    for (int i = primeiro_lance[ply]; i < primeiro_lance[ply+1]; i++){
+        if (!fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
+            continue;
+        }
+
+        unsigned long long no_lances = perft_node(profunidade - 1);
+        desfaz_lance();
+
+        printf("%s: %llu \n", lance_para_string(lista_de_lances[i].inicio, lista_de_lances[i].destino, lista_de_lances[i].promove), no_lances);
+        total += no_lances;
+    }
+
+    return total;
 }
