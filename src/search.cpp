@@ -200,7 +200,7 @@ int pesquisa_de_capturas(int alpha, int beta){
 
     gerar_capturas(lado, xlado);
 
-    for (int i = primeiro_lance[ply]; i < primeiro_lance[ply+1]; i++){
+    for (int i = primeiro_lance[ply]; i < primeiro_lance[ply+1]; ++i){
         ordenar_lances(i);
 
         if (x + pieces_valor[tabuleiro[lista_de_lances[i].destino]] < alpha){

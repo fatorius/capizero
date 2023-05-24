@@ -29,6 +29,7 @@ extern int lookup;
 extern int lance_inicio, lance_destino;
 
 char *lance_para_string(int inicio, int destino, int promove);
+void display_tabuleiro(); // apagar isso dps
 bool ler_comando();
 void lance_computador();
 void print_lance_algebrico(int a, int b);

@@ -57,8 +57,8 @@ void init_peao_lookups(){
         if (colunas[x] < COLUNA_H){
             if (linhas[x] < COLUNA_H){
                 peao_direita[BRANCAS][x] = x + 9;
-                set_bit(bit_peao_capturas[BRANCAS][x], peao_esquerda[BRANCAS][x]);
-                set_bit(bit_esquerda[BRANCAS][x], peao_esquerda[BRANCAS][x]);
+                set_bit(bit_peao_capturas[BRANCAS][x], peao_direita[BRANCAS][x]);
+                set_bit(bit_direita[BRANCAS][x], peao_direita[BRANCAS][x]);
             }
             if (linhas[x] > COLUNA_A){
                 peao_direita[PRETAS][x] = x - 7;
