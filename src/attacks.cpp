@@ -4,22 +4,22 @@
 #include "bitboard.h"
 
 int menor_atacante(const int l, const int xl, const int casa){
-    if (bit_esquerda[xl][casa] & bit_pieces[xl][casa]){
+    if (bit_esquerda[xl][casa] & bit_pieces[l][P]){
         return peao_esquerda[xl][casa];
     }
 
-    if (bit_direita[xl][casa] & bit_pieces[xl][casa]){
+    if (bit_direita[xl][casa] & bit_pieces[l][P]){
         return peao_direita[xl][casa];
     }
 
     u64 t1;
 
-    t1 = bit_moves_cavalo[casa] & bit_pieces[xl][C];
+    t1 = bit_moves_cavalo[casa] & bit_pieces[l][C];
     if (t1){
         return bitscan(t1);
     }
 
-    t1 = bit_moves_bispo[casa] & bit_pieces[xl][B];
+    t1 = bit_moves_bispo[casa] & bit_pieces[l][B];
     while (t1){
         int casa2 = bitscan(t1);
         t1 &= not_mask[casa2];
@@ -29,7 +29,7 @@ int menor_atacante(const int l, const int xl, const int casa){
         }
     }
 
-    t1 = bit_moves_torre[casa] & bit_pieces[xl][T];
+    t1 = bit_moves_torre[casa] & bit_pieces[l][T];
     while (t1){
         int casa2 = bitscan(t1);
         t1 &= not_mask[casa2];
@@ -39,7 +39,7 @@ int menor_atacante(const int l, const int xl, const int casa){
         }
     }
 
-    t1 = bit_moves_dama[casa] & bit_pieces[xl][D];
+    t1 = bit_moves_dama[casa] & bit_pieces[l][D];
     while(t1){
         int casa2 = bitscan(t1);
         t1 &= not_mask[casa2];
