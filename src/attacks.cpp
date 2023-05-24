@@ -63,8 +63,8 @@ bool casa_esta_sendo_atacada(const int l, const int casa){
     int casa2;
     u64 atacantes_deslizantes;
      
-    atacantes_deslizantes = bit_moves_torre[casa] & (bit_pieces[casa][T] | bit_pieces[casa][D]);
-    atacantes_deslizantes |= (bit_moves_bispo[casa] & (bit_pieces[casa][B] | bit_pieces[casa][D]));
+    atacantes_deslizantes = bit_moves_torre[casa] & (bit_pieces[l][T] | bit_pieces[l][D]);
+    atacantes_deslizantes |= (bit_moves_bispo[casa] & (bit_pieces[l][B] | bit_pieces[l][D]));
 
     while (atacantes_deslizantes){
         casa2 = bitscan(atacantes_deslizantes);
