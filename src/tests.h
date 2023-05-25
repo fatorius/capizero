@@ -3,7 +3,19 @@
 
 #include "consts.h"
 
-const unsigned long long test1_valor_esperado = 4865609;
-void test1();
+#define TESTE_SUCESSO cout<<"\033[1;32m TESTE BEM SUCEDIDO \033[0m"<<endl
+#define TESTE_FALHO cout<<"\033[1;31m TESTE FALHO \033[0m"<<endl
+
+#define TEST1_VALOR_ESPERADO 4865609
+
+#define TEST2_VALOR_ESPERADO 3000
+#define TEST2_TOLERANCIA 100
+
+namespace Tests{
+    void test1();
+    void test2();
+    void test3();
+}
+
 
 #endif

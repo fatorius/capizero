@@ -334,7 +334,7 @@ int pesquisa(int alpha, int beta, int profundidade){
     return alpha;
 }
 
-void pensar(){
+void pensar(bool verbose){
     int melhor_linha;
 
     parar_pesquisa = false;
@@ -348,7 +348,7 @@ void pensar(){
         return;
     }
 
-    if (tempo_fixo == 0){
+    if (!tempo_fixo){
         if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
             tempo_maximo = tempo_maximo / 2;
         }
@@ -364,13 +364,15 @@ void pensar(){
 
     memset(historico, 0, sizeof(historico));
 
-    printf("ply score time nodes pv\n");
+    if (verbose){
+        printf("ply score time nodes pv\n");
+    }
 
     for (int profundidade = 1; profundidade <= profundidade_maxima; ++profundidade){
         max_atual = profundidade;
 
-        if (profundidade_fixa == 0 && profundidade_maxima > 1){
-            if (tempo_fixo == 1){
+        if (!profundidade_fixa && profundidade_maxima > 1){
+            if (tempo_fixo){
                 if (obter_tempo() >= tempo_do_inicio + tempo_maximo){
                     parar_pesquisa = true;
                     return;
@@ -384,18 +386,19 @@ void pensar(){
 
         melhor_linha = pesquisa(ALPHA_INICIAL, BETA_INICIAL, profundidade);
 
-        printf("%d %d %d %d ", profundidade, melhor_linha, (obter_tempo() - tempo_do_inicio) / 10, lances_avaliados);
-
         if (hash_lookup(lado)){
-            exibir_melhor_linha(profundidade);
+            if (verbose){
+                printf("%d %d %d %d ", profundidade, melhor_linha, (obter_tempo() - tempo_do_inicio) / 10, lances_avaliados);
+                exibir_melhor_linha(profundidade);    
+                printf("\n");
+                fflush(stdout);    
+            }  
         }
         else{
             lance_inicio = 0;
             lance_destino = 0;
         }
 
-        printf("\n");
-        fflush(stdout);
 
         if (melhor_linha >= VALOR_XEQUE_MATE_BRANCAS || melhor_linha <= VALOR_XEQUE_MATE_PRETAS){
             break;

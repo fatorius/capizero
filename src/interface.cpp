@@ -30,7 +30,12 @@ int tabuleiro_invertido = 0;
 
 extern int lance_inicio, lance_destino;
 
-int tempo_fixo, profundidade_fixa;
+int tempo_gasto;
+
+int tempo_maximo;
+int profundidade_maxima;
+
+bool tempo_fixo, profundidade_fixa;
 
 int profundidade_perft;
 
@@ -215,12 +220,10 @@ void print_resultado(){
     }
 }
 
-void lance_computador(){
-    int tempo_gasto;
-
+void lance_computador(bool verbose){
     jogador[lado] = 1;
 
-    pensar();
+    pensar(verbose);
 
     no_lances++;
 
@@ -229,46 +232,28 @@ void lance_computador(){
 
     lookup = hash_lookup(lado);
 
-    if (lance_inicio != 0 || lance_destino != 0){
-        hash_inicio = lance_inicio;
-        hash_destino = lance_destino;
+    if (verbose){
+        if (lance_inicio != 0 || lance_destino != 0){
+            hash_inicio = lance_inicio;
+            hash_destino = lance_destino;
+        }
+        else{
+            printf("(Sem lances legais) \n");
+            lado_do_computador = VAZIO;
+
+            display_tabuleiro();
+
+            gerar_lances(lado, xlado);
+
+            return;
+        }
     }
-    else{
-        printf("(Sem lances legais) \n");
-        lado_do_computador = VAZIO;
-
-        display_tabuleiro();
-
-        gerar_lances(lado, xlado);
-
-        return;
-    }
-
-    printf(" colisoes %d ", (int) colisoes);
-    printf("\n");
-
-    colisoes = 0;
-
-    printf("Lance do computador: %s \n", lance_para_string(hash_inicio, hash_destino, 0));
-    printf("\n");
+    
+    tempo_gasto = obter_tempo() - tempo_do_inicio;
 
     fazer_lance(hash_inicio, hash_destino);
 
     atualizar_materiais();
-
-    tempo_gasto = obter_tempo() - tempo_do_inicio;
-
-    printf("\nTempo gasto: %d ms \n", tempo_gasto);
-
-    if (tempo_gasto > 0){
-        nps = (double) lances_avaliados / (double) tempo_gasto;
-        nps *= 1000.0;
-    }
-    else{
-        nps = 0;
-    }
-
-    printf("\nLances por segundo: %d \n", (int) nps);
 
     ply = 0;
 
@@ -276,12 +261,34 @@ void lance_computador(){
 
     gerar_lances(lado, xlado);
 
-    print_resultado();
+    if (verbose){
+        printf(" colisoes %d ", (int) colisoes);
+        printf("\n");
 
-    printf("Lance ");
-    printf("%d", no_lances++);
+        colisoes = 0;
 
-    display_tabuleiro();
+        printf("Lance do computador: %s \n", lance_para_string(hash_inicio, hash_destino, 0));
+        printf("\n");
+
+        printf("\nTempo gasto: %d ms \n", tempo_gasto);
+
+        if (tempo_gasto > 0){
+            nps = (double) lances_avaliados / (double) tempo_gasto;
+            nps *= 1000.0;
+        }
+        else{
+            nps = 0;
+        }
+
+        printf("\nLances por segundo: %d \n", (int) nps);
+
+        print_resultado();
+
+        printf("Lance ");
+        printf("%d", no_lances++);
+
+        display_tabuleiro();
+    }
 }
 
 int converter_lance(char *lnc){
@@ -402,13 +409,15 @@ bool ler_comando(){
     else if (!strcmp(cmd, COMANDO_CONFIGURAR_PROFUNDIDADE)){
         scanf("%d", &profundidade_maxima);
         tempo_maximo = 1 << 25;
-        profundidade_fixa = 1;
+        profundidade_fixa = true;
+        tempo_fixo = false;
     }
     else if (!strcmp(cmd, COMANDO_CONFIGURAR_TEMPO)){
         scanf("%d", &tempo_maximo);
         tempo_maximo *= SEGUNDO;
         profundidade_maxima = MAX_PLY;
-        tempo_fixo = 1;
+        tempo_fixo = true;
+        profundidade_fixa = false;
     }
     else if (!strcmp(cmd, COMANDO_TROCAR_DE_LADO)){
         lado ^= 1;

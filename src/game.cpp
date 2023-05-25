@@ -4,9 +4,6 @@
 
 int lado_do_computador;
 
-int tempo_maximo;
-int profundidade_maxima;
-
 int jogador[2];
 
 int lado;

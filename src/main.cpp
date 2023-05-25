@@ -27,7 +27,7 @@ int main(){
 
     while (ler_comando()){
         if (lado_do_computador == lado){
-            lance_computador();
+            lance_computador(true);
         }
     }
 

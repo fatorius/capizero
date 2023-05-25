@@ -16,7 +16,9 @@ int main(){
 
     init();
 
-    test1();
+    Tests::test1();
+    Tests::test2();
+    Tests::test3();
 
     liberar_memoria();
 

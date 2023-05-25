@@ -18,8 +18,6 @@ typedef struct
 extern jogo lista_do_jogo[PILHA_DO_JOGO];
 
 extern int lado_do_computador;
-extern int tempo_maximo;
-extern int profundidade_maxima;
 
 extern int jogador[2];
 

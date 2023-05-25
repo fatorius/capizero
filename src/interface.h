@@ -21,17 +21,21 @@
 #define COMANDO_INICIA_XBOARD "xboard"
 #define COMANDO_REALIZAR_PERFT "perft"
 
-extern int tempo_fixo;
-extern int profundidade_fixa;
+extern bool tempo_fixo;
+extern bool profundidade_fixa;
+
+extern int tempo_maximo;
+extern int profundidade_maxima;
 
 extern int lookup;
+
+extern int tempo_gasto;
 
 extern int lance_inicio, lance_destino;
 
 char *lance_para_string(int inicio, int destino, int promove);
-void display_tabuleiro(); // apagar isso dps
 bool ler_comando();
-void lance_computador();
+void lance_computador(bool verbose);
 void print_lance_algebrico(int a, int b);
 int obter_tempo();
 
