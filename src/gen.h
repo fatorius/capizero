@@ -32,6 +32,7 @@ extern u64 bit_peao_defende[LADOS][CASAS_DO_TABULEIRO];
 void init_lookup_tables();
 void gerar_lances(const int lado_a_mover, const int contraLado);
 void gerar_capturas(const int lado_a_mover, const int contraLado);
+unsigned long long perft_node(int profunidade);
 unsigned long long perft(int profunidade);
 
 #endif
