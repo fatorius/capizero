@@ -15,7 +15,7 @@
 #define C1	2
 #define D1	3
 #define E1	4
-#define F1  5
+#define F1  	5
 #define G1	6
 #define H1	7
 
