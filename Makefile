@@ -1,6 +1,7 @@
 # Initial variables
 .DEFAULT_GOAL = default
 EPOCH = $(shell date +%s)
+VERSION = $(shell cat version.capizero)
 CXXFLAGS = -Wall -std=c++11 -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
 EXE := capizero
 COMP = g++
@@ -27,17 +28,19 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 build: clean ./src/main.o $(SRCS) $(HEADER_FILES)
 	@ $(COMP) $(CXXFLAGS) -O3 -o $(EXE) ./src/main.o $(SRCS)
 	@ echo "================="
-	@ echo "capizero succesfully built"
+	@ echo "capizero $(VERSION) compilado com sucesso"
 
 debug: clean add_debug_variables ./src/main.o $(SRCS) $(HEADER_FILES)
 	@ $(COMP) $(CXXFLAGS) -o $(EXE)_debug ./src/main.o $(SRCS)
 	@ echo "================="
-	@ echo "capizero succesfully built for debug"
+	@ echo "capizero $(VERSION) compilado para debug com sucesso"
+	@ echo "ATENÇÃO: O BINARIO COMPILADO NÃO CONTEM AS OPTIMIZAÇÕES RECOMENDADAS E DEVE SER USADO SOMENTE PARA TESTES E DEBUG"
+	@ echo "Para o uso em jogos normais, use 'make build'"
 
 tests: clean ./src/unit_tests.o ./src/tests.o $(SRCS)
 	@ $(COMP) $(CXXFLAGS) -O3 -o capizero_unit_tests ./src/unit_tests.o ./src/tests.o $(SRCS)
 	@ echo "================="
-	@ echo "unit tests built succesfully"
+	@ echo "testes unitarios compilados com sucesso"
 
 
 # Other commands
@@ -45,26 +48,26 @@ clean:
 	@ rm -rf ./src/*.o
 	
 help:
-	@ echo "If you want to compile capizero you must use:"
-	@ echo "make target"
+	@ echo "Para compilar o capizero, você deve usar:"
+	@ echo "make [alvo]"
 	@ echo ""
-	@ echo "Available targets are: "
+	@ echo "Os alvos são: "
 	@ echo "======================"
-	@ echo "build: build capizero"
-	@ echo "tests: build unity tests"
-	@ echo "debug: build capizero with debug symbols and without optmization flags"
+	@ echo "build: compila o capizero com todas as optimizações recomendadas para o uso em jogos"
+	@ echo "tests: compila um binário para testes unitários"
+	@ echo "debug: compila o capizero sem optimizações e com flags para debug"
 	@ echo "======================"
-	@ echo "Other commands: "
+	@ echo "Outros comandos: "
 	@ echo "----------------------"
-	@ echo "clean: delete all .o files"
-	@ echo "help: shows all possible commands"
-	@ echo "credits: displays capizero creators"
+	@ echo "clean: deleta todos os arquivos .o"
+	@ echo "help: exibe este menu"
+	@ echo "credits: exibe os criadores do capizero"
 	@ echo "----------------------"
 	@ echo ""
 
 credits: 
 	@ echo ""
-	@ echo "capizero is written by HugoSouza"
+	@ echo "capizero $(VERSION) é escrito por HugoSouza"
 	@ echo ""
 
 default: help credits
