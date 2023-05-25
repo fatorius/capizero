@@ -5,6 +5,7 @@
 #include <string.h>
 #include <iostream>
 #include <sys/timeb.h>
+#include <chrono>
 
 #include "game.h"
 #include "gen.h"
@@ -50,9 +51,7 @@ void print_lance_algebrico(int a, int b){
 }
 
 int obter_tempo(){
-    struct timeb timebuffer;
-    ftime(&timebuffer);
-    return (timebuffer.time * SEGUNDO) + timebuffer.millitm;
+    return chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
 }
 
 void display_tabuleiro() {
