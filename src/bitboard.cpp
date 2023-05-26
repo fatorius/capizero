@@ -214,8 +214,13 @@ int obter_borda(int casa, int soma){
 }
 
 int bitscan(u64 b){
-    unsigned int folded;
-    b ^= b - 1;
-    folded = (int) b ^ (b >> 32);
-    return lsb_64_table[folded * 0x78291ACF >> 26];
+    #ifdef NOT_USE_BSFQ
+        unsigned int folded;
+        b ^= b - 1;
+        folded = (int) b ^ (b >> 32);
+        return lsb_64_table[folded * 0x78291ACF >> 26];
+    #else
+        return __builtin_ffsl(b) - 1;
+    #endif
+    
 }

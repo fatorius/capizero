@@ -1,4 +1,4 @@
-# Initial variables
+# Variáveis iniciais
 .DEFAULT_GOAL = default
 EPOCH = $(shell date +%s)
 VERSION = $(shell cat version.capizero)
@@ -6,7 +6,12 @@ CXXFLAGS = -Wall -std=c++11 -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat ve
 EXE := capizero
 COMP = g++
 
-# Source objects
+# Outras configurações
+ifeq ($(BSFQ), FALSE)
+CXXFLAGS += -DNOT_USE_BSFQ
+endif
+
+# Objs
 SRCS = ./src/bitboard.o ./src/init.o \
 		./src/update.o ./src/gen.o \
 		./src/eval.o ./src/hash.o \
@@ -14,7 +19,7 @@ SRCS = ./src/bitboard.o ./src/init.o \
 		./src/interface.o ./src/attacks.o \
 		./src/xboard.o ./src/help.o
 
-# Header files
+# Headers
 HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/update.h ./src/gen.h \
 		./src/eval.h ./src/hash.h \
@@ -43,13 +48,13 @@ tests: clean ./src/unit_tests.o ./src/tests.o $(SRCS)
 	@ echo "testes unitarios compilados com sucesso"
 
 
-# Other commands
+# Outros comandos
 clean:
 	@ rm -rf ./src/*.o
 	
 help:
 	@ echo "Para compilar o capizero, você deve usar:"
-	@ echo "make [alvo]"
+	@ echo "make [alvo] [opções]"
 	@ echo ""
 	@ echo "Os alvos são: "
 	@ echo "======================"
@@ -57,6 +62,9 @@ help:
 	@ echo "tests: compila um binário para testes unitários"
 	@ echo "debug: compila o capizero sem optimizações e com flags para debug"
 	@ echo "======================"
+	@ echo "As opções: "
+	@ echo "BSFQ = [TRUE/FALSE]: utiliza a instrução bsfq para realizar bitscan (valor padrão: TRUE)"
+	@ echo ""
 	@ echo "Outros comandos: "
 	@ echo "----------------------"
 	@ echo "clean: deleta todos os arquivos .o"
@@ -73,7 +81,7 @@ credits:
 default: help credits
 
 
-# Auxiliary recipes
+# Outras receitas
 add_debug_variables:
 	@ $(eval CXXFLAGS += -DDEBUG_BUILD -g)
 
