@@ -1,5 +1,18 @@
+/*
+Nesse arquivo estão definidos todas as constantes
+que serão usadas para gerar os bitboards da engine,
+além de simbolos constantes para casas, peças, colunas
+etc
+
+Também estão linkadas dois outros arquivos header: params e values
+*/
+
+
 #ifndef CONSTS
 #define CONSTS
+
+#include "values.h"
+#include "params.h"
 
 #define COLUNA_A 0
 #define COLUNA_B 1
@@ -106,18 +119,9 @@
 
 #define SEGUNDO 1000
 
-#define MAX_PLY 64
-
 #define CASAS_DO_TABULEIRO 64
 #define LADOS 2
 #define TIPOS_DE_PIECES 6
-
-#define MAX_PLY 64
-
-#define PILHA_DE_LANCES 4000
-#define PILHA_DO_JOGO 2000
-
-#define SCORE_DE_CAPTURA 10000000
 
 #define BRANCAS_ROQUE_MENOR 1
 #define BRANCAS_ROQUE_MAIOR 2
@@ -129,15 +133,6 @@ const char piece_char[6] =
 	'P', 'N', 'B', 'R', 'Q', 'K'
 };
 
-#define VALOR_PEAO 100
-#define VALOR_CAVALO 300
-#define VALOR_BISPO 300
-#define VALOR_TORRE 500
-#define VALOR_DAMA 900
-#define VALOR_REI 10000
-
-#define EN_PASSANT_SCORE 10
-
 #define PROMOCAO 4
 
 #define FILEIRA_8 7
@@ -148,85 +143,6 @@ const char piece_char[6] =
 #define FILEIRA_3 2
 #define FILEIRA_2 1
 #define FILEIRA_1 0
-
-#define ALPHA_INICIAL -10000
-#define BETA_INICIAL 10000
-
-#define VALOR_XEQUE_MATE_PADRAO -9000
-
-#define VALOR_XEQUE_MATE_BRANCAS 9000
-#define VALOR_XEQUE_MATE_PRETAS -9000
-
-#define PONTUACAO_HASH 100000000
-
-#define ISOLADO_SCORE 20
-
-#define COLUNA_SEMI_ABERTA_BONUS 10
-#define COLUNA_ABERTA_BONUS 20
-
-#define VERIFICACAO_DE_LANCES 4095
-
-#define MELHOR_SCORE_INICIAL -10001
-
-
-
-const int defesa_ala_da_dama[LADOS][CASAS_DO_TABULEIRO]=
-{
-{
-	0, 0, 0, 0, 0, 0, 0, 0,
-	8,10, 8, 0, 0, 0, 0, 0,
-	8, 6, 8, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0
-},
-{
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	8, 6, 8, 0, 0, 0, 0, 0,
-	8,10, 8, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0
-}};
-
-const int defesa_ala_do_rei[LADOS][CASAS_DO_TABULEIRO]=
-{
-{
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 8,10, 8,
-	0, 0, 0, 0, 0, 8, 6, 8,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0
-},
-{
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 8, 6, 8,
-	0, 0, 0, 0, 0, 8,10, 8,
-	0, 0, 0, 0, 0, 0, 0, 0
-}};
-
-const int px[6] = {0,10,20,30,40,0};
-const  int cx[6] = {-3,7,17,27,37,0};
-const int bx[6] = {-3,7,17,27,37,0};
-const int tx[6] = {-5,5,15,25,35,0};
-const int dx[6] = {-9,1,11,21,31,0};
-const int rx[6] = {0,10,20,30,40,0};
-
-const int pieces_valor[6] = 
-{
-	VALOR_PEAO, VALOR_CAVALO, VALOR_BISPO, VALOR_TORRE, VALOR_DAMA, VALOR_REI
-};
 
 const int cor_inicial[64] = 
 {
@@ -308,102 +224,6 @@ const int flip[64] =
 	 16,  17,  18,  19,  20,  21,  22,  23,
 	  8,   9,  10,  11,  12,  13,  14,  15,
 	  0,   1,   2,   3,   4,   5,   6,   7
-};
-
-const int peao_score[64] = 
-{
-	  0,   0,   0,   0,   0,   0,   0,   0,
-      0,   2,   4, -12, -12,   4,   2,   0,
-      0,   2,   4,   4,   4,   4,   2,   0,
-      0,   2,   4,   8,   8,   4,   2,   0,
-      0,   2,   4,   8,   8,   4,   2,   0,
-      4,   8,  10,  16,  16,  10,   8,   4,
-    100, 100, 100, 100, 100, 100, 100, 100,
-	  0,   0,   0,   0,   0,   0,   0,   0
-};
-
-const int cavalo_score[64] = 
-{
-	-30, -20, -10,  -8,  -8, -10, -20, -30,
-	-16, -6,   -2,   0,   0,   -2, -6, -16,
-	-8,   -2,   4,   6,   6,   4,   -2, -8,
-	-5,   0,   6,   8,   8,   6,   0, -5,
-	-5,   0,   6,   8,   8,   6,   0, -5,
-	-10,   -2,   4,   6,   6,   4,   -2, -10,
-	-20, -10,   -2,   0,   0,   -2, -10, -20,
-	-150, -20, -10, -5, -5, -10, -20, -150
-};
-
-const int bispo_score[64] = 
-{
-	-10, -10, -12, -10, -10, -12, -10, -10,
-	  0,   4,   4,   4,   4,   4,   4,   0,
-	  2,   4,   6,   6,   6,   6,   4,   2,
-	  2,   4,   6,   8,   8,   6,   4,   2,
-	  2,   4,   6,   8,   8,   6,   4,   2,
-	  2,   4,   6,   6,   6,   6,   4,   2,
-	-10,   4,   4,   4,   4,   4,   4, -10,
-	-10, -10, -10, -10, -10, -10, -10, -10
-};
-
-const int torre_score[64] = 
-{
-	4, 4,  4,  6, 6,  4, 4, 4,
-	0, 0,  0,  0, 0,  0, 0, 0,
-	0, 0,  0,  0, 0,  0, 0, 0,
-	0, 0,  0,  0, 0,  0, 0, 0,
-	0, 0,  0,  0, 0,  0, 0, 0,
-	0, 0,  0,  0, 0,  0, 0, 0,
-	20, 20, 20, 20, 20, 20, 20, 20,
-	10, 10, 10, 10, 10, 10, 10, 10
-};
-
-const int dama_score[64] = 
-{
-    -10, -10,  -6,  -4,  -4,  -6, -10, -10,
-	-10,   2,   2,   2,   2,   2,   2, -10,
-	  2,   2,   2,   3,   3,   2,   2,   2,
-	  2,   2,   3,   4,   4,   3,   2,   2,
-	  2,   2,   3,   4,   4,   3,   2,   2,
-	  2,   2,   2,   3,   3,   2,   2,   2,
-	-10,   2,   2,   2,   2,   2,   2, -10,
-	-10, -10,   2,   2,   2,   2, -10, -10
-};
-
-const int rei_score[64] = 
-{
-     20,  20,  20, -40,  10, -60,  20,  20,     
-	 15,  20, -25, -30, -30, -45,  20,  15,   
-	-48, -48, -48, -48, -48, -48, -48, -48,
-    -48, -48, -48, -48, -48, -48, -48, -48,
-    -48, -48, -48, -48, -48, -48, -48, -48,
-    -48, -48, -48, -48, -48, -48, -48, -48,
-    -48, -48, -48, -48, -48, -48, -48, -48,
-    -48, -48, -48, -48, -48, -48, -48, -48
-};
-
-const int rei_finais_score[64] = 
-{
-	  0,   8,  16,  18,  18,  16,  8,   0,
-	  8,  16,  24,  32,  32,  24,  16,  8,
-	 16,  24,  32,  40,  40,  32,  24,  16,
-	 25,  32,  40,  48,  48,  40,  32,  25,
-	 25,  32,  40,  48,  48,  40,  32,  25,
-	 16,  24,  32,  40,  40,  32,  24,  16,
-	 8,  16,  24,  32,  32,  24,  16,  8,
-	  0,  8,  16,  18,  18,  16,  8,   0
-};
-
-const int peao_passado_score[64] = 
-{
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	60,  60,  60,  60  ,60, 60, 60, 60,
-	30, 30, 30, 30, 30, 30, 30, 30,
-	15, 15, 15, 15,15, 15, 15, 15, 
-	8, 8, 8, 8, 8, 8, 8, 8,
-	8, 8, 8, 8, 8, 8, 8, 8,
-	0, 0, 0, 0, 0, 0, 0, 0
 };
 
 const int roque_mask[64] = {

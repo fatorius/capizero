@@ -26,7 +26,9 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/game.h ./src/search.h \
 		./src/interface.h ./src/attacks.h \
 		./src/xboard.h ./src/help.h \
-		./src/consts.h
+		./src/consts.h ./src/info.h \
+		./src/params.h ./src/tests.h \
+		./src/values.hs
 
 
 # Targets

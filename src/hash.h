@@ -4,9 +4,6 @@
 #include "bitboard.h"
 #include "gen.h"
 
-const u64 MAXHASH =  9000000;
-const u64 HASHSIZE = 5000000;
-
 struct hashp{
     u64 hashlock;
     int inicio;
