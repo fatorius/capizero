@@ -50,16 +50,16 @@ void nova_posicao(){
     piece_mat[BRANCAS] = peao_mat[BRANCAS] = 0;
     piece_mat[PRETAS] = peao_mat[PRETAS] = 0;
 
-    for (int i = 0; i < CASAS_DO_TABULEIRO; i++){
-        if (tabuleiro[i] < VAZIO){
-            if (bit_lados[BRANCAS] & mask[i]){
+    for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
+        if (tabuleiro[casa] < VAZIO){
+            if (bit_lados[BRANCAS] & mask[casa]){
                 c = BRANCAS;
             }
             else{
                 c = PRETAS;
             }
 
-            adicionar_piece(c, tabuleiro[i], i);
+            adicionar_piece(c, tabuleiro[casa], casa);
         }
     }
 
@@ -84,9 +84,9 @@ void verificar_tempo(){
 }
 
 void set_lance_hash(){
-    for (int x = primeiro_lance[ply]; x < primeiro_lance[ply + 1]; x++){
-        if (lista_de_lances[x].inicio == hash_inicio && lista_de_lances[x].destino == hash_destino){
-            lista_de_lances[x].score = PONTUACAO_HASH;
+    for (int lance = primeiro_lance[ply]; lance < primeiro_lance[ply + 1]; lance++){
+        if (lista_de_lances[lance].inicio == hash_inicio && lista_de_lances[lance].destino == hash_destino){
+            lista_de_lances[lance].score = PONTUACAO_HASH;
             return;
         }
     }
@@ -95,26 +95,25 @@ void set_lance_hash(){
 void ordenar_lances(const int desde){
     lance l;
 
-    int ls = lista_de_lances[desde].score;
-    int li = desde;
+    int maior_score = lista_de_lances[desde].score;
+    int indice_do_maior_score = desde;
 
     for (int i = desde + 1; i < primeiro_lance[ply + 1]; ++i){
-        if (lista_de_lances[i].score > ls){
-            ls = lista_de_lances[i].score;
-            li = i;
+        if (lista_de_lances[i].score > maior_score){
+            maior_score = lista_de_lances[i].score;
+            indice_do_maior_score = i;
         }
 
         l = lista_de_lances[desde];
-        lista_de_lances[desde] = lista_de_lances[li];
-        lista_de_lances[li] = l; 
+        lista_de_lances[desde] = lista_de_lances[indice_do_maior_score];
+        lista_de_lances[indice_do_maior_score] = l; 
     }
 }
 
 int pesquisa_de_recapturas(int inicio, const int destino){
-
-    int b;
-    int c = 0;
-    int t = 0;
+    int menor_recaptura;
+    int recaptura = 0;
+    int recapturas_feitas = 0;
 
     int score[12];
 
@@ -125,22 +124,22 @@ int pesquisa_de_recapturas(int inicio, const int destino){
 
     int score_total = 0;
 
-    while (c < 10){
+    while (recaptura < 10){
         if (!fazer_captura(inicio, destino)){
             break;
         }
 
-        t++;
+        recapturas_feitas++;
         lances_avaliados++;
-        c++;
+        recaptura++;
 
-        b = menor_atacante(lado, xlado, destino);
+        menor_recaptura = menor_atacante(lado, xlado, destino);
 
-        if (b > -1){
-            score[c + 1] = pieces_valor[tabuleiro[b]];
+        if (menor_recaptura > -1){
+            score[recaptura + 1] = pieces_valor[tabuleiro[menor_recaptura]];
 
-            if (score[c] > (score[c - 1] + score[c + 1])){
-                c--;
+            if (score[recaptura] > (score[recaptura - 1] + score[recaptura + 1])){
+                recaptura--;
                 break;
             }
         }
@@ -148,30 +147,30 @@ int pesquisa_de_recapturas(int inicio, const int destino){
             break;
         }
 
-        inicio = b;
+        inicio = menor_recaptura;
     }
 
-    while (c > 1){
-        if (score[c-1] >= score[c-2]){
-            c -= 2;
+    while (recaptura > 1){
+        if (score[recaptura-1] >= score[recaptura-2]){
+            recaptura -= 2;
         }
         else {
             break;
         }
     }
 
-    for (int x = 0; x < c; x++){
-        if (x % 2 == 0){
-            score_total += score[x];
+    for (int piece = 0; piece < recaptura; piece++){
+        if (piece % 2 == 0){
+            score_total += score[piece];
         }
         else{
-            score_total -= score[x];
+            score_total -= score[piece];
         }
     }
 
-    while (t){
+    while (recapturas_feitas){
         desfaz_captura();
-        t--;
+        recapturas_feitas--;
     }
 
     return score_total;
@@ -181,16 +180,16 @@ int pesquisa_de_capturas(int alpha, int beta){
     
     lances_avaliados++;
 
-    int x = avaliar();
+    int score_capturas = avaliar();
 
-    if (x > alpha){
-        if (x >= beta){
+    if (score_capturas > alpha){
+        if (score_capturas >= beta){
             return beta;
         }
 
-        alpha = x;
+        alpha = score_capturas;
     }
-    else if (x + VALOR_DAMA < alpha){
+    else if (score_capturas + VALOR_DAMA < alpha){
         return alpha;
     }
 
@@ -203,7 +202,7 @@ int pesquisa_de_capturas(int alpha, int beta){
     for (int i = primeiro_lance[ply]; i < primeiro_lance[ply+1]; ++i){
         ordenar_lances(i);
 
-        if (x + pieces_valor[tabuleiro[lista_de_lances[i].destino]] < alpha){
+        if (score_capturas + pieces_valor[tabuleiro[lista_de_lances[i].destino]] < alpha){
             continue;
         }
 
@@ -216,16 +215,16 @@ int pesquisa_de_capturas(int alpha, int beta){
     }
 
     if (melhorscore > 0){
-        x += melhorscore;
+        score_capturas += melhorscore;
     }
 
-    if (x > alpha){
-        if (x >= beta){
+    if (score_capturas > alpha){
+        if (score_capturas >= beta){
             if (melhorscore > 0){
                 adicionar_hash(lado, lista_de_lances[melhorlance]);
             }
 
-            return x;
+            return score_capturas;
         }
     }
 
@@ -267,66 +266,66 @@ int pesquisa(int alpha, int beta, int profundidade){
         set_lance_hash();
     }
 
-    int c = 0;
-    int x;
-    int p;
+    int lances_legais_na_posicao = 0;
+    int score_candidato;
+    int nova_profundidade;
 
-    for (int i = primeiro_lance[ply]; i < primeiro_lance[ply + 1]; ++i){
-        ordenar_lances(i);
+    for (int candidato = primeiro_lance[ply]; candidato < primeiro_lance[ply + 1]; ++candidato){
+        ordenar_lances(candidato);
 
         // verifica se o lance é legal
-        if (!fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
+        if (!fazer_lance(lista_de_lances[candidato].inicio, lista_de_lances[candidato].destino)){
             continue;
         }
 
-        c++;
+        lances_legais_na_posicao++;
 
         if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
-            p = profundidade;
+            nova_profundidade = profundidade;
         }
         else{
-            p = profundidade - 3;
+            nova_profundidade = profundidade - 3;
         
-            if (lista_de_lances[i].score > SCORE_DE_CAPTURA || c == 1 || check == 1){
-                p = profundidade - 1;
+            if (lista_de_lances[candidato].score > SCORE_DE_CAPTURA || lances_legais_na_posicao == 1 || check == 1){
+                nova_profundidade = profundidade - 1;
             }
-            else if (lista_de_lances[i].score > 0){
-                p = profundidade - 2;
+            else if (lista_de_lances[candidato].score > 0){
+                nova_profundidade = profundidade - 2;
             }
         }
 
-        x = -pesquisa(-beta, -alpha, p);
+        score_candidato = -pesquisa(-beta, -alpha, nova_profundidade);
 
         desfaz_lance();
 
-        if (x > melhorscore){
-            melhorscore = x;
-            melhorlance = lista_de_lances[i];
+        if (score_candidato > melhorscore){
+            melhorscore = score_candidato;
+            melhorlance = lista_de_lances[candidato];
         }
 
-        if (x > alpha){
-            if (x >= beta){
-                if (!(mask[lista_de_lances[i].destino] & bit_total)){
-                    historico[lista_de_lances[i].inicio][lista_de_lances[i].destino] += profundidade;
+        if (score_candidato > alpha){
+            if (score_candidato >= beta){
+                if (!(mask[lista_de_lances[candidato].destino] & bit_total)){
+                    historico[lista_de_lances[candidato].inicio][lista_de_lances[candidato].destino] += profundidade;
                 }
-                adicionar_hash(lado, lista_de_lances[i]);
+                adicionar_hash(lado, lista_de_lances[candidato]);
                 return beta;
             }
-            alpha = x;
+            alpha = score_candidato;
         }
     }
 
-    if (c == 0){
+    if (!lances_legais_na_posicao){
         if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
             return VALOR_XEQUE_MATE_PADRAO + ply;
         }
         else{
-            return 0;
+            return VALOR_EMPATE;
         }
     }
 
     if (cinquenta >= 100){
-        return 0;
+        return VALOR_EMPATE;
     }
 
     adicionar_hash(lado, melhorlance);

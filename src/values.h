@@ -26,6 +26,7 @@ adicionais para peão e torre, e os valores de cada casa para as peças
 #define ALPHA_INICIAL -10000
 #define BETA_INICIAL 10000
 
+#define VALOR_EMPATE 0
 #define VALOR_XEQUE_MATE_PADRAO -9000
 #define MELHOR_SCORE_INICIAL -10001
 
@@ -33,8 +34,6 @@ adicionais para peão e torre, e os valores de cada casa para as peças
 #define VALOR_XEQUE_MATE_PRETAS -9000
 
 #define VERIFICACAO_DE_LANCES 4095
-
-
 
 const int defesa_ala_da_dama[2][64]=
 {

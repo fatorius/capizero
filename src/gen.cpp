@@ -35,137 +35,137 @@ int rei_moves[CASAS_DO_TABULEIRO][9];
 int mc;
 
 void init_peao_lookups(){
-    for (int x = 0; x < 64; x++){
-        peao_esquerda[BRANCAS][x] = -1;
-        peao_esquerda[PRETAS][x] = -1;
-        peao_direita[BRANCAS][x] = -1;
-        peao_direita[PRETAS][x] = -1;
+    for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
+        peao_esquerda[BRANCAS][casa] = -1;
+        peao_esquerda[PRETAS][casa] = -1;
+        peao_direita[BRANCAS][casa] = -1;
+        peao_direita[PRETAS][casa] = -1;
     
-        if (colunas[x] > COLUNA_A){
-            if (linhas[x] < COLUNA_H){
-                peao_esquerda[BRANCAS][x] = x + 7;
-                set_bit(bit_peao_capturas[BRANCAS][x], peao_esquerda[BRANCAS][x]);
-                set_bit(bit_esquerda[BRANCAS][x], peao_esquerda[BRANCAS][x]);
+        if (colunas[casa] > COLUNA_A){
+            if (linhas[casa] < COLUNA_H){
+                peao_esquerda[BRANCAS][casa] = casa + 7;
+                set_bit(bit_peao_capturas[BRANCAS][casa], peao_esquerda[BRANCAS][casa]);
+                set_bit(bit_esquerda[BRANCAS][casa], peao_esquerda[BRANCAS][casa]);
             }
-            if (linhas[x] > COLUNA_A){
-                peao_esquerda[PRETAS][x] = x - 9;
-                set_bit(bit_peao_capturas[PRETAS][x], peao_esquerda[PRETAS][x]);
-                set_bit(bit_esquerda[PRETAS][x], peao_esquerda[PRETAS][x]);
-            }
-        }
-
-        if (colunas[x] < COLUNA_H){
-            if (linhas[x] < COLUNA_H){
-                peao_direita[BRANCAS][x] = x + 9;
-                set_bit(bit_peao_capturas[BRANCAS][x], peao_direita[BRANCAS][x]);
-                set_bit(bit_direita[BRANCAS][x], peao_direita[BRANCAS][x]);
-            }
-            if (linhas[x] > COLUNA_A){
-                peao_direita[PRETAS][x] = x - 7;
-                set_bit(bit_peao_capturas[PRETAS][x], peao_direita[PRETAS][x]);
-                set_bit(bit_direita[PRETAS][x], peao_direita[PRETAS][x]);
+            if (linhas[casa] > COLUNA_A){
+                peao_esquerda[PRETAS][casa] = casa - 9;
+                set_bit(bit_peao_capturas[PRETAS][casa], peao_esquerda[PRETAS][casa]);
+                set_bit(bit_esquerda[PRETAS][casa], peao_esquerda[PRETAS][casa]);
             }
         }
 
-        bit_peao_defende[BRANCAS][x] = bit_peao_capturas[PRETAS][x];
-        bit_peao_defende[PRETAS][x] = bit_peao_capturas[BRANCAS][x];
+        if (colunas[casa] < COLUNA_H){
+            if (linhas[casa] < COLUNA_H){
+                peao_direita[BRANCAS][casa] = casa + 9;
+                set_bit(bit_peao_capturas[BRANCAS][casa], peao_direita[BRANCAS][casa]);
+                set_bit(bit_direita[BRANCAS][casa], peao_direita[BRANCAS][casa]);
+            }
+            if (linhas[casa] > COLUNA_A){
+                peao_direita[PRETAS][casa] = casa - 7;
+                set_bit(bit_peao_capturas[PRETAS][casa], peao_direita[PRETAS][casa]);
+                set_bit(bit_direita[PRETAS][casa], peao_direita[PRETAS][casa]);
+            }
+        }
 
-        if (linhas[x] < COLUNA_H){
-            peao_uma_casa[BRANCAS][x] = x + 8;
+        bit_peao_defende[BRANCAS][casa] = bit_peao_capturas[PRETAS][casa];
+        bit_peao_defende[PRETAS][casa] = bit_peao_capturas[BRANCAS][casa];
+
+        if (linhas[casa] < COLUNA_H){
+            peao_uma_casa[BRANCAS][casa] = casa + 8;
         }
-        if (linhas[x] < COLUNA_G){
-            peao_duas_casas[BRANCAS][x] = x + 16;
+        if (linhas[casa] < COLUNA_G){
+            peao_duas_casas[BRANCAS][casa] = casa + 16;
         }
-        if (linhas[x] > COLUNA_A){ 
-            peao_uma_casa[PRETAS][x] = x - 8;
+        if (linhas[casa] > COLUNA_A){ 
+            peao_uma_casa[PRETAS][casa] = casa - 8;
         }
-        if (linhas[x] > COLUNA_B){
-            peao_duas_casas[PRETAS][x] = x - 16;
+        if (linhas[casa] > COLUNA_B){
+            peao_duas_casas[PRETAS][casa] = casa - 16;
         }
 
     }
 }
 
 void init_cavalo_lookups(){
-    int k, x = 0;
+    int qntt_lances, casa = 0;
     
-    for (x = 0; x < CASAS_DO_TABULEIRO; x++){
-        k = 0;
+    for (casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
+        qntt_lances = 0;
 
-        if (linhas[x] < 6 && colunas[x] < COLUNA_H){
-            cavalo_moves[x][k++] = x + 17;
+        if (linhas[casa] < 6 && colunas[casa] < COLUNA_H){
+            cavalo_moves[casa][qntt_lances++] = casa + 17;
         }
-        if (linhas[x] < COLUNA_H && colunas[x] < COLUNA_G){
-            cavalo_moves[x][k++] = x + 10;
+        if (linhas[casa] < COLUNA_H && colunas[casa] < COLUNA_G){
+            cavalo_moves[casa][qntt_lances++] = casa + 10;
         }
-        if (linhas[x] < 6 && colunas[x] > COLUNA_A){
-            cavalo_moves[x][k++] = x + 15;
+        if (linhas[casa] < 6 && colunas[casa] > COLUNA_A){
+            cavalo_moves[casa][qntt_lances++] = casa + 15;
         }
-        if (linhas[x] < COLUNA_H && colunas[x] > COLUNA_B){
-            cavalo_moves[x][k++] = x + 6;
+        if (linhas[casa] < COLUNA_H && colunas[casa] > COLUNA_B){
+            cavalo_moves[casa][qntt_lances++] = casa + 6;
         }
-        if (linhas[x] > 1 && colunas[x] < COLUNA_H){
-            cavalo_moves[x][k++] = x - 15;
+        if (linhas[casa] > 1 && colunas[casa] < COLUNA_H){
+            cavalo_moves[casa][qntt_lances++] = casa - 15;
         }
-        if (linhas[x] > COLUNA_A && colunas[x] < COLUNA_G){
-            cavalo_moves[x][k++] = x - 6;
+        if (linhas[casa] > COLUNA_A && colunas[casa] < COLUNA_G){
+            cavalo_moves[casa][qntt_lances++] = casa - 6;
         }
-        if (linhas[x] > 1 && colunas[x] > COLUNA_A){
-            cavalo_moves[x][k++] = x - 17;
+        if (linhas[casa] > 1 && colunas[casa] > COLUNA_A){
+            cavalo_moves[casa][qntt_lances++] = casa - 17;
         }
-        if (linhas[x] > COLUNA_A && colunas[x] > COLUNA_B){
-            cavalo_moves[x][k++] = x - 10;
+        if (linhas[casa] > COLUNA_A && colunas[casa] > COLUNA_B){
+            cavalo_moves[casa][qntt_lances++] = casa - 10;
         }
 
-        cavalo_moves[x][k] = -1;
+        cavalo_moves[casa][qntt_lances] = -1;
     }
 
-    for (x = 0; x < CASAS_DO_TABULEIRO; x++){
-        k = 0;
-        while (cavalo_moves[x][k] > -1){
-            bit_moves_cavalo[x] |= mask[cavalo_moves[x][k]];
-            k++;
+    for (casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
+        qntt_lances = 0;
+        while (cavalo_moves[casa][qntt_lances] > -1){
+            bit_moves_cavalo[casa] |= mask[cavalo_moves[casa][qntt_lances]];
+            qntt_lances++;
         }
     }
 }
 
 void init_rei_lookups(){
-    int x, y, k = 0;
+    int casa, qntt_lances, bit = 0;
 
-    for (x = 0; x < CASAS_DO_TABULEIRO; x++){
-        k = 0;
-        y = 0;
+    for (casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
+        bit = 0;
+        qntt_lances = 0;
 
-        if (colunas[x] > COLUNA_A){
-            rei_moves[x][y++] = x-1;    
+        if (colunas[casa] > COLUNA_A){
+            rei_moves[casa][qntt_lances++] = casa-1;    
         }
-        if (colunas[x] < COLUNA_H){
-            rei_moves[x][y++] = x+1;    
+        if (colunas[casa] < COLUNA_H){
+            rei_moves[casa][qntt_lances++] = casa+1;    
         }
-        if (linhas[x] > COLUNA_A){
-            rei_moves[x][y++] = x-8;    
+        if (linhas[casa] > COLUNA_A){
+            rei_moves[casa][qntt_lances++] = casa-8;    
         }
-        if (linhas[x] < COLUNA_H){
-            rei_moves[x][y++] = x+8;    
+        if (linhas[casa] < COLUNA_H){
+            rei_moves[casa][qntt_lances++] = casa+8;    
         }
-        if (colunas[x] < COLUNA_H && linhas[x] < COLUNA_H){
-            rei_moves[x][y++] = x+9;    
+        if (colunas[casa] < COLUNA_H && linhas[casa] < COLUNA_H){
+            rei_moves[casa][qntt_lances++] = casa+9;    
         }
-        if (colunas[x] > COLUNA_A && linhas[x] < COLUNA_H){
-            rei_moves[x][y++] = x+7;    
+        if (colunas[casa] > COLUNA_A && linhas[casa] < COLUNA_H){
+            rei_moves[casa][qntt_lances++] = casa+7;    
         }
-        if (colunas[x] > COLUNA_A && linhas[x] > COLUNA_A){
-            rei_moves[x][y++] = x-9;    
+        if (colunas[casa] > COLUNA_A && linhas[casa] > COLUNA_A){
+            rei_moves[casa][qntt_lances++] = casa-9;    
         }
-        if (colunas[x] < COLUNA_H && linhas[x] > COLUNA_A){
-            rei_moves[x][y++] = x-7;    
+        if (colunas[casa] < COLUNA_H && linhas[casa] > COLUNA_A){
+            rei_moves[casa][qntt_lances++] = casa-7;    
         }
 
-        rei_moves[x][y] = -1;
+        rei_moves[casa][qntt_lances] = -1;
 
-        while (rei_moves[x][k] > -1){
-            bit_moves_rei[x] |= mask[rei_moves[x][k]];
-            k++;
+        while (rei_moves[casa][bit] > -1){
+            bit_moves_rei[casa] |= mask[rei_moves[casa][bit]];
+            bit++;
         }
     }
 
@@ -173,69 +173,69 @@ void init_rei_lookups(){
 }
 
 void init_dtb_lookups(){
-    int x, y = 0;
+    int casa, qntt_lances = 0;
 
-    for (x = 0; x < CASAS_DO_TABULEIRO; x++){
-        y=0;
+    for (casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
+        qntt_lances=0;
 
-        for (int z = 0; z < 8; z++){
-            dtb_moves[x][z] = -1;
-        }
-
-        if (colunas[x] > COLUNA_A){
-            dtb_moves[x][OESTE] = x-1;
-            rei_moves[x][y++] = x-1;    
-        }
-        if (colunas[x] < COLUNA_H){
-            dtb_moves[x][LESTE] = x+1;
-            rei_moves[x][y++] = x+1;    
-        }
-        if (linhas[x] > COLUNA_A){
-            dtb_moves[x][SUL] = x-8;
-            rei_moves[x][y++] = x-8;    
-        }
-        if (linhas[x] < COLUNA_H){
-            dtb_moves[x][NORTE] = x+8;
-            rei_moves[x][y++] = x+8;    
-        }
-        if (colunas[x] < COLUNA_H && linhas[x] < COLUNA_H){
-            dtb_moves[x][NE] = x+9;
-            rei_moves[x][y++] = x+9;    
-        }
-        if (colunas[x] > COLUNA_A && linhas[x] < COLUNA_H){
-            dtb_moves[x][NO] = x+7;
-            rei_moves[x][y++] = x+7;    
-        }
-        if (colunas[x] > COLUNA_A && linhas[x] > COLUNA_A){
-            dtb_moves[x][SO] = x-9;
-            rei_moves[x][y++] = x-9;    
-        }
-        if (colunas[x] < COLUNA_H && linhas[x] > COLUNA_A){
-            dtb_moves[x][SE] = x-7;
-            rei_moves[x][y++] = x-7;    
+        for (int direcao = 0; direcao < 8; direcao++){
+            dtb_moves[casa][direcao] = -1;
         }
 
-        rei_moves[x][y] = -1;
+        if (colunas[casa] > COLUNA_A){
+            dtb_moves[casa][OESTE] = casa-1;
+            rei_moves[casa][qntt_lances++] = casa-1;    
+        }
+        if (colunas[casa] < COLUNA_H){
+            dtb_moves[casa][LESTE] = casa+1;
+            rei_moves[casa][qntt_lances++] = casa+1;    
+        }
+        if (linhas[casa] > COLUNA_A){
+            dtb_moves[casa][SUL] = casa-8;
+            rei_moves[casa][qntt_lances++] = casa-8;    
+        }
+        if (linhas[casa] < COLUNA_H){
+            dtb_moves[casa][NORTE] = casa+8;
+            rei_moves[casa][qntt_lances++] = casa+8;    
+        }
+        if (colunas[casa] < COLUNA_H && linhas[casa] < COLUNA_H){
+            dtb_moves[casa][NE] = casa+9;
+            rei_moves[casa][qntt_lances++] = casa+9;    
+        }
+        if (colunas[casa] > COLUNA_A && linhas[casa] < COLUNA_H){
+            dtb_moves[casa][NO] = casa+7;
+            rei_moves[casa][qntt_lances++] = casa+7;    
+        }
+        if (colunas[casa] > COLUNA_A && linhas[casa] > COLUNA_A){
+            dtb_moves[casa][SO] = casa-9;
+            rei_moves[casa][qntt_lances++] = casa-9;    
+        }
+        if (colunas[casa] < COLUNA_H && linhas[casa] > COLUNA_A){
+            dtb_moves[casa][SE] = casa-7;
+            rei_moves[casa][qntt_lances++] = casa-7;    
+        }
+
+        rei_moves[casa][qntt_lances] = -1;
     }
 
-    for (x = 0; x < CASAS_DO_TABULEIRO; x++){
-        bit_moves_bispo[x] = 0;
-        bit_moves_torre[x] = 0;
-        bit_moves_dama[x] = 0;
+    for (casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
+        bit_moves_bispo[casa] = 0;
+        bit_moves_torre[casa] = 0;
+        bit_moves_dama[casa] = 0;
 
-        for (y = 0; y < CASAS_DO_TABULEIRO; y++){            
-            if (x == y){
+        for (int casa2 = 0; casa2 < CASAS_DO_TABULEIRO; casa2++){            
+            if (casa == casa2){
                 continue;
             }
 
-            if (no_diag[x] == no_diag[y] || ne_diag[x] == ne_diag[y]){
-                bit_moves_bispo[x] |= mask[y];
-                bit_moves_dama[x] |= mask[y];
+            if (no_diag[casa] == no_diag[casa2] || ne_diag[casa] == ne_diag[casa2]){
+                bit_moves_bispo[casa] |= mask[casa2];
+                bit_moves_dama[casa] |= mask[casa2];
             }
 
-            if (colunas[x] == colunas[y] || linhas[x] == linhas[y]){
-                bit_moves_torre[x] |= mask[y];
-                bit_moves_dama[x] |= mask[y];
+            if (colunas[casa] == colunas[casa2] || linhas[casa] == linhas[casa2]){
+                bit_moves_torre[casa] |= mask[casa2];
+                bit_moves_dama[casa] |= mask[casa2];
             }
         }
     }

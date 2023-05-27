@@ -128,6 +128,8 @@ Também estão linkadas dois outros arquivos header: params e values
 #define PRETAS_ROQUE_MENOR 4
 #define PRETAS_ROQUE_MAIOR 8
 
+#define ROQUE 2
+
 const char piece_char[6] = 
 {
 	'P', 'N', 'B', 'R', 'Q', 'K'

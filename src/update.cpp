@@ -8,7 +8,7 @@
 #include "game.h"
 #include "attacks.h"
 
-int casa_reversa[2] = {-8,8};
+int casa_reversa[LADOS] = {-8,8};
 
 jogo* j;
 
@@ -72,7 +72,7 @@ void desfaz_lance(){
     }
 
     // desfaz roque movendo a torre
-    if (abs(inicio - destino) == 2 && tabuleiro[inicio] == R){
+    if (abs(inicio - destino) == ROQUE && tabuleiro[inicio] == R){
         // roque menor brancas
         if (destino == G1){
             mover_piece(lado, T, F1, H1);
@@ -95,7 +95,7 @@ void desfaz_lance(){
 bool fazer_lance(const int inicio, const int destino){
 
     // 1. lida com o roque do rei, movendo também a torre
-    if (abs(inicio - destino) == 2 && tabuleiro[inicio] == R){
+    if (abs(inicio - destino) == ROQUE && tabuleiro[inicio] == R){
 
         // 1.1 verifica se o rei está em xeque
         if (casa_esta_sendo_atacada(xlado, inicio)){

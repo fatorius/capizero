@@ -4,14 +4,15 @@
 #include "bitboard.h"
 
 int menor_atacante(const int l, const int xl, const int casa){
+    // Peões atacantes automaticamente serão os menores atacantes
     if (bit_esquerda[xl][casa] & bit_pieces[l][P]){
         return peao_esquerda[xl][casa];
     }
-
     if (bit_direita[xl][casa] & bit_pieces[l][P]){
         return peao_direita[xl][casa];
     }
 
+    
     u64 t1;
 
     t1 = bit_moves_cavalo[casa] & bit_pieces[l][C];
