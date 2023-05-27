@@ -26,16 +26,14 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 * Ordenação de lances
 
+* Compatibilidade com Xboard
+
+* Bitscan rápidos
 
 
 ## recursos a serem adicionados
 
 * Bitboards mágicos
-
-* Compatibilidade com Xboard
-
-* Bitscan rápidos
-
 
 
 ## para compilar
