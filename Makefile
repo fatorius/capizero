@@ -2,14 +2,15 @@
 .DEFAULT_GOAL = default
 EPOCH = $(shell date +%s)
 VERSION = $(shell cat version.capizero)
+VERSION_WITHOUTQUOTES = $(patsubst '"%"',%, $(VERSION))
 CXXFLAGS = -Wall -std=c++11 -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
-EXE := capizero
+EXE := capizero_$(VERSION_WITHOUTQUOTES)
 COMP = g++
 
 # Outras configurações
 ifeq ($(BSFQ), FALSE)
 CXXFLAGS += -DNOT_USE_BSFQ
-EXE := capizero_no_bsfq
+EXE := capizero_$(VERSION_WITHOUTQUOTES)__no_bsfq
 endif
 
 # Objs
@@ -36,12 +37,12 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 build: clean ./src/main.o $(SRCS) $(HEADER_FILES)
 	@ $(COMP) $(CXXFLAGS) -O3 -o $(EXE) ./src/main.o $(SRCS)
 	@ echo "================="
-	@ echo "capizero $(VERSION) compilado com sucesso"
+	@ echo "capizero $(VERSION_WITHOUTQUOTES) compilado com sucesso"
 
 debug: clean add_debug_variables ./src/main.o $(SRCS) $(HEADER_FILES)
 	@ $(COMP) $(CXXFLAGS) -o $(EXE)_debug ./src/main.o $(SRCS)
 	@ echo "================="
-	@ echo "capizero $(VERSION) compilado para debug com sucesso"
+	@ echo "capizero $(VERSION_WITHOUTQUOTES) compilado para debug com sucesso"
 	@ echo "ATENÇÃO: O BINARIO COMPILADO NÃO CONTEM AS OPTIMIZAÇÕES RECOMENDADAS E DEVE SER USADO SOMENTE PARA TESTES E DEBUG"
 	@ echo "Para o uso em jogos normais, use 'make build'"
 
@@ -78,7 +79,7 @@ help:
 
 credits: 
 	@ echo ""
-	@ echo "capizero $(VERSION) é escrito por HugoSouza"
+	@ echo "capizero $(VERSION_WITHOUTQUOTES) é escrito por HugoSouza"
 	@ echo ""
 
 default: help credits
