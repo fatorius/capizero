@@ -38,5 +38,7 @@ bool ler_comando();
 void lance_computador(bool verbose);
 void print_lance_algebrico(int a, int b);
 int obter_tempo();
+void print_resultado();
+int converter_lance(char *lnc);
 
 #endif

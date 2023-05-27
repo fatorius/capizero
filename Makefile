@@ -9,6 +9,7 @@ COMP = g++
 # Outras configurações
 ifeq ($(BSFQ), FALSE)
 CXXFLAGS += -DNOT_USE_BSFQ
+EXE := capizero_no_bsfq
 endif
 
 # Objs
