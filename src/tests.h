@@ -11,10 +11,15 @@
 #define TEST2_VALOR_ESPERADO 3000
 #define TEST2_TOLERANCIA 100
 
+#define TEST3_VALOR_ESPERADO 4865609
+
+#define TEST4_VALOR_ESPERADO 4865609
+
 namespace Tests{
     void test1();
     void test2();
     void test3();
+    void test4();
 }
 
 

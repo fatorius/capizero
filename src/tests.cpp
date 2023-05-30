@@ -6,6 +6,7 @@
 #include "gen.h"
 #include "interface.h"
 #include "update.h"
+#include "game.h"
 
 using namespace std;
 
@@ -71,12 +72,47 @@ void Tests::test3(){
 
     cout<<"Test 3 - Perft 5 após fazer e desfazer lance"<<endl;
 
-    unsigned long long test1_valor_obtido = perft_node(5);
+    unsigned long long test3_valor_obtido = perft_node(5);
 
-    cout<<"Valor esperado: "<<TEST1_VALOR_ESPERADO<<endl;
-    cout<<"Valor obtido: "<<test1_valor_obtido<<endl;
+    cout<<"Valor esperado: "<<TEST3_VALOR_ESPERADO<<endl;
+    cout<<"Valor obtido: "<<test3_valor_obtido<<endl;
 
-    if (test1_valor_obtido == TEST1_VALOR_ESPERADO){
+    if (test3_valor_obtido == TEST3_VALOR_ESPERADO){
+        TESTE_SUCESSO;
+    }
+    else{
+        TESTE_FALHO;
+    }
+    cout<<"-----------------"<<endl;
+}
+
+// Teste 4
+// Executa diversos lances e reinicia o estado do jogo,
+// em seguida realiza um perft para verificar se a 
+// função novo_jogo() está funcionando corretamente
+void Tests::test4(){
+    cout<<"Test 4 - Perft 5 calcular lance e chamar novo_jogo()"<<endl;
+
+    fazer_lance(E2, E4);
+    fazer_lance(E7, E5);
+    fazer_lance(G1, F3);
+    fazer_lance(B8, C6);
+
+    tempo_maximo = 1000;
+    profundidade_maxima = MAX_PLY;
+    tempo_fixo = true;
+    profundidade_fixa = false;
+
+    lance_computador(false);
+
+    novo_jogo();
+
+    unsigned long long test4_valor_obtido = perft_node(5);
+
+    cout<<"Valor esperado: "<<TEST4_VALOR_ESPERADO<<endl;
+    cout<<"Valor obtido: "<<test4_valor_obtido<<endl;
+
+    if (test4_valor_obtido == TEST4_VALOR_ESPERADO){
         TESTE_SUCESSO;
     }
     else{

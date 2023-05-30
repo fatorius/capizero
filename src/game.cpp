@@ -1,6 +1,7 @@
 #include "game.h"
 
 #include "gen.h"
+#include "interface.h"
 
 int lado_do_computador;
 
@@ -27,6 +28,8 @@ void novo_jogo(){
     hply = 0;
     primeiro_lance[0] = 0;
     jogada = 0;
+
+    no_lances = 0;
     
     init_board();
     

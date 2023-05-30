@@ -47,7 +47,7 @@ debug: clean add_debug_variables ./src/main.o $(SRCS) $(HEADER_FILES)
 	@ echo "Para o uso em jogos normais, use 'make build'"
 
 tests: clean ./src/unit_tests.o ./src/tests.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -O3 -o capizero_unit_tests ./src/unit_tests.o ./src/tests.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -O3 -o $(EXE)_unit_tests ./src/unit_tests.o ./src/tests.o $(SRCS)
 	@ echo "================="
 	@ echo "testes unitarios compilados com sucesso"
 

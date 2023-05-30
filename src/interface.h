@@ -33,6 +33,8 @@ extern int tempo_gasto;
 
 extern int lance_inicio, lance_destino;
 
+extern int no_lances;
+
 char *lance_para_string(int inicio, int destino, int promove);
 bool ler_comando();
 void lance_computador(bool verbose);
