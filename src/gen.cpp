@@ -255,6 +255,14 @@ void adicionar_captura(const int x, const int casa, const int score){
     mc++;
 }
 
+void adicionar_roque(const int x, const int casa){
+    lista_de_lances[mc].inicio = x;
+    lista_de_lances[mc].destino = casa;
+    lista_de_lances[mc].score = SCORE_ROQUE + historico[x][casa];
+    mc++;
+}
+
+
 void adicionar_lance(const int x, const int casa){
     lista_de_lances[mc].inicio = x;
     lista_de_lances[mc].destino = casa;
@@ -278,18 +286,18 @@ void gerar_en_passant(){
 void gerar_roques(){
     if (lado == BRANCAS){
         if (roque & BRANCAS_ROQUE_MENOR && !(bit_entre[H1][E1] & bit_total)){
-            adicionar_lance(E1, G1);
+            adicionar_roque(E1, G1);
         }
         if (roque & BRANCAS_ROQUE_MAIOR && !(bit_entre[A1][E1] & bit_total)){
-            adicionar_lance(E1, C1);
+            adicionar_roque(E1, C1);
         }
     }
     else{
         if (roque & PRETAS_ROQUE_MENOR && !(bit_entre[H8][E8] & bit_total)){
-            adicionar_lance(E8, G8);
+            adicionar_roque(E8, G8);
         }
         if (roque & PRETAS_ROQUE_MAIOR && !(bit_entre[A8][E8] & bit_total)){
-            adicionar_lance(E8, C8);
+            adicionar_roque(E8, C8);
         }
     }
 }
