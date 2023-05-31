@@ -12,7 +12,7 @@
 using namespace std;
 
 int main(){
-    cout<<"executing capizero unit tests \n"<<endl;
+    cout<<"executando testes unitários do capizero \n"<<endl;
 
     init();
 
