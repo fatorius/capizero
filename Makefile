@@ -30,7 +30,7 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/xboard.h ./src/help.h \
 		./src/consts.h ./src/info.h \
 		./src/params.h ./src/tests.h \
-		./src/values.h
+		./src/values.h ./src/stats.h
 
 
 # Targets
@@ -51,6 +51,10 @@ tests: clean ./src/unit_tests.o ./src/tests.o $(SRCS)
 	@ echo "================="
 	@ echo "testes unitarios compilados com sucesso"
 
+stats: clean ./src/stats_tests.o ./src/stats.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -O3 -o $(EXE)_performance_stats ./src/stats_tests.o ./src/stats.o $(SRCS)
+	@ echo "================="
+	@ echo "testes de performance compilados com sucesso"
 
 # Outros comandos
 clean:
@@ -65,6 +69,7 @@ help:
 	@ echo "build: compila o capizero com todas as optimizações recomendadas para o uso em jogos"
 	@ echo "tests: compila um binário para testes unitários"
 	@ echo "debug: compila o capizero sem optimizações e com flags para debug"
+	@ echo "stats: compila um binário para testar a performance da engine no seu computador"
 	@ echo "======================"
 	@ echo "As opções: "
 	@ echo "BSFQ = [TRUE/FALSE]: utiliza a instrução bsfq para realizar bitscan (valor padrão: TRUE)"

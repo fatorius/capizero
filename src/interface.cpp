@@ -232,6 +232,8 @@ void lance_computador(bool verbose){
     lookup = hash_lookup(lado);
 
     if (verbose){
+        tempo_gasto = obter_tempo() - tempo_do_inicio;
+
         if (lance_inicio != 0 || lance_destino != 0){
             hash_inicio = lance_inicio;
             hash_destino = lance_destino;
@@ -248,8 +250,6 @@ void lance_computador(bool verbose){
         }
     }
     
-    tempo_gasto = obter_tempo() - tempo_do_inicio;
-
     fazer_lance(hash_inicio, hash_destino);
 
     atualizar_materiais();
