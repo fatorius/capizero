@@ -91,7 +91,7 @@ void Tests::test3(){
 // em seguida realiza um perft para verificar se a 
 // função novo_jogo() está funcionando corretamente
 void Tests::test4(){
-    cout<<"Test 4 - Perft 5 calcular lance e chamar novo_jogo()"<<endl;
+    cout<<"Test 4 - Perft 5 após calcular lance e chamar novo_jogo()"<<endl;
 
     fazer_lance(E2, E4);
     fazer_lance(E7, E5);

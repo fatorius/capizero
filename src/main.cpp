@@ -1,4 +1,4 @@
-#include <iostream>
+#include <stdio.h>
 
 #include "bitboard.h"
 #include "gen.h"
@@ -11,27 +11,23 @@
 using namespace std;
 
 int main(){
-    cout<<"capizero "<<CAPIZERO_VERSION<<" por Hugo Souza"<<endl;
-    cout<<"build "<<BUILDNO<<endl;
+    printf("capizero %s por Hugo Souza 2023\n", CAPIZERO_VERSION);
+    printf("build %d \n", BUILDNO);
+    printf("compilado em %s \n", __TIMESTAMP__);
 
     #ifdef DEBUG_BUILD
-    cout<<"Build compilada para debug"<<endl;
+    printf("Build compilada para debug\n");
     #endif
 
-    cout<<"compilado em "<<__TIMESTAMP__<<endl;
-    cout<<"\n"<<endl;
+    printf("\n");
 
     init();
-
-    cout<<"Programa iniciado"<<endl;
 
     while (ler_comando()){
         if (lado_do_computador == lado){
             lance_computador(true);
         }
     }
-
-    cout<<endl<<"encerrando programa"<<endl;
 
     liberar_memoria();
 

@@ -1,4 +1,4 @@
-#include <iostream>
+#include <stdio.h>
 
 #include "bitboard.h"
 #include "gen.h"
@@ -9,10 +9,11 @@
 #include "tests.h"
 #include "init.h"
 
-using namespace std;
-
 int main(){
-    cout<<"executando testes unitários do capizero \n"<<endl;
+    printf("capizero %s por Hugo Souza 2023\n", CAPIZERO_VERSION);
+    printf("build %d \n", BUILDNO);
+    printf("compilado em %s \n\n", __TIMESTAMP__);
+    printf("executando testes unitários \n\n\n");
 
     init();
 

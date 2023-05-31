@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <stdio.h>
 #include <string.h>
-#include <iostream>
 #include <sys/timeb.h>
 #include <chrono>
 
@@ -336,9 +335,10 @@ void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
     lance_usuario = converter_lance(lnc);
 
     if (lance_usuario == -1 || !fazer_lance(lista_de_lances[lance_usuario].inicio, lista_de_lances[lance_usuario].destino)){
-        cout<<"Comando / Lance inválido"<<endl;
-        cout<<"Digite 'help' para exibir uma lista de comandos válidos ou"<<endl;
-        cout<<"Digite 'moves' para exibir uma lista de lances legais"<<endl<<endl;
+        printf("Comando / Lance inválido\n");
+        printf("Digite 'help' para exibir uma lista de comandos válidos ou\n");
+        printf("Digite 'moves' para exibir uma lista de lances legais\n");
+        printf("\n");
         return;
     }
 
