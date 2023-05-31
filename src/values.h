@@ -28,18 +28,18 @@ adicionais para peão e torre, e os valores de cada casa para as peças
 #define BETA_INICIAL 10000
 
 #define VALOR_EMPATE 0
-#define VALOR_XEQUE_MATE_PADRAO -9000
+#define VALOR_XEQUE_MATE_PADRAO -99999999
 #define MELHOR_SCORE_INICIAL -10001
 
-#define VALOR_XEQUE_MATE_BRANCAS 9000
-#define VALOR_XEQUE_MATE_PRETAS -9000
+#define VALOR_XEQUE_MATE_BRANCAS 99999999
+#define VALOR_XEQUE_MATE_PRETAS -99999999
 
 #define VERIFICACAO_DE_LANCES 4095
 
 // ----------------P  C  B  T  D  R
 const int px[6] = {0, 10,20,30,40,0}; //P
 const int cx[6] = {-3,9, 17,27,37,0}; //C
-const int bx[6] = {-3,6, 17,27,37,0}; //B
+const int bx[6] = {-3,7, 17,27,37,0}; //B
 const int tx[6] = {-5,5, 15,25,35,0}; //T
 const int dx[6] = {-9,1, 11,21,31,0}; //D
 const int rx[6] = {1, 10,20,30,40,0}; //R
@@ -53,7 +53,7 @@ const int defesa_ala_da_dama[2][64]=
 {
 {
 	0, 0, 0, 0, 0, 0, 0, 0,
-	8,10, 8, 0, 0, 0, 0, 0,
+	8,11, 8, 0, 0, 0, 0, 0,
 	8, 6, 8, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -68,7 +68,7 @@ const int defesa_ala_da_dama[2][64]=
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	8, 6, 8, 0, 0, 0, 0, 0,
-	8,10, 8, 0, 0, 0, 0, 0,
+	8,11, 8, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0
 }};
 
@@ -76,7 +76,7 @@ const int defesa_ala_do_rei[2][64]=
 {
 {
 	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 8,10, 8,
+	0, 0, 0, 0, 0, 8,11, 8,
 	0, 0, 0, 0, 0, 8, 6, 8,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -91,7 +91,7 @@ const int defesa_ala_do_rei[2][64]=
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 8, 6, 8,
-	0, 0, 0, 0, 0, 8,10, 8,
+	0, 0, 0, 0, 0, 8,11, 8,
 	0, 0, 0, 0, 0, 0, 0, 0
 }};
 
