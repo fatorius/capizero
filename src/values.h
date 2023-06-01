@@ -31,9 +31,9 @@ const int pieces_valor[6] =
 
 
 // VALORES PARA ORDENAÇÃO DE LANCES
-#define SCORE_ROQUE       10000000
-#define PONTUACAO_HASH    50000000
-#define SCORE_DE_CAPTURA 100000000
+#define SCORE_ROQUE        5000000
+#define SCORE_DE_CAPTURA  10000000
+#define PONTUACAO_HASH   100000000
 
 
 // VALORES PARA PESQUISA
@@ -57,7 +57,7 @@ const int cx[6] = {-3,9, 17,27,37,0}; //C
 const int bx[6] = {-3,7, 17,27,37,0}; //B
 const int tx[6] = {-5,5, 15,25,35,0}; //T
 const int dx[6] = {-9,1, 11,21,31,0}; //D
-const int rx[6] = {1, 10,20,30,40,0}; //R
+const int rx[6] = { 1,10,20,30,40,0}; //R
 
 
 // tabelas de casas
