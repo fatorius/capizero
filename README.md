@@ -10,35 +10,37 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 ## Recursos presentes na engine
 
-### Representação do tabuleiro
+### 1. Representação do tabuleiro
 
-* Bitboards
+* [Bitboards](https://www.chessprogramming.org/Bitboards)
 
-### Pesquisa de lances
+### 2. Pesquisa de lances
 
-* Pesquisa Minimax
+* [Pesquisa Alpha-beta](https://www.chessprogramming.org/Alpha-Beta)
 
-* Alpha-beta prunning
+* [Quiescence search](https://www.chessprogramming.org/Quiescence_Search)
 
-* Quiescence search
+**2.1 Poda de lances**
 
-* Extensões de xeque
+* [Beta cutoffs](https://www.chessprogramming.org/Beta-Cutoff)
 
-* SEE
+* [SEE](https://www.chessprogramming.org/Static_Exchange_Evaluation)
 
-### Ordenação de lances
+**2.2 Extensões de pesquisa**
 
-* MVV/LVA
+* [Extensões de xeque](https://www.chessprogramming.org/Check_Extensions)
 
-* Lances hash
+**2.3 Reduções de pesquisa**
 
-* Heuristica de histórico
+### 3. Ordenação de lances
 
-### Interface
+* [MVV/LVA](https://www.chessprogramming.org/MVV-LVA)
 
-* Compatibilidade com Xboard
+* [Lances hash](https://www.chessprogramming.org/Hash_Move)
 
-### Avaliação de posições
+* [Heuristica de histórico](https://www.chessprogramming.org/History_Heuristic)
+
+### 4. Avaliação de posições
 
 * Estrutura de peões
 
@@ -48,14 +50,27 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 * Segurança da ala no qual o rei está rocado
 
-## Recursos a serem adicionados
+### 5. Interface
 
-* Bitboards mágicos
+* Compatibilidade com [Xboard](https://www.chessprogramming.org/Chess_Engine_Communication_Protocol)
 
-* Counter move heuristic
+## Recursos a serem implementados
 
-* Killer move heuristic
+* [Bitboards mágicos](https://www.chessprogramming.org/Magic_Bitboards)
 
+* [Killer move heuristic](https://www.chessprogramming.org/Killer_Heuristic)
+
+* [Counter move heuristic](https://www.chessprogramming.org/Countermove_Heuristic)
+
+* [Pesquisa paralela](https://www.chessprogramming.org/Parallel_Search)
+
+* [Late move reductions](https://www.chessprogramming.org/Late_Move_Reductions)
+
+* [Pesquisa da variante principal](https://www.chessprogramming.org/Principal_Variation_Search)
+
+* [Internal Interative Deeping](https://www.chessprogramming.org/Internal_Iterative_Deepening)
+
+* [Null move prunning](https://www.chessprogramming.org/Null_Move_Pruning)
 
 ## Para compilar
 
