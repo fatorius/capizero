@@ -7,6 +7,8 @@ adicionais para peão e torre, e os valores de cada casa para as peças
 #ifndef VALUES
 #define VALUES
 
+
+// VALORES DAS PEÇAS
 #define VALOR_PEAO 100
 #define VALOR_CAVALO 300
 #define VALOR_BISPO 315
@@ -14,28 +16,41 @@ adicionais para peão e torre, e os valores de cada casa para as peças
 #define VALOR_DAMA 900
 #define VALOR_REI 10000
 
+const int pieces_valor[6] = 
+{
+	VALOR_PEAO, VALOR_CAVALO, VALOR_BISPO, VALOR_TORRE, VALOR_DAMA, VALOR_REI
+};
+
+
+// VALORES DAS ESTRUTURAS
 #define EN_PASSANT_SCORE 10
 #define ISOLADO_SCORE 10
 
 #define COLUNA_SEMI_ABERTA_BONUS 11
 #define COLUNA_ABERTA_BONUS 40
 
-#define SCORE_ROQUE 5000000
-#define SCORE_DE_CAPTURA 10000000
-#define PONTUACAO_HASH 100000000
 
+// VALORES PARA ORDENAÇÃO DE LANCES
+#define SCORE_ROQUE       10000000
+#define PONTUACAO_HASH    50000000
+#define SCORE_DE_CAPTURA 100000000
+
+
+// VALORES PARA PESQUISA
 #define ALPHA_INICIAL -10000
 #define BETA_INICIAL 10000
 
-#define VALOR_EMPATE 0
 #define VALOR_XEQUE_MATE_PADRAO -99999999
 #define MELHOR_SCORE_INICIAL -10001
 
+#define VALOR_EMPATE 0
 #define VALOR_XEQUE_MATE_BRANCAS 99999999
 #define VALOR_XEQUE_MATE_PRETAS -99999999
 
 #define VERIFICACAO_DE_LANCES 4095
 
+
+// capturas
 // ----------------P  C  B  T  D  R
 const int px[6] = {0, 10,20,30,40,0}; //P
 const int cx[6] = {-3,9, 17,27,37,0}; //C
@@ -44,11 +59,8 @@ const int tx[6] = {-5,5, 15,25,35,0}; //T
 const int dx[6] = {-9,1, 11,21,31,0}; //D
 const int rx[6] = {1, 10,20,30,40,0}; //R
 
-const int pieces_valor[6] = 
-{
-	VALOR_PEAO, VALOR_CAVALO, VALOR_BISPO, VALOR_TORRE, VALOR_DAMA, VALOR_REI
-};
 
+// tabelas de casas
 const int defesa_ala_da_dama[2][64]=
 {
 {

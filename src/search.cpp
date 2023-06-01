@@ -133,7 +133,7 @@ int pesquisa_de_recapturas(int inicio, const int destino){
         lances_avaliados++;
         recaptura++;
 
-        menor_recaptura = menor_atacante(lado, xlado, destino);
+        menor_recaptura = menor_atacante(lado, xlado, destino); // ordena por MVA/LVV
 
         if (menor_recaptura > -1){
             score[recaptura + 1] = pieces_valor[tabuleiro[menor_recaptura]];
@@ -263,7 +263,7 @@ int pesquisa(int alpha, int beta, int profundidade){
     gerar_lances(lado, xlado);
 
     if (hash_lookup(lado)){
-        set_lance_hash();
+        set_lance_hash(); // ordena por lances hash
     }
 
     int lances_legais_na_posicao = 0;
@@ -281,7 +281,7 @@ int pesquisa(int alpha, int beta, int profundidade){
         lances_legais_na_posicao++;
 
         if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
-            nova_profundidade = profundidade;
+            nova_profundidade = profundidade; // extensões de xeques
         }
         else{
             nova_profundidade = profundidade - 3;
@@ -305,8 +305,8 @@ int pesquisa(int alpha, int beta, int profundidade){
 
         if (score_candidato > alpha){
             if (score_candidato >= beta){
-                if (!(mask[lista_de_lances[candidato].destino] & bit_total)){
-                    historico[lista_de_lances[candidato].inicio][lista_de_lances[candidato].destino] += profundidade;
+                if (!(mask[lista_de_lances[candidato].destino] & bit_total)){ // adiciona no historico se não for uma captura
+                    historico[lista_de_lances[candidato].inicio][lista_de_lances[candidato].destino] += 1 << profundidade;
                 }
                 adicionar_hash(lado, lista_de_lances[candidato]);
                 return beta;

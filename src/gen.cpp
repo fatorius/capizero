@@ -251,14 +251,14 @@ void init_lookup_tables(){
 void adicionar_captura(const int x, const int casa, const int score){
     lista_de_lances[mc].inicio = x;
     lista_de_lances[mc].destino = casa;
-    lista_de_lances[mc].score = score + SCORE_DE_CAPTURA;
+    lista_de_lances[mc].score = score + SCORE_DE_CAPTURA; // ordena por capturas
     mc++;
 }
 
 void adicionar_roque(const int x, const int casa){
     lista_de_lances[mc].inicio = x;
     lista_de_lances[mc].destino = casa;
-    lista_de_lances[mc].score = SCORE_ROQUE + historico[x][casa];
+    lista_de_lances[mc].score = SCORE_ROQUE + historico[x][casa]; // ordena por roque
     mc++;
 }
 
@@ -266,7 +266,7 @@ void adicionar_roque(const int x, const int casa){
 void adicionar_lance(const int x, const int casa){
     lista_de_lances[mc].inicio = x;
     lista_de_lances[mc].destino = casa;
-    lista_de_lances[mc].score = historico[x][casa];
+    lista_de_lances[mc].score = historico[x][casa]; // ordena pela heuristica de historico
     mc++;
 }
 
