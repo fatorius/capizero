@@ -18,8 +18,8 @@ int main(){
     init();
 
     Stats::movegen_performance_test();
-    Stats::search_performance_test();
     Stats::eval_performance_test();
+    Stats::search_performance_test();
 
     liberar_memoria();
 

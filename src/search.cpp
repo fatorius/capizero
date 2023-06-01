@@ -203,7 +203,7 @@ int pesquisa(int alpha, int beta, int profundidade){
 
     if (hash_lookup(lado)){
         adicionar_pontuacao_de_hash(); // ordena por lances hash, pv é pesquisado primeiro
-    }
+    } // else {internal interactive deeping} TODO
 
     int lances_legais_na_posicao = 0;
     int score_candidato;
