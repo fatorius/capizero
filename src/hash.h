@@ -21,6 +21,8 @@ void liberar_memoria();
 void adicionar_hash(const int ld, const lance lc);
 void adicionar_chave(const int l, const int piece, const int casa);
 
+void adicionar_pontuacao_de_hash();
+
 bool hash_lookup(const int l);
 
 u64 obter_lock();

@@ -2,6 +2,9 @@
 
 #include "gen.h"
 #include "interface.h"
+#include "eval.h"
+#include "update.h"
+#include "hash.h"
 
 int lado_do_computador;
 
@@ -34,4 +37,36 @@ void novo_jogo(){
     init_board();
     
     gerar_lances(lado, xlado);
+}
+
+bool checar_repeticoes(){
+    for (int i = hply-4; i >= hply - cinquenta; i -=2){
+        if (lista_do_jogo[i].hash == chaveAtual && lista_do_jogo[i].lock == lockAtual){
+            return true;
+        }
+    }
+    return false;
+}
+
+void nova_posicao(){
+    int c = 0;
+
+    piece_mat[BRANCAS] = peao_mat[BRANCAS] = 0;
+    piece_mat[PRETAS] = peao_mat[PRETAS] = 0;
+
+    for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
+        if (tabuleiro[casa] < VAZIO){
+            if (bit_lados[BRANCAS] & mask[casa]){
+                c = BRANCAS;
+            }
+            else{
+                c = PRETAS;
+            }
+
+            adicionar_piece(c, tabuleiro[casa], casa);
+        }
+    }
+
+    chaveAtual = obter_chave();
+    lockAtual = obter_lock();
 }

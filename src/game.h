@@ -31,5 +31,7 @@ extern int primeiro_lance[MAX_PLY];
 extern int jogada;
 
 void novo_jogo();
+void nova_posicao();
+bool checar_repeticoes();
 
 #endif

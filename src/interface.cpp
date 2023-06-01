@@ -38,6 +38,25 @@ bool tempo_fixo, profundidade_fixa;
 
 int profundidade_perft;
 
+void exibir_melhor_linha(int profundidade){
+     lance_inicio = hash_inicio;
+     lance_destino = hash_destino;
+
+     for (int x = 0; x < profundidade; x++){
+        if (hash_lookup(lado) == false){
+            break;
+        }
+
+        printf(" ");
+        print_lance_algebrico(hash_inicio, hash_destino);
+        fazer_lance(hash_inicio, hash_destino);
+     }
+
+     while (ply){
+        desfaz_lance();
+     }
+}
+
 void converter_casa_para_algebrico(int a){
     if(a < 0 || a > 63){
         return;

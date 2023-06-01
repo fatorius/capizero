@@ -42,5 +42,6 @@ void print_lance_algebrico(int a, int b);
 int obter_tempo();
 void print_resultado();
 int converter_lance(char *lnc);
+void exibir_melhor_linha(int profundidade);
 
 #endif

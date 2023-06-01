@@ -4,6 +4,9 @@
 
 #include "consts.h"
 
+#include "gen.h"
+#include "game.h"
+
 u64 hash[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 u64 lock[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 
@@ -51,6 +54,15 @@ void adicionar_hash(const int ld, const lance lc){
     ptr->hashlock = lockAtual;
     ptr->inicio = lc.inicio;
     ptr->dest = lc.destino;
+}
+
+void adicionar_pontuacao_de_hash(){
+    for (int lance = primeiro_lance[ply]; lance < primeiro_lance[ply + 1]; lance++){
+        if (lista_de_lances[lance].inicio == hash_inicio && lista_de_lances[lance].destino == hash_destino){
+            lista_de_lances[lance].score = PONTUACAO_HASH;
+            return;
+        }
+    }
 }
 
 u64 obter_lock(){

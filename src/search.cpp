@@ -24,71 +24,10 @@ int max_atual;
 
 int lance_inicio, lance_destino;
 
-void exibir_melhor_linha(int profundidade){
-     lance_inicio = hash_inicio;
-     lance_destino = hash_destino;
-
-     for (int x = 0; x < profundidade; x++){
-        if (hash_lookup(lado) == false){
-            break;
-        }
-
-        printf(" ");
-        print_lance_algebrico(hash_inicio, hash_destino);
-        fazer_lance(hash_inicio, hash_destino);
-     }
-
-     while (ply){
-        desfaz_lance();
-     }
-     
-}
-
-void nova_posicao(){
-    int c = 0;
-
-    piece_mat[BRANCAS] = peao_mat[BRANCAS] = 0;
-    piece_mat[PRETAS] = peao_mat[PRETAS] = 0;
-
-    for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
-        if (tabuleiro[casa] < VAZIO){
-            if (bit_lados[BRANCAS] & mask[casa]){
-                c = BRANCAS;
-            }
-            else{
-                c = PRETAS;
-            }
-
-            adicionar_piece(c, tabuleiro[casa], casa);
-        }
-    }
-
-    chaveAtual = obter_chave();
-    lockAtual = obter_lock();
-}
-
-int checar_repeticoes(){
-    for (int i = hply-4; i >= hply - cinquenta; i -=2){
-        if (lista_do_jogo[i].hash == chaveAtual && lista_do_jogo[i].lock == lockAtual){
-            return 1;
-        }
-    }
-    return 0;
-}
-
 void verificar_tempo(){
     if ((obter_tempo() >= tempo_do_fim || (tempo_maximo < 50 && ply > 1)) && profundidade_fixa == 0 && ply > 1){
         parar_pesquisa = true;
         longjmp(env, 0);
-    }
-}
-
-void set_lance_hash(){
-    for (int lance = primeiro_lance[ply]; lance < primeiro_lance[ply + 1]; lance++){
-        if (lista_de_lances[lance].inicio == hash_inicio && lista_de_lances[lance].destino == hash_destino){
-            lista_de_lances[lance].score = PONTUACAO_HASH;
-            return;
-        }
     }
 }
 
@@ -263,7 +202,7 @@ int pesquisa(int alpha, int beta, int profundidade){
     gerar_lances(lado, xlado);
 
     if (hash_lookup(lado)){
-        set_lance_hash(); // ordena por lances hash
+        adicionar_pontuacao_de_hash(); // ordena por lances hash, pv é pesquisado primeiro
     }
 
     int lances_legais_na_posicao = 0;
@@ -280,12 +219,13 @@ int pesquisa(int alpha, int beta, int profundidade){
 
         lances_legais_na_posicao++;
 
-        if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
+        if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){ // extensões
             nova_profundidade = profundidade; // extensões de xeques
         }
-        else{
+        else{ // reduções
             nova_profundidade = profundidade - 3;
         
+            // TODO MELHORAR ESSAS REDUÇÕES ?????????????
             if (lista_de_lances[candidato].score > SCORE_DE_CAPTURA || lances_legais_na_posicao == 1 || check == 1){
                 nova_profundidade = profundidade - 1;
             }
