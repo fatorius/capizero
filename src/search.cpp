@@ -268,13 +268,13 @@ int pesquisa(int alpha, int beta, int profundidade){
             if (score_candidato >= beta){ // beta-cutoff
 
                 if (!(mask[lista_de_lances[candidato].destino] & bit_total)){ // adiciona no historico se não for uma captura
-                    historico_heuristica[lista_de_lances[candidato].inicio][lista_de_lances[candidato].destino] += 1 << profundidade; // TODO testar se profundidade*profundidade é um valor melhor para o historico ?????
+                    historico_heuristica[lista_de_lances[candidato].inicio][lista_de_lances[candidato].destino] += 1 << profundidade; 
                     contraLance_heuristica[lista_do_jogo[hply].inicio][lista_do_jogo[hply].destino] = lista_de_lances[candidato];
                 }
 
                 adicionar_hash(lado, lista_de_lances[candidato]);
 
-                // TODO adicionar killer move e counter move
+                // TODO adicionar killer move
 
                 return beta;
             }
