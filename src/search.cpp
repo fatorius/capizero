@@ -15,7 +15,9 @@
 
 int lances_avaliados;
 int tempo_do_inicio, tempo_do_fim;
-int historico[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
+
+int historico_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
+lance contraLance_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
 
 jmp_buf env;
 bool parar_pesquisa;
@@ -243,7 +245,7 @@ int pesquisa(int alpha, int beta, int profundidade){
 
         // pesquisa da variante principal (pvs)
         if (pesquisandoPV){
-            score_candidato = -pesquisa(-beta, -alpha, nova_profundidade);    
+            score_candidato = -pesquisa(-beta, -alpha, nova_profundidade); // extender profundidade???     
         }
         else{
             if (-pesquisa(-alpha - 1, -alpha, nova_profundidade) > alpha){
@@ -263,10 +265,11 @@ int pesquisa(int alpha, int beta, int profundidade){
         }
 
         if (score_candidato > alpha){
-            if (score_candidato >= beta){
+            if (score_candidato >= beta){ // beta-cutoff
 
                 if (!(mask[lista_de_lances[candidato].destino] & bit_total)){ // adiciona no historico se não for uma captura
-                    historico[lista_de_lances[candidato].inicio][lista_de_lances[candidato].destino] += 1 << profundidade;
+                    historico_heuristica[lista_de_lances[candidato].inicio][lista_de_lances[candidato].destino] += 1 << profundidade; // TODO testar se profundidade*profundidade é um valor melhor para o historico ?????
+                    contraLance_heuristica[lista_do_jogo[hply].inicio][lista_do_jogo[hply].destino] = lista_de_lances[candidato];
                 }
 
                 adicionar_hash(lado, lista_de_lances[candidato]);
@@ -326,7 +329,8 @@ void pensar(bool verbose){
 
     nova_posicao();
 
-    memset(historico, 0, sizeof(historico));
+    memset(historico_heuristica, 0, sizeof(historico_heuristica));
+    memset(contraLance_heuristica, 0, sizeof(contraLance_heuristica));
 
     if (verbose){
         printf("ply score time nodes pv\n");

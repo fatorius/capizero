@@ -248,25 +248,34 @@ void init_lookup_tables(){
     init_dtb_lookups();
 }
 
-void adicionar_captura(const int x, const int casa, const int score){
-    lista_de_lances[mc].inicio = x;
-    lista_de_lances[mc].destino = casa;
+int calcularBonusHeuristicas(const int origem, const int destino){
+    lance contraLance = contraLance_heuristica[lista_do_jogo[hply].inicio][lista_do_jogo[hply].destino];
+
+    if (contraLance.inicio == origem && contraLance.destino == destino){
+        return SCORE_CONTRALANCE + historico_heuristica[origem][destino];
+    }
+
+    return historico_heuristica[origem][destino];
+}
+
+void adicionar_captura(const int origem, const int destino, const int score){
+    lista_de_lances[mc].inicio = origem;
+    lista_de_lances[mc].destino = destino;
     lista_de_lances[mc].score = score + SCORE_DE_CAPTURA; // ordena por capturas
     mc++;
 }
 
-void adicionar_roque(const int x, const int casa){
-    lista_de_lances[mc].inicio = x;
-    lista_de_lances[mc].destino = casa;
-    lista_de_lances[mc].score = SCORE_ROQUE + historico[x][casa]; // ordena por roque
+void adicionar_roque(const int origem, const int destino){
+    lista_de_lances[mc].inicio = origem;
+    lista_de_lances[mc].destino = destino;
+    lista_de_lances[mc].score = SCORE_ROQUE; // ordena por roque TODO TESTAR SE ESSA ORDENAÇÃO REALMENTE RESULTA EM MELHORAS ????????
     mc++;
 }
 
-
-void adicionar_lance(const int x, const int casa){
-    lista_de_lances[mc].inicio = x;
-    lista_de_lances[mc].destino = casa;
-    lista_de_lances[mc].score = historico[x][casa]; // ordena pela heuristica de historico
+void adicionar_lance(const int origem, const int destino){
+    lista_de_lances[mc].inicio = origem;
+    lista_de_lances[mc].destino = destino;
+    lista_de_lances[mc].score = calcularBonusHeuristicas(origem, destino);
     mc++;
 }
 

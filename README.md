@@ -42,6 +42,8 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 * [Heuristica de histórico](https://www.chessprogramming.org/History_Heuristic)
 
+* [Counter move heuristic](https://www.chessprogramming.org/Countermove_Heuristic)
+
 ### 4. Avaliação de posições
 
 * Estrutura de peões
@@ -61,8 +63,6 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 * [Bitboards mágicos](https://www.chessprogramming.org/Magic_Bitboards)
 
 * [Killer move heuristic](https://www.chessprogramming.org/Killer_Heuristic)
-
-* [Counter move heuristic](https://www.chessprogramming.org/Countermove_Heuristic)
 
 * [Pesquisa paralela](https://www.chessprogramming.org/Parallel_Search)
 
