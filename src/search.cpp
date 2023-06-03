@@ -172,7 +172,7 @@ int pesquisa_de_capturas(int alpha, int beta){
 
 int pesquisa(int alpha, int beta, int profundidade){
     if (ply && checar_repeticoes()){
-        return 0;
+        return VALOR_EMPATE;
     }
 
     if (profundidade < 1){
@@ -181,13 +181,16 @@ int pesquisa(int alpha, int beta, int profundidade){
 
     lances_avaliados++;
 
-    if ((lances_avaliados & 4095) == 0){
+    if ((lances_avaliados & VERIFICACAO_DE_LANCES) == 0){
         verificar_tempo();
     }
 
     if (ply > MAX_PLY-2){
         return avaliar();
     }
+
+
+    // pesquisa alpha-beta
 
     lance melhorlance;
 
@@ -209,6 +212,8 @@ int pesquisa(int alpha, int beta, int profundidade){
     int score_candidato;
     int nova_profundidade;
 
+    bool pesquisandoPV = true;
+
     for (int candidato = primeiro_lance[ply]; candidato < primeiro_lance[ply + 1]; ++candidato){
         ordenar_lances(candidato);
 
@@ -219,6 +224,8 @@ int pesquisa(int alpha, int beta, int profundidade){
 
         lances_legais_na_posicao++;
 
+
+        // REDUÇÕES E EXTENSÕES
         if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){ // extensões
             nova_profundidade = profundidade; // extensões de xeques
         }
@@ -234,7 +241,19 @@ int pesquisa(int alpha, int beta, int profundidade){
             }
         }
 
-        score_candidato = -pesquisa(-beta, -alpha, nova_profundidade);
+        // pesquisa da variante principal (pvs)
+        if (pesquisandoPV){
+            score_candidato = -pesquisa(-beta, -alpha, nova_profundidade);    
+        }
+        else{
+            if (-pesquisa(-alpha - 1, -alpha, nova_profundidade) > alpha){
+                score_candidato = -pesquisa(-beta, -alpha, nova_profundidade); 
+            }
+            else{
+                desfaz_lance();
+                continue;
+            }
+        }
 
         desfaz_lance();
 
@@ -245,13 +264,19 @@ int pesquisa(int alpha, int beta, int profundidade){
 
         if (score_candidato > alpha){
             if (score_candidato >= beta){
+
                 if (!(mask[lista_de_lances[candidato].destino] & bit_total)){ // adiciona no historico se não for uma captura
                     historico[lista_de_lances[candidato].inicio][lista_de_lances[candidato].destino] += 1 << profundidade;
                 }
+
                 adicionar_hash(lado, lista_de_lances[candidato]);
+
+                // TODO adicionar killer move e counter move
+
                 return beta;
             }
             alpha = score_candidato;
+            pesquisandoPV = false;
         }
     }
 

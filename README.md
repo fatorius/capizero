@@ -20,6 +20,8 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 * [Quiescence search](https://www.chessprogramming.org/Quiescence_Search)
 
+* [Pesquisa da variante principal](https://www.chessprogramming.org/Principal_Variation_Search)
+
 **2.1 Poda de lances**
 
 * [Beta cutoffs](https://www.chessprogramming.org/Beta-Cutoff)
@@ -65,8 +67,6 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 * [Pesquisa paralela](https://www.chessprogramming.org/Parallel_Search)
 
 * [Late move reductions](https://www.chessprogramming.org/Late_Move_Reductions)
-
-* [Pesquisa da variante principal](https://www.chessprogramming.org/Principal_Variation_Search)
 
 * [Internal Interative Deeping](https://www.chessprogramming.org/Internal_Iterative_Deepening)
 
