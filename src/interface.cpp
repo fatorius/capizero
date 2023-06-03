@@ -250,9 +250,9 @@ void lance_computador(bool verbose){
 
     lookup = hash_lookup(lado);
 
-    if (verbose){
-        tempo_gasto = obter_tempo() - tempo_do_inicio;
+    tempo_gasto = obter_tempo() - tempo_do_inicio;
 
+    if (verbose){
         if (lance_inicio != 0 || lance_destino != 0){
             hash_inicio = lance_inicio;
             hash_destino = lance_destino;
