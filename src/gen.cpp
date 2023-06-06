@@ -261,7 +261,7 @@ int calcularBonusHeuristicas(const int origem, const int destino){
 void adicionar_captura(const int origem, const int destino, const int score){
     lista_de_lances[mc].inicio = origem;
     lista_de_lances[mc].destino = destino;
-    lista_de_lances[mc].score = score + SCORE_DE_CAPTURA; // ordena por capturas
+    lista_de_lances[mc].score = score; // ordena por capturas
     mc++;
 }
 

@@ -235,7 +235,7 @@ int pesquisa(int alpha, int beta, int profundidade){
             nova_profundidade = profundidade - 3;
         
             // TODO MELHORAR ESSAS REDUÇÕES ?????????????
-            if (lista_de_lances[candidato].score > SCORE_DE_CAPTURA || lances_legais_na_posicao == 1 || check == 1){
+            if (lista_de_lances[candidato].score > SCORE_DE_CAPTURA_VANTAJOSAS || lances_legais_na_posicao == 1 || check == 1){
                 nova_profundidade = profundidade - 1;
             }
             else if (lista_de_lances[candidato].score > 0){
