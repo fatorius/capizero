@@ -200,7 +200,7 @@ void xboard(){
 			continue;
 		}
 
-		primeiro_lance[0] = 0;
+		qntt_lances_totais[0] = 0;
 		gerar_lances(lado, xlado);
 
 		m = converter_lance(linha);

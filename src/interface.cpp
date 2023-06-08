@@ -187,7 +187,7 @@ void print_resultado(){
     atualizar_materiais();
     gerar_lances(lado, xlado);
 
-    for (i = 0; i < primeiro_lance[1]; ++i){
+    for (i = 0; i < qntt_lances_totais[1]; ++i){
         if (fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
             desfaz_lance();
             existem_lances_legais = true;
@@ -204,7 +204,7 @@ void print_resultado(){
 
         return;
     } 
-    else if (i == primeiro_lance[1] && !existem_lances_legais){
+    else if (i == qntt_lances_totais[1] && !existem_lances_legais){
         display_tabuleiro();
 
         printf("Fim do jogo \n");
@@ -275,7 +275,7 @@ void lance_computador(bool verbose){
 
     ply = 0;
 
-    primeiro_lance[0] = 0;
+    qntt_lances_totais[0] = 0;
 
     gerar_lances(lado, xlado);
 
@@ -326,7 +326,7 @@ int converter_lance(char *lnc){
     destino = lnc[2] - 'a';
     destino += ((lnc[3] - '0') - 1) * 8;
 
-    for (i = 0; i < primeiro_lance[1]; i++){
+    for (i = 0; i < qntt_lances_totais[1]; i++){
         if (lista_de_lances[i].inicio == inicio && lista_de_lances[i].destino == destino){
             if (lnc[4] == 'n' || lnc[4]=='N'){
                 lista_de_lances[i].promove = C;
@@ -348,7 +348,7 @@ int converter_lance(char *lnc){
 void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
 
     ply = 0;
-    primeiro_lance[0] = 0;
+    qntt_lances_totais[0] = 0;
     gerar_lances(lado, xlado);
 
     lance_usuario = converter_lance(lnc);
@@ -401,7 +401,7 @@ bool ler_comando(){
     else if (!strcmp(cmd, COMANDO_EXIBIR_LANCES)){
         printf("Lances legais: \n");
 
-        for (int i = 0; i < primeiro_lance[1]; i++){
+        for (int i = 0; i < qntt_lances_totais[1]; i++){
             printf("%s", lance_para_string(lista_de_lances[i].inicio, lista_de_lances[i].destino, lista_de_lances[i].promove));
             printf("\n");
         }
@@ -449,8 +449,8 @@ bool ler_comando(){
         desfaz_lance();
         ply = 0;
 
-        if (primeiro_lance[0] != 0){
-            primeiro_lance[0] = 0;
+        if (qntt_lances_totais[0] != 0){
+            qntt_lances_totais[0] = 0;
         }
 
         gerar_lances(lado, xlado);

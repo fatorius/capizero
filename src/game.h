@@ -27,7 +27,7 @@ extern int cinquenta;
 extern int roque;
 extern int ply;
 extern int hply;
-extern int primeiro_lance[MAX_PLY];
+extern int qntt_lances_totais[MAX_PLY];
 extern int jogada;
 
 void novo_jogo();

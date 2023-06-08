@@ -316,7 +316,7 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
 
     u64 t1, t2, t3;
 
-    mc = primeiro_lance[ply];
+    mc = qntt_lances_totais[ply];
 
     gerar_en_passant();
     gerar_roques();
@@ -522,13 +522,13 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         adicionar_lance(casa, casa_destino);
     }
 
-    primeiro_lance[ply + 1] = mc;
+    qntt_lances_totais[ply + 1] = mc;
 }
 
 void gerar_capturas(const int lado_a_mover, const int contraLado){
     int casa, casa_destino;
     u64 t1, t2;
-    mc = primeiro_lance[ply];
+    mc = qntt_lances_totais[ply];
 
 
     // 1. gera capturas de peao
@@ -636,7 +636,7 @@ void gerar_capturas(const int lado_a_mover, const int contraLado){
     }
 
 
-    primeiro_lance[ply + 1] = mc;
+    qntt_lances_totais[ply + 1] = mc;
 }
 
 unsigned long long perft_node(int profunidade){
@@ -648,7 +648,7 @@ unsigned long long perft_node(int profunidade){
 
     gerar_lances(lado, xlado);
 
-    for (int i = primeiro_lance[ply]; i < primeiro_lance[ply+1]; i++){
+    for (int i = qntt_lances_totais[ply]; i < qntt_lances_totais[ply+1]; i++){
         if (!fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
             continue;
         }
@@ -668,7 +668,7 @@ unsigned long long perft(int profunidade){
 
     gerar_lances(lado, xlado);
 
-    for (int i = primeiro_lance[ply]; i < primeiro_lance[ply+1]; i++){
+    for (int i = qntt_lances_totais[ply]; i < qntt_lances_totais[ply+1]; i++){
         if (!fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
             continue;
         }

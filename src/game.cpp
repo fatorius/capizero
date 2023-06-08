@@ -16,7 +16,7 @@ int cinquenta;
 int roque;
 int ply;
 int hply;
-int primeiro_lance[MAX_PLY];
+int qntt_lances_totais[MAX_PLY];
 int jogada;
 
 
@@ -29,7 +29,7 @@ void novo_jogo(){
     roque = 15;
     ply = 0;
     hply = 0;
-    primeiro_lance[0] = 0;
+    qntt_lances_totais[0] = 0;
     jogada = 0;
 
     no_lances = 0;

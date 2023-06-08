@@ -39,7 +39,7 @@ void ordenar_lances(const int desde){
     int maior_score = lista_de_lances[desde].score;
     int indice_do_maior_score = desde;
 
-    for (int i = desde + 1; i < primeiro_lance[ply + 1]; ++i){
+    for (int i = desde + 1; i < qntt_lances_totais[ply + 1]; ++i){
         if (lista_de_lances[i].score > maior_score){
             maior_score = lista_de_lances[i].score;
             indice_do_maior_score = i;
@@ -140,7 +140,7 @@ int pesquisa_de_capturas(int alpha, int beta){
 
     gerar_capturas(lado, xlado);
 
-    for (int i = primeiro_lance[ply]; i < primeiro_lance[ply+1]; ++i){
+    for (int i = qntt_lances_totais[ply]; i < qntt_lances_totais[ply+1]; ++i){
         ordenar_lances(i);
 
         if (score_capturas + pieces_valor[tabuleiro[lista_de_lances[i].destino]] < alpha){
@@ -216,7 +216,7 @@ int pesquisa(int alpha, int beta, int profundidade){
 
     bool pesquisandoPV = true;
 
-    for (int candidato = primeiro_lance[ply]; candidato < primeiro_lance[ply + 1]; ++candidato){
+    for (int candidato = qntt_lances_totais[ply]; candidato < qntt_lances_totais[ply + 1]; ++candidato){
         ordenar_lances(candidato);
 
         // verifica se o lance é legal
