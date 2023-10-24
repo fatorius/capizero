@@ -355,8 +355,8 @@ void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
 
     if (lance_usuario == -1 || !fazer_lance(lista_de_lances[lance_usuario].inicio, lista_de_lances[lance_usuario].destino)){
         printf("Comando / Lance inválido\n");
-        printf("Digite 'help' para exibir uma lista de comandos válidos ou\n");
-        printf("Digite 'moves' para exibir uma lista de lances legais\n");
+        printf("Digite 'ajuda' para exibir uma lista de comandos válidos ou\n");
+        printf("Digite 'lances' para exibir uma lista de lances legais\n");
         printf("\n");
         return;
     }
