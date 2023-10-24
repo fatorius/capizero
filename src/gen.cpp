@@ -7,6 +7,7 @@
 #include "game.h"
 #include "update.h"
 #include "interface.h"
+#include "magics.h"
 
 u64 bit_esquerda[LADOS][CASAS_DO_TABULEIRO];
 u64 bit_direita[LADOS][CASAS_DO_TABULEIRO];
@@ -25,6 +26,9 @@ u64 bit_moves_bispo[CASAS_DO_TABULEIRO];
 u64 bit_moves_torre[CASAS_DO_TABULEIRO];
 u64 bit_moves_dama[CASAS_DO_TABULEIRO];
 u64 bit_moves_rei[CASAS_DO_TABULEIRO];
+
+u64 bit_magicas_bispo[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
+u64 bit_magicas_torre[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
 
 lance lista_de_lances[PILHA_DE_LANCES];
 
@@ -167,9 +171,7 @@ void init_rei_lookups(){
             bit_moves_rei[casa] |= mask[rei_moves[casa][bit]];
             bit++;
         }
-    }
-
-    
+    }   
 }
 
 void init_dtb_lookups(){
@@ -241,11 +243,82 @@ void init_dtb_lookups(){
     }
 }
 
+u64 obterBloqueadoresPorCasa(int index, u64 raios){
+    u64 bloqueadores = 0;
+
+    int bloqueador = 0;
+    int i = 0;
+
+    while (raios){
+        bloqueador = bitscan(raios);
+        raios &= not_mask[bloqueador];
+
+        if (index & (1 << i)){
+            bloqueadores |= mask[bloqueador];
+        }
+
+        i++;
+    }
+
+    return bloqueadores;
+}
+
+u64 gerarLancesBispoSemMagica(int casa, u64 bloqueadores){
+    u64 lances = 0;
+
+    for (int direcao = NE; direcao < NO + 1; direcao += 2){ 
+        for (int casa_destino = casa;;){
+            casa_destino = dtb_moves[casa_destino][direcao];
+
+            lances |= mask[casa_destino];
+            
+            if ((mask[casa_destino] & bloqueadores) || (casa_destino == -1)){
+                break;
+            }
+        }
+    }
+
+    return lances;
+}
+
+u64 gerarLancesTorreSemMagica(int casa, u64 bloqueadores){
+    u64 lances = 0;
+
+    for (int direcao = NORTE; direcao < NO + 1; direcao += 2){
+        for (int casa_destino = casa;;){
+            casa_destino = dtb_moves[casa_destino][direcao];
+
+            lances |= mask[casa_destino];
+
+            if ((mask[casa_destino] & bloqueadores) || (casa_destino == -1)){
+                break;
+            }
+        }
+    }
+
+    return lances;
+}
+
+void init_magic_lookups(){
+    for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
+        for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << bits_indices_bispos[casa]); pecaBloqueadora++){
+            u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_moves_bispo[casa]);
+            bit_magicas_bispo[casa][(bloqueadores * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa])] = gerarLancesBispoSemMagica(casa, bloqueadores);
+        }
+
+        for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << bits_indices_torres[casa]); pecaBloqueadora++){
+            u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_moves_torre[casa]);
+            bit_magicas_torre[casa][(bloqueadores * magicas_torres[casa]) >> (64 - bits_indices_torres[casa])] = gerarLancesTorreSemMagica(casa, bloqueadores);
+        }
+    }
+}
+
 void init_lookup_tables(){
     init_peao_lookups();
     init_cavalo_lookups();
     init_rei_lookups();
     init_dtb_lookups();
+    init_magic_lookups();
 }
 
 int calcularBonusHeuristicas(const int origem, const int destino){
@@ -312,9 +385,12 @@ void gerar_roques(){
 }
 
 void gerar_lances(const int lado_a_mover, const int contraLado){
-    int casa, direcao, casa_destino;
+    int casa, casa_destino;
 
     u64 t1, t2, t3;
+
+    //variáveis relacionadas a geração mágica de lances
+    u64 bloqueadores, chave_hash, ataques;
 
     mc = qntt_lances_totais[ply];
 
@@ -392,36 +468,25 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
     while (t1){
         casa = bitscan(t1);
         t1 &= not_mask[casa];
+        
+        bloqueadores = bit_total & bit_moves_bispo[casa];
+        chave_hash = (bloqueadores * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa]);
 
-        for (direcao = NE; direcao < NO + 1; direcao += 2){ 
-            // 3.1 gera diagonais com captura
-            if (mask_vetores[casa][direcao] & bit_total){
-                for (casa_destino = casa;;){
-                    casa_destino = dtb_moves[casa_destino][direcao];
+        ataques = bit_magicas_bispo[casa][chave_hash];
 
-                    if (mask[casa_destino] & bit_total){
-                        if (mask[casa_destino] & bit_lados[contraLado]){
-                            adicionar_captura(casa, casa_destino, bx[tabuleiro[casa_destino]]);
-                        }
+        while (ataques){
+            casa_destino = bitscan(ataques);
+            ataques &= not_mask[casa_destino];
 
-                        break;
-                    }
-
-                    adicionar_lance(casa, casa_destino);
+            if (mask[casa_destino] & bit_total){
+                if (mask[casa_destino] & bit_lados[contraLado]){
+                    adicionar_captura(casa, casa_destino, bx[tabuleiro[casa_destino]]);
                 }
+                
+                continue;
             }
-            // 3.2 gera diagonais sem captura
-            else{
-                for (casa_destino = casa;;){
-                    casa_destino = dtb_moves[casa_destino][direcao];
 
-                    if (casa_destino == -1){
-                        break;
-                    }
-
-                    adicionar_lance(casa, casa_destino);
-                }
-            }
+            adicionar_lance(casa, casa_destino);
         }
     }
 
@@ -431,35 +496,24 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         casa = bitscan(t1);
         t1 &= not_mask[casa];
 
-        for (direcao = NORTE; direcao < NO + 1; direcao += 2){
-            // 4.1 gera linhas com captura
-            if (mask_vetores[casa][direcao] & bit_total){
-                for (casa_destino = casa;;){
-                    casa_destino = dtb_moves[casa_destino][direcao];
+        bloqueadores = bit_total & bit_moves_torre[casa];
+        chave_hash = (bloqueadores * magicas_torres[casa]) >> (64 - bits_indices_torres[casa]);
 
-                    if (mask[casa_destino] & bit_total){
-                        if (mask[casa_destino] & bit_lados[contraLado]){
-                            adicionar_captura(casa, casa_destino, tx[tabuleiro[casa_destino]]);
-                        }
+        ataques = bit_magicas_torre[casa][chave_hash];
 
-                        break;
-                    }
+        while (ataques){
+            casa_destino = bitscan(ataques);
+            ataques &= not_mask[casa_destino];
 
-                    adicionar_lance(casa, casa_destino);
+            if (mask[casa_destino] & bit_total){
+                if (mask[casa_destino] & bit_lados[contraLado]){
+                    adicionar_captura(casa, casa_destino, tx[tabuleiro[casa_destino]]);
                 }
-            }
-            // 4.2 gera linhas sem captura
-            else{
-                for (casa_destino = casa;;){
-                    casa_destino = dtb_moves[casa_destino][direcao];
 
-                    if (casa_destino == -1){
-                        break;
-                    }
-
-                    adicionar_lance(casa, casa_destino);
-                }
+                continue;
             }
+
+            adicionar_lance(casa, casa_destino);
         }
     }
 
@@ -469,35 +523,30 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         casa = bitscan(t1);
         t1 &= not_mask[casa];
 
-        for (direcao = NORTE; direcao < NO + 1; direcao++){
-            // 5.1 gera linhas com captura
-            if (mask_vetores[casa][direcao] & bit_total){
-                for (casa_destino = casa;;){
-                    casa_destino = dtb_moves[casa_destino][direcao];
+        
+        bloqueadores = bit_total & bit_moves_bispo[casa];
+        chave_hash = (bloqueadores * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa]);
 
-                    if (mask[casa_destino] & bit_total){
-                        if (mask[casa_destino] & bit_lados[contraLado]){
-                            adicionar_captura(casa, casa_destino, dx[tabuleiro[casa_destino]]);
-                        }
+        ataques = bit_magicas_bispo[casa][chave_hash];
 
-                        break;
-                    }
+        bloqueadores = bit_total & bit_moves_torre[casa];
+        chave_hash = (bloqueadores * magicas_torres[casa]) >> (64 - bits_indices_torres[casa]);
 
-                    adicionar_lance(casa, casa_destino);
+        ataques |= bit_magicas_torre[casa][chave_hash];
+
+        while (ataques){
+            casa_destino = bitscan(ataques);
+            ataques &= not_mask[casa_destino];
+
+            if (mask[casa_destino] & bit_total){
+                if (mask[casa_destino] & bit_lados[contraLado]){
+                    adicionar_captura(casa, casa_destino, dx[tabuleiro[casa_destino]]);
                 }
-            }
-            // 5.2 gera linhas sem captura
-            else{
-                for (casa_destino = casa;;){
-                    casa_destino = dtb_moves[casa_destino][direcao];
 
-                    if (casa_destino == -1){
-                        break;
-                    }
-
-                    adicionar_lance(casa, casa_destino);
-                }
+                continue;
             }
+
+            adicionar_lance(casa, casa_destino);
         }
     }
 

@@ -2,6 +2,7 @@
 #define GEN
 
 #include "bitboard.h"
+#include "params.h"
 
 typedef struct
 {
@@ -25,6 +26,9 @@ extern u64 bit_moves_bispo[CASAS_DO_TABULEIRO];
 extern u64 bit_moves_torre[CASAS_DO_TABULEIRO];
 extern u64 bit_moves_dama[CASAS_DO_TABULEIRO];
 extern u64 bit_moves_rei[CASAS_DO_TABULEIRO];
+
+extern u64 bit_magicas_bispo[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
+extern u64 bit_magicas_torre[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
 
 extern u64 bit_peao_capturas[LADOS][CASAS_DO_TABULEIRO];
 extern u64 bit_peao_defende[LADOS][CASAS_DO_TABULEIRO];
