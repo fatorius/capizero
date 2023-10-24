@@ -23,6 +23,8 @@ int main(){
 
     init();
 
+    printf("\n\nalgoritmo iniciado\n\n");
+
     while (ler_comando()){
         if (lado_do_computador == lado){
             lance_computador(true);
