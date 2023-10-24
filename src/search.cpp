@@ -51,7 +51,7 @@ void ordenar_lances(const int desde){
     }
 }
 
-int pesquisa_de_recapturas(int inicio, const int destino){
+int pesquisa_quiescence(int inicio, const int destino){
     int menor_recaptura;
     int recaptura = 0;
     int recapturas_feitas = 0;
@@ -117,7 +117,7 @@ int pesquisa_de_recapturas(int inicio, const int destino){
     return score_total;
 }
 
-int pesquisa_de_capturas(int alpha, int beta){
+int pesquisa_rapida(int alpha, int beta){
     
     lances_avaliados++;
 
@@ -147,7 +147,7 @@ int pesquisa_de_capturas(int alpha, int beta){
             continue;
         }
 
-        score = pesquisa_de_recapturas(lista_de_lances[i].inicio, lista_de_lances[i].destino);
+        score = pesquisa_quiescence(lista_de_lances[i].inicio, lista_de_lances[i].destino);
 
         if (score > melhorscore){
             melhorscore = score;
@@ -178,7 +178,7 @@ int pesquisa(int alpha, int beta, int profundidade){
     }
 
     if (profundidade < 1){
-        return pesquisa_de_capturas(alpha, beta);
+        return pesquisa_rapida(alpha, beta);
     }
 
     lances_avaliados++;
