@@ -14,6 +14,8 @@ Também estão linkadas dois outros arquivos header: params e values
 #include "values.h"
 #include "params.h"
 
+#define BITS 64
+
 #define COLUNA_A 0
 #define COLUNA_B 1
 #define COLUNA_C 2
