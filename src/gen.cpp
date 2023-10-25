@@ -9,8 +9,6 @@
 #include "interface.h"
 #include "magics.h"
 
-#include "debug.h"
-
 u64 bit_esquerda[LADOS][CASAS_DO_TABULEIRO];
 u64 bit_direita[LADOS][CASAS_DO_TABULEIRO];
 
