@@ -9,6 +9,8 @@
 #include "interface.h"
 #include "magics.h"
 
+#include "debug.h"
+
 u64 bit_esquerda[LADOS][CASAS_DO_TABULEIRO];
 u64 bit_direita[LADOS][CASAS_DO_TABULEIRO];
 
@@ -26,6 +28,9 @@ u64 bit_moves_bispo[CASAS_DO_TABULEIRO];
 u64 bit_moves_torre[CASAS_DO_TABULEIRO];
 u64 bit_moves_dama[CASAS_DO_TABULEIRO];
 u64 bit_moves_rei[CASAS_DO_TABULEIRO];
+
+u64 bit_casas_relevantes_bispo[CASAS_DO_TABULEIRO];
+u64 bit_casas_relevantes_torres[CASAS_DO_TABULEIRO];
 
 u64 bit_magicas_bispo[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
 u64 bit_magicas_torre[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
@@ -174,6 +179,26 @@ void init_rei_lookups(){
     }   
 }
 
+void init_casas_relevantes(){
+    for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
+        bit_casas_relevantes_bispo[casa] = bit_moves_bispo[casa] & bordas_neg;
+        bit_casas_relevantes_torres[casa] = bit_moves_torre[casa];
+
+        if (colunas[casa] != COLUNA_A){
+            bit_casas_relevantes_torres[casa] &= ~mask_cols[COLUNA_A];
+        }
+        if (colunas[casa] != COLUNA_H){
+            bit_casas_relevantes_torres[casa] &= ~mask_cols[COLUNA_H];
+        }
+        if (linhas[casa] != LINHA_1){
+            bit_casas_relevantes_torres[casa] &= ~mask_rows[LINHA_1];
+        }
+        if (linhas[casa] != LINHA_8){
+            bit_casas_relevantes_torres[casa] &= ~mask_rows[LINHA_8];
+        }
+    }
+}
+
 void init_dtb_lookups(){
     int casa, qntt_lances = 0;
 
@@ -302,12 +327,12 @@ u64 gerarLancesTorreSemMagica(int casa, u64 bloqueadores){
 void init_magic_lookups(){
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << bits_indices_bispos[casa]); pecaBloqueadora++){
-            u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_moves_bispo[casa]);
+            u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_casas_relevantes_bispo[casa]); 
             bit_magicas_bispo[casa][(bloqueadores * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa])] = gerarLancesBispoSemMagica(casa, bloqueadores);
         }
 
         for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << bits_indices_torres[casa]); pecaBloqueadora++){
-            u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_moves_torre[casa]);
+            u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_casas_relevantes_torres[casa]);
             bit_magicas_torre[casa][(bloqueadores * magicas_torres[casa]) >> (64 - bits_indices_torres[casa])] = gerarLancesTorreSemMagica(casa, bloqueadores);
         }
     }
@@ -318,6 +343,7 @@ void init_lookup_tables(){
     init_cavalo_lookups();
     init_rei_lookups();
     init_dtb_lookups();
+    init_casas_relevantes();
     init_magic_lookups();
 }
 
@@ -469,7 +495,7 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         casa = bitscan(t1);
         t1 &= not_mask[casa];
         
-        bloqueadores = bit_total & bit_moves_bispo[casa];
+        bloqueadores = bit_total & bit_casas_relevantes_bispo[casa];
         chave_hash = (bloqueadores * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa]);
 
         ataques = bit_magicas_bispo[casa][chave_hash];
@@ -496,7 +522,7 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         casa = bitscan(t1);
         t1 &= not_mask[casa];
 
-        bloqueadores = bit_total & bit_moves_torre[casa];
+        bloqueadores = bit_total & bit_casas_relevantes_torres[casa];
         chave_hash = (bloqueadores * magicas_torres[casa]) >> (64 - bits_indices_torres[casa]);
 
         ataques = bit_magicas_torre[casa][chave_hash];
@@ -524,12 +550,12 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         t1 &= not_mask[casa];
 
         
-        bloqueadores = bit_total & bit_moves_bispo[casa];
+        bloqueadores = bit_total & bit_casas_relevantes_bispo[casa];
         chave_hash = (bloqueadores * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa]);
 
         ataques = bit_magicas_bispo[casa][chave_hash];
 
-        bloqueadores = bit_total & bit_moves_torre[casa];
+        bloqueadores = bit_total & bit_casas_relevantes_torres[casa];
         chave_hash = (bloqueadores * magicas_torres[casa]) >> (64 - bits_indices_torres[casa]);
 
         ataques |= bit_magicas_torre[casa][chave_hash];
