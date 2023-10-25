@@ -19,7 +19,8 @@ SRCS = ./src/bitboard.o ./src/init.o \
 		./src/eval.o ./src/hash.o \
 		./src/game.o ./src/search.o \
 		./src/interface.o ./src/attacks.o \
-		./src/xboard.o ./src/help.o
+		./src/xboard.o ./src/help.o \
+		./src/debug.o
 
 # Headers
 HEADER_FILES = ./src/bitboard.h ./src/init.h \
@@ -30,7 +31,8 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/xboard.h ./src/help.h \
 		./src/consts.h ./src/info.h \
 		./src/params.h ./src/tests.h \
-		./src/values.h ./src/stats.h
+		./src/values.h ./src/stats.h \
+		./src/debug.h
 
 
 # Targets
