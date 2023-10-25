@@ -3,6 +3,8 @@
 #include <stdio.h>
 
 void Debug::printBitboard(u64 bitboard){
+    printf("======================\n");
+    
     int bit;
 
     for (int y = 7; y >= 0; y--){
@@ -20,4 +22,7 @@ void Debug::printBitboard(u64 bitboard){
             }
         }
     }
+
+    
+    printf("======================\n");
 }
