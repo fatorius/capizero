@@ -25,6 +25,15 @@ Também estão linkadas dois outros arquivos header: params e values
 #define COLUNA_G 6
 #define COLUNA_H 7
 
+#define LINHA_1 0
+#define LINHA_2 8
+#define LINHA_3 16
+#define LINHA_4 24
+#define LINHA_5 32
+#define LINHA_6 40
+#define LINHA_7 48
+#define LINHA_8 56
+
 #define A1	0
 #define B1	1
 #define C1	2
