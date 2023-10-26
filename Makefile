@@ -9,7 +9,7 @@ COMP = g++
 
 # Outras configurações
 ifeq ($(BSFQ), FALSE)
-CXXFLAGS += -DNOT_USE_BSFQ
+CXXFLAGS += -NOT_USE_BSFQ
 EXE := capizero_$(VERSION_WITHOUTQUOTES)__no_bsfq
 endif
 
