@@ -34,6 +34,9 @@ Também estão linkadas dois outros arquivos header: params e values
 #define LINHA_7 48
 #define LINHA_8 56
 
+#define PRIMEIRA_LINHA 0
+#define ULTIMA_LINHA 7
+
 #define A1	0
 #define B1	1
 #define C1	2

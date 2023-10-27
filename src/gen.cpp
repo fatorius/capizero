@@ -188,10 +188,10 @@ void init_casas_relevantes(){
         if (colunas[casa] != COLUNA_H){
             bit_casas_relevantes_torres[casa] &= ~mask_cols[COLUNA_H];
         }
-        if (linhas[casa] != LINHA_1){
+        if (linhas[casa] != PRIMEIRA_LINHA){
             bit_casas_relevantes_torres[casa] &= ~mask_rows[LINHA_1];
         }
-        if (linhas[casa] != LINHA_8){
+        if (linhas[casa] != ULTIMA_LINHA){
             bit_casas_relevantes_torres[casa] &= ~mask_rows[LINHA_8];
         }
     }
