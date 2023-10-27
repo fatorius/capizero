@@ -416,6 +416,9 @@ bool ler_comando(){
     else if (!strcmp(cmd, COMANDO_DESATIVAR_ENGINE)){
         lado_do_computador = VAZIO;
     }
+    else if (!strcmp(cmd, COMANDO_QUIT)){
+        return false;
+    }
     else if (!strcmp(cmd, COMANDO_ENCERRAR)){
         return false;
     }
