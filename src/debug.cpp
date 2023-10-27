@@ -26,3 +26,7 @@ void Debug::printBitboard(u64 bitboard){
     
     printf("======================\n");
 }
+
+void Debug::print(const char* msg){
+    printf(msg);
+}

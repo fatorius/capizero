@@ -9,7 +9,7 @@ COMP = g++
 
 # Outras configurações
 ifeq ($(BSFQ), FALSE)
-CXXFLAGS += -DNOT_USE_BSFQ
+CXXFLAGS += -NOT_USE_BSFQ
 EXE := capizero_$(VERSION_WITHOUTQUOTES)__no_bsfq
 endif
 
@@ -29,10 +29,9 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/game.h ./src/search.h \
 		./src/interface.h ./src/attacks.h \
 		./src/xboard.h ./src/help.h \
-		./src/consts.h ./src/info.h \
-		./src/params.h ./src/tests.h \
-		./src/values.h ./src/stats.h \
-		./src/debug.h
+		./src/consts.h ./src/params.h 
+		./src/tests.h \ ./src/values.h 
+		./src/stats.h \ ./src/debug.h
 
 
 # Targets
