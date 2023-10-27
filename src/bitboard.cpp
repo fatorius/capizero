@@ -11,10 +11,14 @@ u64 mask[CASAS_DO_TABULEIRO];
 u64 not_mask[CASAS_DO_TABULEIRO];
 
 u64 mask_cols[CASAS_DO_TABULEIRO];
+u64 mask_rows[CASAS_DO_TABULEIRO];
 u64 mask_isolados[CASAS_DO_TABULEIRO];
 
 u64 mask_ala_do_rei;
 u64 mask_ala_da_dama;
+
+u64 bordas;
+u64 bordas_neg;
 
 u64 mask_passados[LADOS][CASAS_DO_TABULEIRO];
 u64 mask_path[LADOS][CASAS_DO_TABULEIRO];
@@ -51,6 +55,10 @@ void init_bits(){
                 }
             }
 
+            if (linhas[casa] == linhas[casa2]){
+                set_bit(mask_rows[casa], casa2);
+            }
+
             if (abs(colunas[casa] - colunas[casa2]) < 2){
                 if (linhas[casa] < linhas[casa2] && linhas[casa2] < COLUNA_H){
                     set_bit(mask_passados[BRANCAS][casa], casa2);
@@ -75,10 +83,15 @@ void init_bits(){
         if (colunas[casa] > COLUNA_E){
             set_bit(mask_ala_do_rei, casa);
         }
+
+
     }
 
     not_coluna_a = ~mask_cols[COLUNA_A];
     not_coluna_h = ~mask_cols[COLUNA_H];
+
+    bordas = mask_cols[COLUNA_A] | mask_cols[COLUNA_H] | mask_rows[LINHA_1] | mask_rows[LINHA_8];
+    bordas_neg = ~bordas;
 }
 
 void init_vetores(){

@@ -3,7 +3,8 @@
 EPOCH = $(shell date +%s)
 VERSION = $(shell cat version.capizero)
 VERSION_WITHOUTQUOTES = $(patsubst '"%"',%, $(VERSION))
-CXXFLAGS = -Wall -std=c++11 -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
+CXXFLAGS = -Wall -std=c++11 -O3 -march=native -flto  -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
+CXXDEBUGFLAGS = -Wall -std=c++11 -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
 EXE := capizero_$(VERSION_WITHOUTQUOTES)
 COMP = g++
 
@@ -31,12 +32,12 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/xboard.h ./src/help.h \
 		./src/consts.h ./src/params.h \
 		./src/tests.h ./src/values.h \
-		./src/stats.h ./src/debug.h
+		./src/stats.h ./src/debug.h ./src/magics.h
 
 
 # Targets
 build: clean ./src/main.o $(SRCS) $(HEADER_FILES)
-	@ $(COMP) $(CXXFLAGS) -O3 -o $(EXE) ./src/main.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o $(EXE) ./src/main.o $(SRCS)
 	@ echo "================="
 	@ echo "capizero $(VERSION_WITHOUTQUOTES) compilado com sucesso"
 
@@ -48,12 +49,12 @@ debug: clean add_debug_variables ./src/main.o $(SRCS) $(HEADER_FILES)
 	@ echo "Para o uso em jogos normais, use 'make build'"
 
 tests: clean ./src/unit_tests.o ./src/tests.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -O3 -o $(EXE)_unit_tests ./src/unit_tests.o ./src/tests.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o $(EXE)_unit_tests ./src/unit_tests.o ./src/tests.o $(SRCS)
 	@ echo "================="
 	@ echo "testes unitarios compilados com sucesso"
 
 stats: clean ./src/stats_tests.o ./src/stats.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -O3 -o $(EXE)_performance_stats ./src/stats_tests.o ./src/stats.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o $(EXE)_performance_stats ./src/stats_tests.o ./src/stats.o $(SRCS)
 	@ echo "================="
 	@ echo "testes de performance compilados com sucesso"
 

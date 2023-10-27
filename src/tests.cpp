@@ -68,6 +68,8 @@ void Tests::test2(){
 // as funções de atualização do tabuleiro (fazer lance e
 // desfazer lance) estão funcionando corretamente
 void Tests::test3(){
+    novo_jogo();
+    fazer_lance(E2, E4);
     desfaz_lance();
 
     cout<<"Test 3 - Perft 5 após fazer e desfazer lance"<<endl;

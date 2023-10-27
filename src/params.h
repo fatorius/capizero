@@ -16,4 +16,6 @@ do programa
 #define PILHA_DE_LANCES 4000
 #define PILHA_DO_JOGO 2000
 
+#define MAGIC_HASHTABLE_SIZE 4096
+
 #endif

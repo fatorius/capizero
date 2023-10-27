@@ -14,6 +14,10 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 * [Bitboards](https://www.chessprogramming.org/Bitboards)
 
+**1.2 Geração de lances**
+
+* [Bitboards mágicos](https://www.chessprogramming.org/Magic_Bitboards)
+
 ### 2. Pesquisa de lances
 
 * [Pesquisa Alpha-beta](https://www.chessprogramming.org/Alpha-Beta)
@@ -59,8 +63,6 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 * Compatibilidade com [Xboard](https://www.chessprogramming.org/Chess_Engine_Communication_Protocol)
 
 ## Recursos a serem implementados
-
-* [Bitboards mágicos](https://www.chessprogramming.org/Magic_Bitboards)
 
 * [Killer move heuristic](https://www.chessprogramming.org/Killer_Heuristic)
 

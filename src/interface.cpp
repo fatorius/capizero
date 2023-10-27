@@ -424,13 +424,19 @@ bool ler_comando(){
         return true;
     }
     else if (!strcmp(cmd, COMANDO_CONFIGURAR_PROFUNDIDADE)){
-        scanf("%d", &profundidade_maxima);
+        if (scanf("%d", &profundidade_maxima) == EOF){
+            return false;
+        }
+
         tempo_maximo = 1 << 25;
         profundidade_fixa = true;
         tempo_fixo = false;
     }
     else if (!strcmp(cmd, COMANDO_CONFIGURAR_TEMPO)){
-        scanf("%d", &tempo_maximo);
+        if (scanf("%d", &tempo_maximo) == EOF){
+            return false;
+        }
+
         tempo_maximo *= SEGUNDO;
         profundidade_maxima = MAX_PLY;
         tempo_fixo = true;
@@ -461,7 +467,9 @@ bool ler_comando(){
         return false;
     }
     else if (!strcmp(cmd, COMANDO_REALIZAR_PERFT)){
-        scanf("%d", &profundidade_perft);
+        if (scanf("%d", &profundidade_perft) == EOF){
+            return false;
+        }
 
         int tempoInicial = obter_tempo();
 
