@@ -1,6 +1,7 @@
 #include "debug.h"
 
 #include <stdio.h>
+#include <iostream>
 
 void Debug::printBitboard(u64 bitboard){
     printf("======================\n");
@@ -28,5 +29,5 @@ void Debug::printBitboard(u64 bitboard){
 }
 
 void Debug::print(const char* msg){
-    printf(msg);
+    std::cout<<msg<<std::endl;
 }
