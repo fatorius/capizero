@@ -15,6 +15,7 @@ void xboard(){
 	int lado_do_computador;
 	char linha[256], comando[256];
 	int m;
+	int prom;
 
 	signal(SIGINT, SIG_IGN);
 	printf("\n");
@@ -28,6 +29,7 @@ void xboard(){
 		fflush(stdout);
 
 		if (lado == lado_do_computador){
+			prom = 0;
 			pensar(true);
 			atualizar_materiais();
 			gerar_lances(lado, xlado);
@@ -45,7 +47,11 @@ void xboard(){
 			lista_de_lances[0].inicio = hash_inicio;
             lista_de_lances[0].destino = hash_destino;
             
-			printf("move %s\n", lance_para_string(hash_inicio,hash_destino,0));
+			if ((tabuleiro[hash_inicio] == P) && (linhas[hash_destino] == fileira_de_promocao[lado])){
+				prom = D; // ASSUME QUE O JOGADOR IRÁ PROMOVER SEMPRE PARA DAMA
+			}
+
+			printf("move %s\n", lance_para_string(hash_inicio,hash_destino,prom));
 	
 			fazer_lance(hash_inicio,hash_destino);
   
