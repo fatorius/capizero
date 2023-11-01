@@ -228,7 +228,7 @@ void xboard(){
 
 		if (!strcmp(comando, "protover")) {
 			sscanf(linha, "protover %d", &n);
-			printf("feature ping=1 reuse=0 analyze=0 setboard=1 myname=capizero_%s name=0 nps=0\n", CAPIZERO_VERSION);
+			printf("feature ping=1 analyze=0 setboard=1 myname=capizero_%s name=0 nps=0\n", CAPIZERO_VERSION);
 			continue;
 		}
 
