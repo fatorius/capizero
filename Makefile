@@ -5,8 +5,12 @@ VERSION = $(shell cat version.capizero)
 VERSION_WITHOUTQUOTES = $(patsubst '"%"',%, $(VERSION))
 CXXFLAGS = -Wall -std=c++11 -O3 -march=native -flto  -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
 CXXDEBUGFLAGS = -Wall -std=c++11 -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
-EXE := capizero_$(VERSION_WITHOUTQUOTES)
+EXE := $(NAME)
 COMP = g++
+
+ifeq ($(NAME),)
+EXE := capizero_$(VERSION_WITHOUTQUOTES)
+endif
 
 # Outras configurações
 ifeq ($(BSFQ), FALSE)
@@ -74,6 +78,7 @@ help:
 	@ echo "stats: compila um binário para testar a performance da engine no seu computador"
 	@ echo "======================"
 	@ echo "As opções: "
+	@ echo "NAME = string: define o nome do binário"
 	@ echo "BSFQ = [TRUE/FALSE]: utiliza a instrução bsfq para realizar bitscan (valor padrão: TRUE)"
 	@ echo ""
 	@ echo "Outros comandos: "
