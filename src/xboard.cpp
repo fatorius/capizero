@@ -211,7 +211,7 @@ void xboard(){
 
 		m = converter_lance(linha);
 		if (m == -1 || !fazer_lance(lista_de_lances[m].inicio, lista_de_lances[m].destino)){
-			printf("Error (unknown comando): %s\n", comando);
+			printf("Error (unknown comand): %s\n", comando);
         }
 		else {
 			ply = 0;
