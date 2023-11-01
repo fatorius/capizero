@@ -423,7 +423,28 @@ bool ler_comando(){
         return false;
     }
     else if (!strcmp(cmd, COMANDO_CARREGAR_FEN)){
-        // todo
+        char posicao[80], lado_a_jogar[1], roques[4], casa_en_passant[2], hm[4], fm[4];
+		
+        if (scanf("%s", posicao) == EOF){
+            return false;
+        }
+        if (scanf("%s", lado_a_jogar) == EOF){
+            return false;
+        }
+		if (scanf("%s", roques) == EOF){
+            return false;
+        }
+        if (scanf("%s", casa_en_passant) == EOF){
+            return false;
+        }
+        if (scanf("%s", hm) == EOF){
+            return false;
+        }
+		if (scanf("%s", fm) == EOF){
+            return false;
+        }
+
+		setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
         return true;
     }
     else if (!strcmp(cmd, COMANDO_CONFIGURAR_PROFUNDIDADE)){

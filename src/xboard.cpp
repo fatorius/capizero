@@ -15,6 +15,7 @@ void xboard(){
 	int lado_do_computador;
 	char linha[256], comando[256];
 	int m;
+	int n;
 	int prom;
 
 	signal(SIGINT, SIG_IGN);
@@ -104,6 +105,12 @@ void xboard(){
 			xlado = BRANCAS;
 			gerar_lances(lado, xlado);
 			lado_do_computador = BRANCAS;
+			continue;
+		}
+
+		if (!strcmp(comando, "d")) 
+		{
+			display_tabuleiro();
 			continue;
 		}
 		
@@ -203,6 +210,25 @@ void xboard(){
 		}
 
 		if (!strcmp(comando, "nopost")) {
+			continue;
+		}
+
+		if (!strcmp(comando, "ping")){
+			sscanf(linha, "ping %d", &n);
+			printf("pong %d\n", n);
+			continue;
+		}
+
+		if (!strcmp(comando, "setboard")){
+			char posicao[80], lado_a_jogar[1], roques[4], casa_en_passant[2], hm[4], fm[4];
+			sscanf(linha, "setboard %s %s %s %s %s %s", posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
+			setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
+			continue;
+		}
+
+		if (!strcmp(comando, "protover")) {
+			sscanf(linha, "protover %d", &n);
+			printf("feature ping=1 reuse=0 analyze=0 setboard=1 myname=capizero_%s name=0 nps=0\n", CAPIZERO_VERSION);
 			continue;
 		}
 
