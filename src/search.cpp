@@ -285,7 +285,7 @@ int pesquisa(int alpha, int beta, int profundidade){
 
     if (!lances_legais_na_posicao){
         if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
-            return VALOR_XEQUE_MATE_PADRAO + ply;
+            return VALOR_XEQUE_MATE_PADRAO - ply;
         }
         else{
             return VALOR_EMPATE;
