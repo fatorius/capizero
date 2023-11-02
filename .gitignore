@@ -39,3 +39,9 @@
 #Editor files
 .vscode/
 .idea/
+
+#Python Files
+*.pyc
+
+# Chess game files
+*.pgn
