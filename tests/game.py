@@ -79,11 +79,19 @@ class TestGame:
         print("-" * 30)
         print(self.tabuleiro)
         print("-" * 30)
-
+        
+        aval = ""
+        
+        if self.info["score"].is_mate():
+        	aval = f"M{self.info['score'].white().mate()}"
+       	else: 
+        	aval = self.info["score"].white().score()
+        
+        
         if self.lado == "BRANCO":
-            print(f"{self.white}: {self.tabuleiro.fullmove_number}. {self.ultimo_lance} ({self.info['score'].relative.score()})")
+            print(f"{self.white}: {self.tabuleiro.fullmove_number}. {self.ultimo_lance} ({aval})")
         else:
-            print(f"{self.black}: {self.tabuleiro.fullmove_number}... {self.ultimo_lance} ({self.info['score'].relative.score() * -1})")
+            print(f"{self.black}: {self.tabuleiro.fullmove_number}... {self.ultimo_lance} ({aval})")
 
         print(f"Profundidade {self.info['depth']} em {self.info['time']} segundos")
 
