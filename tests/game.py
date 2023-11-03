@@ -10,7 +10,7 @@ from datetime import datetime
 import aberturas
 
 RELEASE_RATING = sys.argv[1]
-ROUNDS = sys.argv[2]
+ROUNDS = int(sys.argv[2])
 TEMPO_EM_SEGUNDOS = sys.argv[3]
 
 LOCAL_SCORE = 0
@@ -75,7 +75,9 @@ class TestGame:
 
     def print_game(self):
         clear_terminal()
-        print(f"Jogo {self.jogo_no} : {self.white} - {self.black}")
+        print(f"Match capizero_local - capizero_release ({LOCAL_SCORE} - {RELEASE_SCORE})")
+        print("="*30)
+        print(f"Jogo {self.jogo_no}/{ROUNDS*2} : {self.white} - {self.black}")
         print("-" * 30)
         print(self.tabuleiro)
         print("-" * 30)
@@ -167,7 +169,7 @@ class TestGame:
         self.black_engine.quit()
 
 
-for jogo_no in range(int(ROUNDS)):
+for jogo_no in range(ROUNDS):
     game = TestGame("capizero_local", "capizero_latest_version", (jogo_no*2) + 1)
     game.play()
 
