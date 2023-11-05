@@ -1,23 +1,37 @@
+# -----------------------------------------------------
 # Variáveis iniciais
 .DEFAULT_GOAL = default
 EPOCH = $(shell date +%s)
 VERSION = $(shell cat version.capizero)
 VERSION_WITHOUTQUOTES = $(patsubst '"%"',%, $(VERSION))
-CXXFLAGS = -Wall -std=c++11 -O3 -march=native -flto  -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
+CXXFLAGS = -Wall -std=c++11 -O3 -march=native -flto -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
 CXXDEBUGFLAGS = -Wall -std=c++11 -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
 EXE := $(NAME)
 COMP = g++
+
+
+
+
+
+# -----------------------------------------------------
+# Configurações
 
 ifeq ($(NAME),)
 EXE := capizero_$(VERSION_WITHOUTQUOTES)
 endif
 
-# Outras configurações
-ifeq ($(BSFQ), FALSE)
-CXXFLAGS += -NOT_USE_BSFQ
-EXE := capizero_$(VERSION_WITHOUTQUOTES)__no_bsfq
+ifeq ($(COMP),gcc)
+CXXFLAGS += -DGNU
+else ifeq ($(COMP),g++)
+CXXFLAGS += -DGNU
+else ifeq ($(COMP),clang)
+CXXFLAGS += -DMSVC
 endif
 
+
+
+
+# -----------------------------------------------------
 # Objs
 SRCS = ./src/bitboard.o ./src/init.o \
 		./src/update.o ./src/gen.o \
@@ -39,6 +53,9 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/stats.h ./src/debug.h ./src/magics.h
 
 
+
+
+# -----------------------------------------------------
 # Targets
 build: clean ./src/main.o $(SRCS) $(HEADER_FILES)
 	@ $(COMP) $(CXXFLAGS) -o $(EXE) ./src/main.o $(SRCS)
@@ -62,6 +79,9 @@ stats: clean ./src/stats_tests.o ./src/stats.o $(SRCS)
 	@ echo "================="
 	@ echo "testes de performance compilados com sucesso"
 
+
+
+# -----------------------------------------------------
 # Outros comandos
 clean:
 	@ rm -rf ./src/*.o
@@ -79,7 +99,7 @@ help:
 	@ echo "======================"
 	@ echo "As opções: "
 	@ echo "NAME = string: define o nome do binário"
-	@ echo "BSFQ = [TRUE/FALSE]: utiliza a instrução bsfq para realizar bitscan (valor padrão: TRUE)"
+	@ echo "COMP = string: define o compilador (padrão=g++)"
 	@ echo ""
 	@ echo "Outros comandos: "
 	@ echo "----------------------"
@@ -97,6 +117,8 @@ credits:
 default: help credits
 
 
+
+# -----------------------------------------------------
 # Outras receitas
 add_debug_variables:
 	@ $(eval CXXFLAGS += -DDEBUG_BUILD -g)
