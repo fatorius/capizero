@@ -3,6 +3,13 @@
 #include <cstdlib>
 #include <stdio.h>
 
+#ifdef __BMI2__
+    #include <immintrin.h>
+    #define USE_PEXT
+#else
+    #define USE_MAGIC_HASHING
+#endif
+
 #include "search.h"
 #include "game.h"
 #include "update.h"
@@ -323,15 +330,30 @@ u64 gerarLancesTorreSemMagica(int casa, u64 bloqueadores){
 }
 
 void init_magic_lookups(){
+    int index;
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << bits_indices_bispos[casa]); pecaBloqueadora++){
             u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_casas_relevantes_bispo[casa]); 
-            bit_magicas_bispo[casa][(bloqueadores * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa])] = gerarLancesBispoSemMagica(casa, bloqueadores);
+
+            #ifdef USE_PEXT
+                index = _pext_u64(bloqueadores, bit_casas_relevantes_bispo[casa]);
+            #else
+                index = (bloqueadores * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa]);
+            #endif
+
+            bit_magicas_bispo[casa][index] = gerarLancesBispoSemMagica(casa, bloqueadores);   
         }
 
         for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << bits_indices_torres[casa]); pecaBloqueadora++){
             u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_casas_relevantes_torres[casa]);
-            bit_magicas_torre[casa][(bloqueadores * magicas_torres[casa]) >> (64 - bits_indices_torres[casa])] = gerarLancesTorreSemMagica(casa, bloqueadores);
+
+            #ifdef USE_PEXT
+                index = _pext_u64(bloqueadores, bit_casas_relevantes_torres[casa]);
+            #else
+                index = (bloqueadores * magicas_torres[casa]) >> (64 - bits_indices_torres[casa]);
+            #endif
+
+            bit_magicas_torre[casa][index] = gerarLancesTorreSemMagica(casa, bloqueadores);
         }
     }
 }
@@ -413,8 +435,7 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
 
     u64 t1, t2, t3;
 
-    //variáveis relacionadas a geração mágica de lances
-    u64 bloqueadores, chave_hash, ataques;
+    u64 ataques_deslizantes;
 
     mc = qntt_lances_totais[ply];
 
@@ -493,14 +514,15 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         casa = bitscan(t1);
         t1 &= not_mask[casa];
         
-        bloqueadores = bit_total & bit_casas_relevantes_bispo[casa];
-        chave_hash = (bloqueadores * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa]);
+        #ifdef USE_PEXT
+            ataques_deslizantes = bit_magicas_bispo[casa][_pext_u64(bit_total, bit_casas_relevantes_bispo[casa])];
+        #else
+            ataques_deslizantes = bit_magicas_bispo[casa][(bit_total & bit_casas_relevantes_bispo[casa] * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa])];
+        #endif
 
-        ataques = bit_magicas_bispo[casa][chave_hash];
-
-        while (ataques){
-            casa_destino = bitscan(ataques);
-            ataques &= not_mask[casa_destino];
+        while (ataques_deslizantes){
+            casa_destino = bitscan(ataques_deslizantes);
+            ataques_deslizantes &= not_mask[casa_destino];
 
             if (mask[casa_destino] & bit_total){
                 if (mask[casa_destino] & bit_lados[contraLado]){
@@ -520,14 +542,15 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         casa = bitscan(t1);
         t1 &= not_mask[casa];
 
-        bloqueadores = bit_total & bit_casas_relevantes_torres[casa];
-        chave_hash = (bloqueadores * magicas_torres[casa]) >> (64 - bits_indices_torres[casa]);
+        #ifdef USE_PEXT
+            ataques_deslizantes = bit_magicas_bispo[casa][_pext_u64(bit_total, bit_casas_relevantes_torres[casa])];
+        #else
+            ataques_deslizantes = bit_magicas_torre[casa][(bit_total & bit_casas_relevantes_torres[casa] * magicas_torres[casa]) >> (64 - bits_indices_torres[casa])];
+        #endif
 
-        ataques = bit_magicas_torre[casa][chave_hash];
-
-        while (ataques){
-            casa_destino = bitscan(ataques);
-            ataques &= not_mask[casa_destino];
+        while (ataques_deslizantes){
+            casa_destino = bitscan(ataques_deslizantes);
+            ataques_deslizantes &= not_mask[casa_destino];
 
             if (mask[casa_destino] & bit_total){
                 if (mask[casa_destino] & bit_lados[contraLado]){
@@ -547,20 +570,15 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         casa = bitscan(t1);
         t1 &= not_mask[casa];
 
-        
-        bloqueadores = bit_total & bit_casas_relevantes_bispo[casa];
-        chave_hash = (bloqueadores * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa]);
+        #ifdef USE_PEXT
+            ataques_deslizantes = bit_magicas_bispo[casa][_pext_u64(bit_total, bit_casas_relevantes_torres[casa])] | bit_magicas_torre[casa][_pext_u64(bit_total, bit_casas_relevantes_torres[casa])];
+        #else
+            ataques_deslizantes = bit_magicas_bispo[casa][(bit_total & bit_casas_relevantes_bispo[casa] * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa])] | bit_magicas_torre[casa][(bit_total & bit_casas_relevantes_torres[casa] * magicas_torres[casa]) >> (64 - bits_indices_torres[casa])];
+        #endif
 
-        ataques = bit_magicas_bispo[casa][chave_hash];
-
-        bloqueadores = bit_total & bit_casas_relevantes_torres[casa];
-        chave_hash = (bloqueadores * magicas_torres[casa]) >> (64 - bits_indices_torres[casa]);
-
-        ataques |= bit_magicas_torre[casa][chave_hash];
-
-        while (ataques){
-            casa_destino = bitscan(ataques);
-            ataques &= not_mask[casa_destino];
+        while (ataques_deslizantes){
+            casa_destino = bitscan(ataques_deslizantes);
+            ataques_deslizantes &= not_mask[casa_destino];
 
             if (mask[casa_destino] & bit_total){
                 if (mask[casa_destino] & bit_lados[contraLado]){
