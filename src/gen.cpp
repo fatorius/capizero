@@ -346,13 +346,20 @@ void init_lookup_tables(){
 }
 
 int calcularBonusHeuristicas(const int origem, const int destino){
+    int bonus = historico_heuristica[origem][destino];
     lance contraLance = contraLance_heuristica[lista_do_jogo[hply].inicio][lista_do_jogo[hply].destino];
 
+    if (killers_primarios[ply].inicio == origem && killers_primarios[ply].destino == destino){
+        return SCORE_KILLER_1 + bonus;
+    }
+    if (killers_secundarios[ply].inicio == origem && killers_secundarios[ply].destino == destino){
+        return SCORE_KILLER_2 + bonus;
+    }
     if (contraLance.inicio == origem && contraLance.destino == destino){
-        return SCORE_CONTRALANCE + historico_heuristica[origem][destino];
+        return SCORE_CONTRALANCE + bonus;
     }
 
-    return historico_heuristica[origem][destino];
+    return bonus;
 }
 
 void adicionar_captura(const int origem, const int destino, const int score){

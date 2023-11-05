@@ -18,6 +18,8 @@ int tempo_do_inicio, tempo_do_fim;
 
 int historico_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
 lance contraLance_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
+lance killers_primarios[MAX_PLY];
+lance killers_secundarios[MAX_PLY];
 
 jmp_buf env;
 bool parar_pesquisa;
@@ -270,11 +272,12 @@ int pesquisa(int alpha, int beta, int profundidade){
                 if (!(mask[lista_de_lances[candidato].destino] & bit_total)){ // adiciona no historico se não for uma captura
                     historico_heuristica[lista_de_lances[candidato].inicio][lista_de_lances[candidato].destino] += 1 << profundidade; 
                     contraLance_heuristica[lista_do_jogo[hply].inicio][lista_do_jogo[hply].destino] = lista_de_lances[candidato];
+
+                    killers_secundarios[ply] = killers_primarios[ply];
+                    killers_primarios[ply] = lista_de_lances[candidato];
                 }
 
                 adicionar_hash(lado, lista_de_lances[candidato]);
-
-                // TODO adicionar killer move
 
                 return beta;
             }
