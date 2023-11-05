@@ -79,7 +79,9 @@ stats: clean ./src/stats_tests.o ./src/stats.o $(SRCS)
 	@ echo "================="
 	@ echo "testes de performance compilados com sucesso"
 
-
+magicsgenerator: ./src/generate_magics.cpp
+	@ $(COMP) -c $(CXXFLAGS) ./src/generate_magics.cpp -o ./src/generate_magics.o
+	@ $(COMP) -o magicsgenerator ./src/generate_magics.o 
 
 # -----------------------------------------------------
 # Outros comandos
