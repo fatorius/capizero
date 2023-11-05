@@ -15,11 +15,17 @@
 
 #define TEST4_VALOR_ESPERADO 4865609
 
+#define TEST5_VALOR_ESPERADO 64827465
+
+#define TEST6_VALOR_ESPERADO 1267835
+
 namespace Tests{
     void test1();
     void test2();
     void test3();
     void test4();
+    void test5();
+    void test6();
 }
 
 

@@ -12,8 +12,9 @@
 #define COMANDO_FAZER_LANCE "jogar"
 #define COMANDO_ATIVAR_ENGINE "on"
 #define COMANDO_DESATIVAR_ENGINE "off"
-#define COMANDO_ENCERRAR "quit"
-#define COMANDO_CARREGAR_FEN "sb"
+#define COMANDO_QUIT "quit"
+#define COMANDO_ENCERRAR "sair"
+#define COMANDO_CARREGAR_FEN "fen"
 #define COMANDO_CONFIGURAR_PROFUNDIDADE "prof"
 #define COMANDO_CONFIGURAR_TEMPO "tempo"
 #define COMANDO_TROCAR_DE_LADO "troca"
@@ -43,5 +44,6 @@ int obter_tempo();
 void print_resultado();
 int converter_lance(char *lnc);
 void exibir_melhor_linha(int profundidade);
+void display_tabuleiro();
 
 #endif

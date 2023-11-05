@@ -28,7 +28,7 @@ void novo_jogo(){
     cinquenta = 0;
     roque = 15;
     ply = 0;
-    hply = 0;
+    hply = 1;
     qntt_lances_totais[0] = 0;
     jogada = 0;
 

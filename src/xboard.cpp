@@ -15,6 +15,8 @@ void xboard(){
 	int lado_do_computador;
 	char linha[256], comando[256];
 	int m;
+	int n;
+	int prom;
 
 	signal(SIGINT, SIG_IGN);
 	printf("\n");
@@ -28,6 +30,7 @@ void xboard(){
 		fflush(stdout);
 
 		if (lado == lado_do_computador){
+			prom = 0;
 			pensar(true);
 			atualizar_materiais();
 			gerar_lances(lado, xlado);
@@ -45,7 +48,11 @@ void xboard(){
 			lista_de_lances[0].inicio = hash_inicio;
             lista_de_lances[0].destino = hash_destino;
             
-			printf("move %s\n", lance_para_string(hash_inicio,hash_destino,0));
+			if ((tabuleiro[hash_inicio] == P) && (linhas[hash_destino] == fileira_de_promocao[lado])){
+				prom = D; // ASSUME QUE O JOGADOR IRÁ PROMOVER SEMPRE PARA DAMA
+			}
+
+			printf("move %s\n", lance_para_string(hash_inicio,hash_destino,prom));
 	
 			fazer_lance(hash_inicio,hash_destino);
   
@@ -98,6 +105,12 @@ void xboard(){
 			xlado = BRANCAS;
 			gerar_lances(lado, xlado);
 			lado_do_computador = BRANCAS;
+			continue;
+		}
+
+		if (!strcmp(comando, "d")) 
+		{
+			display_tabuleiro();
 			continue;
 		}
 		
@@ -200,12 +213,31 @@ void xboard(){
 			continue;
 		}
 
+		if (!strcmp(comando, "ping")){
+			sscanf(linha, "ping %d", &n);
+			printf("pong %d\n", n);
+			continue;
+		}
+
+		if (!strcmp(comando, "setboard")){
+			char posicao[80], lado_a_jogar[1], roques[4], casa_en_passant[2], hm[4], fm[4];
+			sscanf(linha, "setboard %s %s %s %s %s %s", posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
+			setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
+			continue;
+		}
+
+		if (!strcmp(comando, "protover")) {
+			sscanf(linha, "protover %d", &n);
+			printf("feature ping=1 analyze=0 setboard=1 myname=capizero_%s name=0 nps=0\n", CAPIZERO_VERSION);
+			continue;
+		}
+
 		qntt_lances_totais[0] = 0;
 		gerar_lances(lado, xlado);
 
 		m = converter_lance(linha);
 		if (m == -1 || !fazer_lance(lista_de_lances[m].inicio, lista_de_lances[m].destino)){
-			printf("Error (unknown comando): %s\n", comando);
+			printf("Error (unknown comand): %s\n", comando);
         }
 		else {
 			ply = 0;

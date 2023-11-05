@@ -21,6 +21,8 @@ int main(){
     Tests::test2();
     Tests::test3();
     Tests::test4();
+    Tests::test5();
+    Tests::test6();
 
     liberar_memoria();
 

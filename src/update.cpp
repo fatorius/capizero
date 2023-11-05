@@ -1,6 +1,12 @@
 #include "update.h"
 
 #include <cstdlib>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <iostream>
+#include <string>
+
 
 #include "bitboard.h"
 #include "consts.h"
@@ -120,7 +126,7 @@ bool fazer_lance(const int inicio, const int destino){
         }
         // 1.2.3 roque menor pretas
         else if (destino == G8){
-            if (casa_esta_sendo_atacada(xlado, G8)){
+            if (casa_esta_sendo_atacada(xlado, F8)){
                 return false;
             }
             mover_piece(lado, T, H8, F8);
@@ -233,4 +239,289 @@ int fazer_captura(const int inicio, const int destino){
     }
 
     return true;
+}
+
+int obter_cor(char p){
+    switch (p){
+        case 'P':
+            return BRANCAS;
+            break;
+        case 'p':
+            return PRETAS;
+            break;
+        case 'N':
+            return BRANCAS;
+            break;
+        case 'n':
+            return PRETAS;
+            break;
+        case 'B':
+            return BRANCAS;
+            break;
+        case 'b':
+            return PRETAS;
+            break;
+        case 'R':
+            return BRANCAS;
+            break;
+        case 'r':
+            return PRETAS;
+            break;
+        case 'Q':
+            return BRANCAS;
+            break;
+        case 'q':
+            return PRETAS;
+            break;
+        case 'K':
+            return BRANCAS;
+            break;
+        case 'k':
+            return PRETAS;
+            break;
+        default:
+            return VAZIO;
+            break;
+    }
+}
+
+int obter_peca(char p){
+    switch (p){
+        case 'P':
+            return P;
+            break;
+        case 'p':
+            return P;
+            break;
+        case 'N':
+            return C;
+            break;
+        case 'n':
+            return C;
+            break;
+        case 'B':
+            return B;
+            break;
+        case 'b':
+            return B;
+            break;
+        case 'R':
+            return T;
+            break;
+        case 'r':
+            return T;
+            break;
+        case 'Q':
+            return D;
+            break;
+        case 'q':
+            return D;
+            break;
+        case 'K':
+            return R;
+            break;
+        case 'k':
+            return R;
+            break;
+        default:
+            return VAZIO;
+            break;
+    }
+}
+
+int obter_casa_inicio_por_en_passant(char ep[2]){
+    char* epptr = ep;
+    std::string epstr = epptr;
+    
+    if (epstr == "a3"){
+        return A2;
+    }
+    else if (epstr == "b3"){
+        return B2;
+    }
+    else if (epstr == "c3"){
+        return C2;
+    }
+    else if (epstr == "d3"){
+        return D2;
+    }
+    else if (epstr == "e3"){
+        return E2;
+    }
+    else if (epstr == "f3"){
+        return F2;
+    }
+    else if (epstr == "g3"){
+        return G2;
+    }
+    else if (epstr == "h3"){
+        return H2;
+    }
+    else if (epstr == "a6"){
+        return A7;
+    }
+    else if (epstr == "b6"){
+        return B7;
+    }
+    else if (epstr == "c6"){
+        return C7;
+    }
+    else if (epstr == "d6"){
+        return D7;
+    }
+    else if (epstr == "e6"){
+        return E7;
+    }
+    else if (epstr == "f6"){
+        return F7;
+    }
+    else if (epstr == "g6"){
+        return G7;
+    }
+    else{
+        return H7;
+    }
+}
+
+int obter_casa_destino_por_en_passant(char ep[2]){
+    char* epptr = ep;
+    std::string epstr = epptr;
+    
+    if (epstr == "a3"){
+        return A4;
+    }
+    else if (epstr == "b3"){
+        return B4;
+    }
+    else if (epstr == "c3"){
+        return C4;
+    }
+    else if (epstr == "d3"){
+        return D4;
+    }
+    else if (epstr == "e3"){
+        return E4;
+    }
+    else if (epstr == "f3"){
+        return F4;
+    }
+    else if (epstr == "g3"){
+        return G4;
+    }
+    else if (epstr == "h3"){
+        return H4;
+    }
+    else if (epstr == "a6"){
+        return A5;
+    }
+    else if (epstr == "b6"){
+        return B5;
+    }
+    else if (epstr == "c6"){
+        return C5;
+    }
+    else if (epstr == "d6"){
+        return D5;
+    }
+    else if (epstr == "e6"){
+        return E5;
+    }
+    else if (epstr == "f6"){
+        return F5;
+    }
+    else if (epstr == "g6"){
+        return G5;
+    }
+    else{
+        return H5;
+    }
+}
+
+void setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4], char casa_en_passant[2], char hm[4], char fm[4]){
+    //1. LIMPA O TABULEIRO
+    memset(bit_pieces, 0, sizeof(bit_pieces));
+    memset(bit_lados, 0, sizeof(bit_lados));
+    bit_total = 0;
+
+    for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
+        tabuleiro[casa] = VAZIO;
+    }
+
+
+    // 2. ADICIONA AS PEÇAS
+    int coluna = 0;
+    int linha = 7;
+
+    for (int i = 0; i < 80; i++){
+        if (posicao[i] == '\0'){
+            break;
+        }
+        else if (posicao[i] == '/'){
+            linha--;
+            coluna = 0;
+            continue;
+        }
+        else if (isdigit(posicao[i])){
+            coluna += posicao[i] - '0';
+            continue;
+        }
+
+        adicionar_piece(obter_cor(posicao[i]), obter_peca(posicao[i]), ((linha * 8) + coluna));
+        
+        coluna++;
+    }
+
+
+    //3. DEFINE O LADO A JOGAR
+    if (lado_a_jogar[0] == 'w'){
+        lado = 0;
+        xlado = 1;
+    }
+    else{
+        lado = 1;
+        xlado = 0;
+    }
+
+
+    //4. DEFINE OS DIREITOS DE ROQUE
+    roque = 0;
+    for (int j = 0; j < 4; j++){
+        if (roques[j] == '\0'){
+            break;
+        }
+
+        switch (roques[j]){
+            case 'K':
+                roque |= 4;
+                break;
+            case 'Q':
+                roque |= 8;
+                break;
+            case 'k':
+                roque |= 1;
+                break;
+            case 'q':
+                roque |= 2;
+                break;
+            default:
+                break;
+        }
+    }
+
+    // 5. DEFINE A QUANTIDADE DE LANCES
+    char* hmptr = hm;
+    std::string hmstr = hmptr;
+
+    cinquenta = std::stoi(hmstr);
+
+    ply = 1;
+    hply = 1;
+
+    // 6. DEFINE A CASA DE EN PASSANT
+    if (casa_en_passant[0] != '-'){
+        j = &lista_do_jogo[hply-1];
+
+        j->inicio = obter_casa_inicio_por_en_passant(casa_en_passant);
+        j->destino = obter_casa_destino_por_en_passant(casa_en_passant);
+    }
 }
