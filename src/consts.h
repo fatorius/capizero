@@ -151,6 +151,8 @@ const char piece_char[6] =
 
 #define PROMOCAO 4
 
+#define FILEIRA_DE_PROMOCAO FILEIRA_7
+
 #define FILEIRA_8 7
 #define FILEIRA_7 6
 #define FILEIRA_6 5

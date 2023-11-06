@@ -375,6 +375,13 @@ void adicionar_roque(const int origem, const int destino){
     mc++;
 }
 
+void adicionar_promocao(const int origem, const int destino){
+    lista_de_lances[mc].inicio = origem;
+    lista_de_lances[mc].destino = destino;
+    lista_de_lances[mc].score = SCORE_PROMOCAO;
+    mc++;
+}
+
 void adicionar_lance(const int origem, const int destino){
     lista_de_lances[mc].inicio = origem;
     lista_de_lances[mc].destino = destino;
@@ -460,7 +467,13 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
     while (t3){
         casa = bitscan(t3);
         t3 &= not_mask[casa];
-        adicionar_lance(casa, peao_uma_casa[lado_a_mover][casa]);
+
+        if (fileiras[lado][casa] == FILEIRA_DE_PROMOCAO){
+            adicionar_promocao(casa, peao_uma_casa[lado_a_mover][casa]);
+        }
+        else{
+            adicionar_lance(casa, peao_uma_casa[lado_a_mover][casa]);
+        }
 
         // 1.4.1 avanço duplo
         if (fileiras[lado_a_mover][casa] == 1 && tabuleiro[peao_duas_casas[lado_a_mover][casa]] == VAZIO){
