@@ -30,6 +30,10 @@ const int pieces_valor[6] =
 #define COLUNA_ABERTA_BONUS 40
 
 
+// REDUÇÕES E CONDIÇÕES
+#define REDUCAO_IID /4
+#define PROFUNDIDADE_CONDICAO_IID 5
+
 // VALORES PARA ORDENAÇÃO DE LANCES
 #define SCORE_ROQUE        5000000
 #define SCORE_CAPTURAS_D   8000000

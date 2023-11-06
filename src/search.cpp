@@ -174,7 +174,13 @@ int pesquisa_rapida(int alpha, int beta){
     return alpha;
 }
 
-int pesquisa(int alpha, int beta, int profundidade){
+void adicionar_pontuacao_iid(int alpha, int beta, int profundidade){
+    for (int candidato = qntt_lances_totais[ply]; candidato < qntt_lances_totais[ply + 1]; ++candidato){
+        lista_de_lances[candidato].score = -pesquisa(-beta, -alpha, profundidade REDUCAO_IID, false);
+    }
+}   
+
+int pesquisa(int alpha, int beta, int profundidade, bool pv){
     if (ply && checar_repeticoes()){
         return VALOR_EMPATE;
     }
@@ -210,7 +216,9 @@ int pesquisa(int alpha, int beta, int profundidade){
 
     if (hash_lookup(lado)){
         adicionar_pontuacao_de_hash(); // ordena por lances hash, pv é pesquisado primeiro
-    } // else {internal interactive deeping} TODO
+    } else if (profundidade > PROFUNDIDADE_CONDICAO_IID && pv){
+        adicionar_pontuacao_iid(alpha, beta, profundidade);
+    }
 
     int lances_legais_na_posicao = 0;
     int score_candidato;
@@ -247,11 +255,11 @@ int pesquisa(int alpha, int beta, int profundidade){
 
         // pesquisa da variante principal (pvs)
         if (pesquisandoPV){
-            score_candidato = -pesquisa(-beta, -alpha, nova_profundidade); // extender profundidade???     
+            score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true); // extender profundidade???     
         }
         else{
-            if (-pesquisa(-alpha - 1, -alpha, nova_profundidade) > alpha){
-                score_candidato = -pesquisa(-beta, -alpha, nova_profundidade); 
+            if (-pesquisa(-alpha - 1, -alpha, nova_profundidade, false) > alpha){
+                score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true); 
             }
             else{
                 desfaz_lance();
@@ -355,7 +363,7 @@ void pensar(bool verbose){
             }
         }
 
-        melhor_linha = pesquisa(ALPHA_INICIAL, BETA_INICIAL, profundidade);
+        melhor_linha = pesquisa(ALPHA_INICIAL, BETA_INICIAL, profundidade, true);
 
         if (hash_lookup(lado)){
             if (verbose){
