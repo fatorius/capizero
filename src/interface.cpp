@@ -280,10 +280,8 @@ void lance_computador(bool verbose){
     gerar_lances(lado, xlado);
 
     if (verbose){
-        printf(" colisoes %d ", (int) colisoes);
+        printf(" colisoes 0");
         printf("\n");
-
-        colisoes = 0;
 
         printf("Lance do computador: %s \n", lance_para_string(hash_inicio, hash_destino, 0));
         printf("\n");

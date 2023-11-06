@@ -12,8 +12,6 @@ u64 lock[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 
 u64 chaveAtual, lockAtual;
 
-uint64_t colisoes;
-
 hashp *hashpos[LADOS];
 
 int hash_inicio, hash_destino;
