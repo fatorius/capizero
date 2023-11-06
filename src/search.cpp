@@ -314,6 +314,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
 
 void pensar(bool verbose){
     int melhor_linha;
+    int alpha, beta;
 
     parar_pesquisa = false;
 
@@ -363,7 +364,30 @@ void pensar(bool verbose){
             }
         }
 
-        melhor_linha = pesquisa(ALPHA_INICIAL, BETA_INICIAL, profundidade, true);
+        if (profundidade == 1){
+            alpha = ALPHA_INICIAL;
+            beta = BETA_INICIAL;
+        }
+        else{
+            alpha = melhor_linha - TAMANHO_JANELA_DE_PESQUISA;
+            beta = melhor_linha + TAMANHO_JANELA_DE_PESQUISA;
+        }
+
+        melhor_linha = pesquisa(alpha, beta, profundidade, true);
+
+        if (melhor_linha <= alpha){
+            alpha = (melhor_linha - (TAMANHO_JANELA_DE_PESQUISA * READAPTACAO_JANELA_DE_PESQUISA));
+            melhor_linha = pesquisa(alpha, beta, profundidade, true);
+        }
+        else if (melhor_linha >= beta){
+            if (profundidade == 1){
+                beta = BETA_INICIAL;
+            }
+            else{
+                beta = (melhor_linha + (TAMANHO_JANELA_DE_PESQUISA * READAPTACAO_JANELA_DE_PESQUISA));
+            }
+            melhor_linha = pesquisa(alpha, beta, profundidade, true);
+        }
 
         if (hash_lookup(lado)){
             if (verbose){
