@@ -46,11 +46,11 @@ void ordenar_lances(const int desde){
             maior_score = lista_de_lances[i].score;
             indice_do_maior_score = i;
         }
-
-        l = lista_de_lances[desde];
-        lista_de_lances[desde] = lista_de_lances[indice_do_maior_score];
-        lista_de_lances[indice_do_maior_score] = l; 
     }
+
+    l = lista_de_lances[desde];
+    lista_de_lances[desde] = lista_de_lances[indice_do_maior_score];
+    lista_de_lances[indice_do_maior_score] = l; 
 }
 
 int pesquisa_quiescence(int inicio, const int destino){
