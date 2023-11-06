@@ -1,5 +1,6 @@
 #include "hash.h"
 
+#include <stdio.h>
 #include <cstdlib>
 
 #include "consts.h"
