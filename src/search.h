@@ -9,8 +9,10 @@ extern int lances_avaliados;
 
 extern int historico_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
 extern lance contraLance_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
+extern lance killers_primarios[MAX_PLY];
+extern lance killers_secundarios[MAX_PLY];
 
 void pensar(bool verbose);
-
+int pesquisa(int alpha, int beta, int profundidade, bool pv);
 
 #endif

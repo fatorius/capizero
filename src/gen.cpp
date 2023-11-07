@@ -348,8 +348,14 @@ void init_lookup_tables(){
 int calcularBonusHeuristicas(const int origem, const int destino){
     lance contraLance = contraLance_heuristica[lista_do_jogo[hply].inicio][lista_do_jogo[hply].destino];
 
+    if (killers_primarios[ply].inicio == origem && killers_primarios[ply].destino == destino){
+        return SCORE_KILLER_1;
+    }
+    if (killers_secundarios[ply].inicio == origem && killers_secundarios[ply].destino == destino){
+        return SCORE_KILLER_2;
+    }
     if (contraLance.inicio == origem && contraLance.destino == destino){
-        return SCORE_CONTRALANCE + historico_heuristica[origem][destino];
+        return SCORE_CONTRALANCE;
     }
 
     return historico_heuristica[origem][destino];
