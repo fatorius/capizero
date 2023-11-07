@@ -238,18 +238,18 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
 
 
         // REDUÇÕES E EXTENSÕES
-        if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){ // extensões
+        if (check == 1){ // extensões
             nova_profundidade = profundidade; // extensões de xeques
         }
         else{ // reduções
-            nova_profundidade = profundidade - 3;
-        
-            // TODO MELHORAR ESSAS REDUÇÕES ?????????????
-            if (lista_de_lances[candidato].score > SCORE_DE_CAPTURA_VANTAJOSAS || lances_legais_na_posicao == 1 || check == 1){
+            if (lista_de_lances[candidato].score > SCORE_DE_CAPTURA_VANTAJOSAS || lances_legais_na_posicao == 1){
                 nova_profundidade = profundidade - 1;
             }
             else if (lista_de_lances[candidato].score > 0){
                 nova_profundidade = profundidade - 2;
+            }
+            else{
+                nova_profundidade = profundidade - REDUCAO_LMR;
             }
         }
 

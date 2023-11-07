@@ -47,6 +47,8 @@ const int pieces_valor[6] =
 #define SCORE_CAPTURAS_V  50000000
 #define PONTUACAO_HASH   100000000
 
+#define REDUCAO_LMR 3
+
 // ordenação de capturas
 #define SCORE_CAPTURAS_DESVANTAJOSAS SCORE_CAPTURAS_D
 #define SCORE_DE_CAPTURA_VANTAJOSAS SCORE_CAPTURAS_V
