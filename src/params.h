@@ -9,9 +9,8 @@ do programa
 #define PARAMS
 
 #define MAX_PLY 64
-
-#define MAXHASH 9000000
-#define HASHSIZE 5000000
+#define MAXHASH 20000000
+#define HASHSIZE   10000
 
 #define PILHA_DE_LANCES 4000
 #define PILHA_DO_JOGO 2000

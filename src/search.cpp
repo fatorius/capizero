@@ -18,6 +18,8 @@ int tempo_do_inicio, tempo_do_fim;
 
 int historico_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
 lance contraLance_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
+lance killers_primarios[MAX_PLY];
+lance killers_secundarios[MAX_PLY];
 
 jmp_buf env;
 bool parar_pesquisa;
@@ -44,11 +46,11 @@ void ordenar_lances(const int desde){
             maior_score = lista_de_lances[i].score;
             indice_do_maior_score = i;
         }
-
-        l = lista_de_lances[desde];
-        lista_de_lances[desde] = lista_de_lances[indice_do_maior_score];
-        lista_de_lances[indice_do_maior_score] = l; 
     }
+
+    l = lista_de_lances[desde];
+    lista_de_lances[desde] = lista_de_lances[indice_do_maior_score];
+    lista_de_lances[indice_do_maior_score] = l; 
 }
 
 int pesquisa_quiescence(int inicio, const int destino){
@@ -172,7 +174,13 @@ int pesquisa_rapida(int alpha, int beta){
     return alpha;
 }
 
-int pesquisa(int alpha, int beta, int profundidade){
+void adicionar_pontuacao_iid(int alpha, int beta, int profundidade){
+    for (int candidato = qntt_lances_totais[ply]; candidato < qntt_lances_totais[ply + 1]; ++candidato){
+        lista_de_lances[candidato].score = -pesquisa(-beta, -alpha, profundidade REDUCAO_IID, false);
+    }
+}   
+
+int pesquisa(int alpha, int beta, int profundidade, bool pv){
     if (ply && checar_repeticoes()){
         return VALOR_EMPATE;
     }
@@ -208,7 +216,9 @@ int pesquisa(int alpha, int beta, int profundidade){
 
     if (hash_lookup(lado)){
         adicionar_pontuacao_de_hash(); // ordena por lances hash, pv é pesquisado primeiro
-    } // else {internal interactive deeping} TODO
+    } else if (profundidade > PROFUNDIDADE_CONDICAO_IID && pv){
+        adicionar_pontuacao_iid(alpha, beta, profundidade);
+    }
 
     int lances_legais_na_posicao = 0;
     int score_candidato;
@@ -228,28 +238,28 @@ int pesquisa(int alpha, int beta, int profundidade){
 
 
         // REDUÇÕES E EXTENSÕES
-        if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){ // extensões
+        if (check == 1){ // extensões
             nova_profundidade = profundidade; // extensões de xeques
         }
         else{ // reduções
-            nova_profundidade = profundidade - 3;
-        
-            // TODO MELHORAR ESSAS REDUÇÕES ?????????????
-            if (lista_de_lances[candidato].score > SCORE_DE_CAPTURA_VANTAJOSAS || lances_legais_na_posicao == 1 || check == 1){
+            if (lista_de_lances[candidato].score > SCORE_DE_CAPTURA_VANTAJOSAS || lances_legais_na_posicao == 1){
                 nova_profundidade = profundidade - 1;
             }
             else if (lista_de_lances[candidato].score > 0){
                 nova_profundidade = profundidade - 2;
             }
+            else{
+                nova_profundidade = profundidade - REDUCAO_LMR;
+            }
         }
 
         // pesquisa da variante principal (pvs)
         if (pesquisandoPV){
-            score_candidato = -pesquisa(-beta, -alpha, nova_profundidade); // extender profundidade???     
+            score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true); // extender profundidade???     
         }
         else{
-            if (-pesquisa(-alpha - 1, -alpha, nova_profundidade) > alpha){
-                score_candidato = -pesquisa(-beta, -alpha, nova_profundidade); 
+            if (-pesquisa(-alpha - 1, -alpha, nova_profundidade, false) > alpha){
+                score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true); 
             }
             else{
                 desfaz_lance();
@@ -270,11 +280,12 @@ int pesquisa(int alpha, int beta, int profundidade){
                 if (!(mask[lista_de_lances[candidato].destino] & bit_total)){ // adiciona no historico se não for uma captura
                     historico_heuristica[lista_de_lances[candidato].inicio][lista_de_lances[candidato].destino] += 1 << profundidade; 
                     contraLance_heuristica[lista_do_jogo[hply].inicio][lista_do_jogo[hply].destino] = lista_de_lances[candidato];
+
+                    killers_secundarios[ply] = killers_primarios[ply];
+                    killers_primarios[ply] = lista_de_lances[candidato];
                 }
 
                 adicionar_hash(lado, lista_de_lances[candidato]);
-
-                // TODO adicionar killer move
 
                 return beta;
             }
@@ -303,6 +314,7 @@ int pesquisa(int alpha, int beta, int profundidade){
 
 void pensar(bool verbose){
     int melhor_linha;
+    int alpha, beta;
 
     parar_pesquisa = false;
 
@@ -352,7 +364,30 @@ void pensar(bool verbose){
             }
         }
 
-        melhor_linha = pesquisa(ALPHA_INICIAL, BETA_INICIAL, profundidade);
+        if (profundidade == 1){
+            alpha = ALPHA_INICIAL;
+            beta = BETA_INICIAL;
+        }
+        else{
+            alpha = melhor_linha - TAMANHO_JANELA_DE_PESQUISA;
+            beta = melhor_linha + TAMANHO_JANELA_DE_PESQUISA;
+        }
+
+        melhor_linha = pesquisa(alpha, beta, profundidade, true);
+
+        if (melhor_linha <= alpha){
+            alpha = (melhor_linha - (TAMANHO_JANELA_DE_PESQUISA * READAPTACAO_JANELA_DE_PESQUISA));
+            melhor_linha = pesquisa(alpha, beta, profundidade, true);
+        }
+        else if (melhor_linha >= beta){
+            if (profundidade == 1){
+                beta = BETA_INICIAL;
+            }
+            else{
+                beta = (melhor_linha + (TAMANHO_JANELA_DE_PESQUISA * READAPTACAO_JANELA_DE_PESQUISA));
+            }
+            melhor_linha = pesquisa(alpha, beta, profundidade, true);
+        }
 
         if (hash_lookup(lado)){
             if (verbose){
