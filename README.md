@@ -47,7 +47,7 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 * [MVV/LVA](https://www.chessprogramming.org/MVV-LVA)
 
 * [Killer move heuristic](https://www.chessprogramming.org/Killer_Heuristic)
-* 
+
 * [Tabela de Transposição](https://www.chessprogramming.org/Transposition_Table)
 
 * [Heuristica de histórico](https://www.chessprogramming.org/History_Heuristic)
@@ -70,13 +70,7 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 ### 6. Interface
 
-* Compatibilidade com [Xboard](https://www.chessprogramming.org/Chess_Engine_Communication_Protocol)
-
-## Recursos a serem implementados
-
-* [Pesquisa paralela](https://www.chessprogramming.org/Parallel_Search)
-
-* [Null move prunning](https://www.chessprogramming.org/Null_Move_Pruning)
+* Compatibilidade com [Xboard](https://www.chessprogramming.org/Chess_Engine_Communication_Protocol)[https://www.chessprogramming.org/Null_Move_Pruning)
 
 ## Para compilar
 
@@ -89,3 +83,7 @@ no terminal, digite:
 ```
 make build
 ```
+
+## Para contribuir
+
+leia o nosso [Guia de contribuição](https://github.com/fatorius/capizero/blob/main/CONTRIBUTING.md)
