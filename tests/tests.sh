@@ -47,4 +47,4 @@ fi
 
 echo "Iniciando script de testes..."
 
-python3 game.py $CAPIZERO_RATING 2 5
+python3 game.py $CAPIZERO_RATING 8 1

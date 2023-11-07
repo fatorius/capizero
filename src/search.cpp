@@ -223,15 +223,11 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
     int lances_legais_na_posicao = 0;
     int score_candidato;
     int nova_profundidade;
-    int lances_analizados = 0;
 
     bool pesquisandoPV = true;
-    bool lmr = true;
 
     for (int candidato = qntt_lances_totais[ply]; candidato < qntt_lances_totais[ply + 1]; ++candidato){
-        lmr = true;
         ordenar_lances(candidato);
-        lances_analizados++;
 
         // verifica se o lance é legal
         if (!fazer_lance(lista_de_lances[candidato].inicio, lista_de_lances[candidato].destino)){
@@ -244,15 +240,13 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
         // REDUÇÕES E EXTENSÕES
         if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){ // extensões
             nova_profundidade = profundidade; // extensões de xeques
-            lmr = false;
         }
         else{ // reduções
-            nova_profundidade = profundidade REDUCAO_LMR;
+            nova_profundidade = profundidade - 3;
         
-            // não realizar LMR nessas condições
-            if ((lista_de_lances[candidato].score > SCORE_ROQUE || lances_legais_na_posicao == 1 || check == 1) && lances_analizados < LANCES_MINIMOS_PARA_LMR && profundidade < PROFUNDIDADE_MINIMA_PARA_LMR){
+            // TODO MELHORAR ESSAS REDUÇÕES ?????????????
+            if (lista_de_lances[candidato].score > SCORE_DE_CAPTURA_VANTAJOSAS || lances_legais_na_posicao == 1 || check == 1){
                 nova_profundidade = profundidade - 1;
-                lmr = false;
             }
             else if (lista_de_lances[candidato].score > 0){
                 nova_profundidade = profundidade - 2;
@@ -265,8 +259,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
         }
         else{
             if (-pesquisa(-alpha - 1, -alpha, nova_profundidade, false) > alpha){
-                score_candidato = -pesquisa(-beta, -alpha, profundidade - 1, true); 
-                lmr = false;
+                score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true); 
             }
             else{
                 desfaz_lance();
@@ -295,10 +288,6 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
                 adicionar_hash(lado, lista_de_lances[candidato]);
 
                 return beta;
-            }
-
-            if (lmr){
-                score_candidato = -pesquisa(-beta, -alpha, profundidade - 1, true); 
             }
             alpha = score_candidato;
             pesquisandoPV = false;

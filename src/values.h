@@ -34,12 +34,6 @@ const int pieces_valor[6] =
 #define REDUCAO_IID /4
 #define PROFUNDIDADE_CONDICAO_IID 5
 
-//		LATE MOVE REDUCTION
-#define PROFUNDIDADE_MINIMA_PARA_LMR 3
-#define LANCES_MINIMOS_PARA_LMR 5
-#define REDUCAO_LMR /3
-
-
 // WINDOWS
 #define TAMANHO_JANELA_DE_PESQUISA 20
 #define READAPTACAO_JANELA_DE_PESQUISA 3
@@ -51,7 +45,6 @@ const int pieces_valor[6] =
 #define SCORE_KILLER_2     9500000
 #define SCORE_KILLER_1    10000000
 #define SCORE_CAPTURAS_V  50000000
-#define SCORE_PROMOCAO    90000000
 #define PONTUACAO_HASH   100000000
 
 // ordenação de capturas
