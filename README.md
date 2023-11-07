@@ -70,7 +70,7 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 ### 6. Interface
 
-* Compatibilidade com [Xboard](https://www.chessprogramming.org/Chess_Engine_Communication_Protocol)[https://www.chessprogramming.org/Null_Move_Pruning)
+* Compatibilidade com [Xboard](https://www.chessprogramming.org/Chess_Engine_Communication_Protocol)
 
 ## Para compilar
 
