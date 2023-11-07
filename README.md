@@ -26,6 +26,8 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 * [Pesquisa da variante principal](https://www.chessprogramming.org/Principal_Variation_Search)
 
+* [Internal Interative Deeping](https://www.chessprogramming.org/Internal_Iterative_Deepening)
+ 
 **2.1 Poda de lances**
 
 * [Beta cutoffs](https://www.chessprogramming.org/Beta-Cutoff)
@@ -38,17 +40,25 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 **2.3 Reduções de pesquisa**
 
+* [Late move reductions](https://www.chessprogramming.org/Late_Move_Reductions)
+
 ### 3. Ordenação de lances
 
 * [MVV/LVA](https://www.chessprogramming.org/MVV-LVA)
 
-* [Lances hash](https://www.chessprogramming.org/Hash_Move)
+* [Killer move heuristic](https://www.chessprogramming.org/Killer_Heuristic)
+* 
+* [Tabela de Transposição](https://www.chessprogramming.org/Transposition_Table)
 
 * [Heuristica de histórico](https://www.chessprogramming.org/History_Heuristic)
 
 * [Counter move heuristic](https://www.chessprogramming.org/Countermove_Heuristic)
 
-### 4. Avaliação de posições
+### 4. Hash
+
+* [Zobrist Hashing](https://www.chessprogramming.org/Zobrist_Hashing)
+
+### 5. Avaliação de posições
 
 * Estrutura de peões
 
@@ -58,19 +68,13 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 * Segurança da ala no qual o rei está rocado
 
-### 5. Interface
+### 6. Interface
 
 * Compatibilidade com [Xboard](https://www.chessprogramming.org/Chess_Engine_Communication_Protocol)
 
 ## Recursos a serem implementados
 
-* [Killer move heuristic](https://www.chessprogramming.org/Killer_Heuristic)
-
 * [Pesquisa paralela](https://www.chessprogramming.org/Parallel_Search)
-
-* [Late move reductions](https://www.chessprogramming.org/Late_Move_Reductions)
-
-* [Internal Interative Deeping](https://www.chessprogramming.org/Internal_Iterative_Deepening)
 
 * [Null move prunning](https://www.chessprogramming.org/Null_Move_Pruning)
 
