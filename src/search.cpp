@@ -24,8 +24,6 @@ lance killers_secundarios[MAX_PLY];
 jmp_buf env;
 bool parar_pesquisa;
 
-int max_atual;
-
 int lance_inicio, lance_destino;
 
 void verificar_tempo(){
@@ -349,8 +347,6 @@ void pensar(bool verbose){
     }
 
     for (int profundidade = 1; profundidade <= profundidade_maxima; ++profundidade){
-        max_atual = profundidade;
-
         if (!profundidade_fixa && profundidade_maxima > 1){
             if (tempo_fixo){
                 if (obter_tempo() >= tempo_do_inicio + tempo_maximo){
