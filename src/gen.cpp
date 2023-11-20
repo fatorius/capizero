@@ -543,7 +543,7 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         t1 &= not_mask[casa];
 
         #ifdef USE_PEXT
-            ataques_deslizantes = bit_magicas_bispo[casa][_pext_u64(bit_total, bit_casas_relevantes_torres[casa])];
+            ataques_deslizantes = bit_magicas_torre[casa][_pext_u64(bit_total, bit_casas_relevantes_torres[casa])];
         #else
             ataques_deslizantes = bit_magicas_torre[casa][(bit_total & bit_casas_relevantes_torres[casa] * magicas_torres[casa]) >> (64 - bits_indices_torres[casa])];
         #endif
@@ -571,7 +571,7 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         t1 &= not_mask[casa];
 
         #ifdef USE_PEXT
-            ataques_deslizantes = bit_magicas_bispo[casa][_pext_u64(bit_total, bit_casas_relevantes_torres[casa])] | bit_magicas_torre[casa][_pext_u64(bit_total, bit_casas_relevantes_torres[casa])];
+            ataques_deslizantes = bit_magicas_bispo[casa][_pext_u64(bit_total, bit_casas_relevantes_bispo[casa])] | bit_magicas_torre[casa][_pext_u64(bit_total, bit_casas_relevantes_torres[casa])];
         #else
             ataques_deslizantes = bit_magicas_bispo[casa][(bit_total & bit_casas_relevantes_bispo[casa] * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa])] | bit_magicas_torre[casa][(bit_total & bit_casas_relevantes_torres[casa] * magicas_torres[casa]) >> (64 - bits_indices_torres[casa])];
         #endif
