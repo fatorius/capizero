@@ -46,22 +46,21 @@ void atualizar_materiais(){
     piece_mat[BRANCAS] = 0;
     piece_mat[PRETAS] = 0;
 
-    for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
-        if (tabuleiro[casa] < VAZIO){
-            if (bit_lados[BRANCAS] & mask[casa]){
-                cor = BRANCAS;
-            }
-            else{
-                cor = PRETAS;
-            }
+    u64 tt = bit_total;
+    int casa;
 
-            if (tabuleiro[casa] == P){
-                peao_mat[cor] += VALOR_PEAO;
-            }
-            else{
-                piece_mat[cor] += pieces_valor[tabuleiro[casa]];
-            }
+    while(tt){
+        casa = bitscan(tt);
+        tt &= not_mask[casa];
+
+        if (bit_lados[BRANCAS] & mask[casa]){
+            cor = BRANCAS;
         }
+        else{
+            cor = PRETAS;
+        }
+
+        piece_mat[cor] += pieces_valor[tabuleiro[casa]];
     }
 }
 

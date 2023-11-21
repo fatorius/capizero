@@ -99,7 +99,6 @@ void desfaz_lance(){
 }
 
 bool fazer_lance(const int inicio, const int destino){
-
     // 1. lida com o roque do rei, movendo também a torre
     if (abs(inicio - destino) == ROQUE && tabuleiro[inicio] == R){
 
