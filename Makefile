@@ -5,7 +5,7 @@ EPOCH = $(shell date +%s)
 VERSION = $(shell cat version.capizero)
 VERSION_WITHOUTQUOTES = $(patsubst '"%"',%, $(VERSION))
 CXXFLAGS = -Wall -std=c++11 -O3 -march=native -flto -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
-CXXDEBUGFLAGS = -Wall -std=c++11 -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
+CXXDEBUGFLAGS = -Wall -std=c++11 -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero) -g -DDEBUG_BUILD
 EXE := $(NAME)
 COMP = g++
 
@@ -29,6 +29,11 @@ CXXFLAGS += -DMSVC
 endif
 
 
+ifeq ($(PEXT),true)
+CXXFLAGS += -DUSEPEXT
+else ifeq ($(PEXT),TRUE)
+CXXFLAGS += -DUSEPEXT
+endif
 
 
 # -----------------------------------------------------
@@ -57,27 +62,27 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 
 # -----------------------------------------------------
 # Targets
-build: clean ./src/main.o $(SRCS) $(HEADER_FILES)
-	@ $(COMP) $(CXXFLAGS) -o $(EXE) ./src/main.o $(SRCS)
+build: clean add_build_variables $(SRCS) $(HEADER_FILES)
+	@ $(COMP) $(CXXFLAGS) -o $(EXE) $(SRCS)
 	@ echo "================="
-	@ echo "capizero $(VERSION_WITHOUTQUOTES) compilado com sucesso"
+	@ echo "$(EXE) compilado com sucesso"
 
-debug: clean add_debug_variables ./src/main.o $(SRCS) $(HEADER_FILES)
-	@ $(COMP) $(CXXFLAGS) -o $(EXE)_debug ./src/main.o $(SRCS)
+debug: clean add_debug_variables $(SRCS) $(HEADER_FILES)
+	@ $(COMP) $(CXXFLAGS) -o $(EXE) $(SRCS)
 	@ echo "================="
-	@ echo "capizero $(VERSION_WITHOUTQUOTES) compilado para debug com sucesso"
 	@ echo "ATENÇÃO: O BINARIO COMPILADO NÃO CONTEM AS OPTIMIZAÇÕES RECOMENDADAS E DEVE SER USADO SOMENTE PARA TESTES E DEBUG"
 	@ echo "Para o uso em jogos normais, use 'make build'"
+	@ echo "$(EXE) compilado com sucesso"
 
-tests: clean ./src/unit_tests.o ./src/tests.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -o $(EXE)_unit_tests ./src/unit_tests.o ./src/tests.o $(SRCS)
+tests: clean add_tests_variables $(SRCS) $(HEADER_FILES)
+	@ $(COMP) $(CXXFLAGS) -o $(EXE) $(SRCS)
 	@ echo "================="
-	@ echo "testes unitarios compilados com sucesso"
+	@ echo "$(EXE) compilado com sucesso"
 
-stats: clean ./src/stats_tests.o ./src/stats.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -o $(EXE)_performance_stats ./src/stats_tests.o ./src/stats.o $(SRCS)
+stats: clean add_stats_variables $(SRCS) $(HEADER_FILES)
+	@ $(COMP) $(CXXFLAGS) -o $(EXE) $(SRCS)
 	@ echo "================="
-	@ echo "testes de performance compilados com sucesso"
+	@ echo "$(EXE) compilado com sucesso"
 
 
 
@@ -100,6 +105,7 @@ help:
 	@ echo "As opções: "
 	@ echo "NAME = string: define o nome do binário"
 	@ echo "COMP = string: define o compilador (padrão=g++)"
+	@ echo "PEXT = [true/false]: define se a engine usará bitboards PEXT (experimental) (padrão=false)"
 	@ echo ""
 	@ echo "Outros comandos: "
 	@ echo "----------------------"
@@ -119,9 +125,24 @@ default: help credits
 
 
 # -----------------------------------------------------
-# Outras receitas
-add_debug_variables:
-	@ $(eval CXXFLAGS += -DDEBUG_BUILD -g)
+# Outras funções
+add_build_variables: ./src/main.o
+	@ $(eval SRCS += ./src/main.o)
+
+add_debug_variables: ./src/main.o
+	@ $(eval SRCS += ./src/main.o)
+	@ $(eval EXE = $(EXE)_debug)
+	@ $(eval CXXFLAGS = $(CXXDEBUGFLAGS))
+
+add_stats_variables: ./src/stats_tests.o ./src/stats.o
+	@ $(eval EXE = $(EXE)_stats)
+	@ $(eval SRCS += ./src/stats_tests.o ./src/stats.o)
+
+add_tests_variables: ./src/unit_tests.o ./src/tests.o
+	@ $(eval EXE = $(EXE)_tests)
+	@ $(eval SRCS += ./src/unit_tests.o ./src/tests.o)
+
+
 
 %.o : %.cpp
 	@ echo building $@

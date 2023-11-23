@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <stdio.h>
 
-#ifdef __BMI2__
+#if defined(__BMI2__) && defined(USEPEXT)
     #include <immintrin.h>
     #define USE_PEXT
 #else
