@@ -17,6 +17,7 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 **1.2 Geração de lances**
 
 * [Bitboards mágicos](https://www.chessprogramming.org/Magic_Bitboards)
+* [Bitboards PEXT](https://www.josherv.in/2022/08/28/chess-3/)
 
 ### 2. Pesquisa de lances
 
