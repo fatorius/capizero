@@ -3,6 +3,7 @@
 #include "bitboard.h"
 #include "consts.h"
 #include "game.h"
+#include "gen.h"
 
 int score_casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 int reis_score_finais[LADOS][CASAS_DO_TABULEIRO];
@@ -68,33 +69,62 @@ int avaliar_peao(const int l, const int casa){
     int score = 0;
     int xl = l^1;
 
-    if (!(mask_passados[l][casa] & bit_pieces[xl][P]) && !(mask_path[l][casa] & bit_pieces[l][P])){
+    if (!(mask_passados[l][casa] & bit_pieces[xl][P])){
         score += passados[l][casa];
     }
 
     if ((mask_isolados[casa] & bit_pieces[l][P]) == 0){
         score -= ISOLADO_SCORE;
     }
+    else{
+        if (mask[peao_esquerda[xl][casa]] & bit_pieces[l][P]){
+            score += PEAO_PROTEGIDO_SCORE;
+        }
+        if (mask[peao_direita[xl][casa]] & bit_pieces[l][P]){
+            score += PEAO_PROTEGIDO_SCORE;
+        }
+    }
 
-    peao_ala_do_rei[l] = defesa_ala_do_rei[l][casa];
-    peao_ala_da_dama[l] = defesa_ala_da_dama[l][casa];
+    peao_ala_do_rei[l] += defesa_ala_do_rei[l][casa];
+    peao_ala_da_dama[l] += defesa_ala_da_dama[l][casa];
 
     return score;
 }
 
 int avaliar_torre(const int l, const int casa){
-    int score = 0;
+    int xl = l^1;
 
     if (!(mask_cols[casa] & bit_pieces[l][P])){
-        score = COLUNA_SEMI_ABERTA_BONUS;
-
-        if (!(mask_cols[casa] & bit_pieces[l^1][P])){
+        if (!(mask_cols[casa] & bit_pieces[xl][P])){
             return COLUNA_ABERTA_BONUS;
         }
+
+        return COLUNA_SEMI_ABERTA_BONUS;
+    }
+    else if (!(mask_cols[casa] & bit_pieces[xl][P])){
+        return COLUNA_SEMI_ABERTA_BONUS;
     }
 
-    return score;
+    return 0;
 }
+
+int avaliar_dama(const int l, const int casa){
+    int xl = l^1;
+
+    if (!(mask_cols[casa] & bit_pieces[l][P])){
+        if (!(mask_cols[casa] & bit_pieces[xl][P])){
+            return COLUNA_ABERTA_BONUS_DAMA;
+        }
+
+        return COLUNA_SEMI_ABERTA_BONUS_DAMA;
+    }
+    else if (!(mask_cols[casa] & bit_pieces[xl][P])){
+        return COLUNA_SEMI_ABERTA_BONUS_DAMA;
+    }
+
+    return 0;
+}
+
 
 int avaliar(){
     int score[LADOS] = {0, 0};
@@ -149,6 +179,7 @@ int avaliar(){
             t1 &= not_mask[casa];
 
             score[l] += score_casas[l][D][casa];
+            score[l] += avaliar_dama(l, casa);
         }
     }
 
@@ -177,4 +208,12 @@ int avaliar(){
     }
 
     return score[lado] - score[xlado];
+}
+
+int diff_material(){
+    
+}
+
+int avaliar(){
+    int material = diff_material(); 
 }

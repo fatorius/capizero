@@ -49,9 +49,11 @@ void init_bits(){
 
                 if (linhas[casa] < linhas[casa2]){
                     set_bit(mask_path[BRANCAS][casa], casa2);
+                    set_bit(mask_passados[BRANCAS][casa], casa2);
                 }
                 if (linhas[casa] > linhas[casa2]){
                     set_bit(mask_path[PRETAS][casa], casa2);
+                    set_bit(mask_passados[PRETAS][casa], casa2);
                 }
             }
 
@@ -59,12 +61,12 @@ void init_bits(){
                 set_bit(mask_rows[casa], casa2);
             }
 
-            if (abs(colunas[casa] - colunas[casa2]) < 2){
-                if (linhas[casa] < linhas[casa2] && linhas[casa2] < COLUNA_H){
+            if (abs(colunas[casa] - colunas[casa2]) == 1){
+                if (linhas[casa] < linhas[casa2]){
                     set_bit(mask_passados[BRANCAS][casa], casa2);
                 }
-                if (linhas[casa] > linhas[casa2] && linhas[casa] > COLUNA_A){
-                    set_bit(mask_passados[BRANCAS][casa], casa2);
+                else if (linhas[casa] > linhas[casa2]){
+                    set_bit(mask_passados[PRETAS][casa], casa2);
                 }
             }
 
