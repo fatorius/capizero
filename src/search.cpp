@@ -62,8 +62,8 @@ int pesquisa_quiescence(int inicio, const int destino){
 
     memset(score, 0, sizeof(score));
 
-    score[0] = pieces_valor[tabuleiro[destino]];
-    score[1] = pieces_valor[tabuleiro[inicio]];
+    score[0] = valor_material[tabuleiro[destino]];
+    score[1] = valor_material[tabuleiro[inicio]];
 
     int score_total = 0;
 
@@ -79,7 +79,7 @@ int pesquisa_quiescence(int inicio, const int destino){
         menor_recaptura = menor_atacante(lado, xlado, destino); // ordena por MVA/LVV
 
         if (menor_recaptura > -1){
-            score[recaptura + 1] = pieces_valor[tabuleiro[menor_recaptura]];
+            score[recaptura + 1] = valor_material[tabuleiro[menor_recaptura]];
 
             if (score[recaptura] > (score[recaptura - 1] + score[recaptura + 1])){
                 recaptura--;
@@ -145,7 +145,7 @@ int pesquisa_rapida(int alpha, int beta){
     for (int i = qntt_lances_totais[ply]; i < qntt_lances_totais[ply+1]; ++i){
         ordenar_lances(i);
 
-        if (score_capturas + pieces_valor[tabuleiro[lista_de_lances[i].destino]] < alpha){
+        if (score_capturas + valor_material[tabuleiro[lista_de_lances[i].destino]] < alpha){
             continue;
         }
 

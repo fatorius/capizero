@@ -16,7 +16,7 @@ adicionais para peão e torre, e os valores de cada casa para as peças
 #define VALOR_DAMA 900
 #define VALOR_REI 10000
 
-const int pieces_valor[6] = 
+const int valor_material[6] = 
 {
 	VALOR_PEAO, VALOR_CAVALO, VALOR_BISPO, VALOR_TORRE, VALOR_DAMA, VALOR_REI
 };

@@ -60,7 +60,7 @@ void atualizar_materiais(){
             cor = PRETAS;
         }
 
-        piece_mat[cor] += pieces_valor[tabuleiro[casa]];
+        piece_mat[cor] += valor_material[tabuleiro[casa]];
     }
 }
 
