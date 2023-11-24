@@ -10,9 +10,6 @@ EXE := $(NAME)
 COMP = g++
 
 
-
-
-
 # -----------------------------------------------------
 # Configurações
 
@@ -30,10 +27,10 @@ CXXFLAGS += -DMSVC
 endif
 
 # - PEXT
-ifeq ($(PEXT),true)
-CXXFLAGS += -DUSEPEXT
-else ifeq ($(PEXT),TRUE)
-CXXFLAGS += -DUSEPEXT
+ifeq ($(PEXT),false)
+CXXFLAGS += -DNOT_USE_PEXT
+else ifeq ($(PEXT),FALSE)
+CXXFLAGS += -DNOT_USE_PEXT
 endif
 
 # -----------------------------------------------------
@@ -56,8 +53,6 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/consts.h ./src/params.h \
 		./src/tests.h ./src/values.h \
 		./src/stats.h ./src/debug.h ./src/magics.h
-
-
 
 
 # -----------------------------------------------------
@@ -88,6 +83,7 @@ magicsgenerator: ./src/generate_magics.cpp
 	@ $(COMP) -c $(CXXFLAGS) ./src/generate_magics.cpp -o ./src/generate_magics.o
 	@ $(COMP) -o magicsgenerator ./src/generate_magics.o 
 
+
 # -----------------------------------------------------
 # Outros comandos
 clean:
@@ -107,7 +103,7 @@ help:
 	@ echo "As opções: "
 	@ echo "NAME = string: define o nome do binário"
 	@ echo "COMP = string: define o compilador (padrão=g++)"
-	@ echo "PEXT = [true/false]: define se a engine usará bitboards PEXT (experimental) (padrão=false)"
+	@ echo "PEXT = [true/false]: define se a engine usará bitboards PEXT (experimental) (padrão=true)"
 	@ echo ""
 	@ echo "Outros comandos: "
 	@ echo "----------------------"
@@ -123,7 +119,6 @@ credits:
 	@ echo ""
 
 default: help credits
-
 
 
 # -----------------------------------------------------
