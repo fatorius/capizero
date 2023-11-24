@@ -20,6 +20,7 @@ ifeq ($(NAME),)
 EXE := capizero_$(VERSION_WITHOUTQUOTES)
 endif
 
+# - Compilador
 ifeq ($(COMP),gcc)
 CXXFLAGS += -DGNU
 else ifeq ($(COMP),g++)
@@ -28,13 +29,12 @@ else ifeq ($(COMP),clang)
 CXXFLAGS += -DMSVC
 endif
 
-
+# - PEXT
 ifeq ($(PEXT),true)
 CXXFLAGS += -DUSEPEXT
 else ifeq ($(PEXT),TRUE)
 CXXFLAGS += -DUSEPEXT
 endif
-
 
 # -----------------------------------------------------
 # Objs
@@ -62,27 +62,27 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 
 # -----------------------------------------------------
 # Targets
-build: clean add_build_variables $(SRCS) $(HEADER_FILES)
-	@ $(COMP) $(CXXFLAGS) -o $(EXE) $(SRCS)
+build: clean ./src/main.o $(SRCS) $(HEADER_FILES)
+	@ $(COMP) $(CXXFLAGS) -o $(EXE) ./src/main.o $(SRCS)
 	@ echo "================="
 	@ echo "$(EXE) compilado com sucesso"
 
-debug: clean add_debug_variables $(SRCS) $(HEADER_FILES)
-	@ $(COMP) $(CXXFLAGS) -o $(EXE) $(SRCS)
+debug: clean add_debug_variables ./src/main.o $(SRCS) $(HEADER_FILES)
+	@ $(COMP) $(CXXFLAGS) -o $(EXE)_debug ./src/main.o $(SRCS)
 	@ echo "================="
 	@ echo "ATENÇÃO: O BINARIO COMPILADO NÃO CONTEM AS OPTIMIZAÇÕES RECOMENDADAS E DEVE SER USADO SOMENTE PARA TESTES E DEBUG"
 	@ echo "Para o uso em jogos normais, use 'make build'"
-	@ echo "$(EXE) compilado com sucesso"
+	@ echo "$(EXE)_debug compilado com sucesso"
 
-tests: clean add_tests_variables $(SRCS) $(HEADER_FILES)
-	@ $(COMP) $(CXXFLAGS) -o $(EXE) $(SRCS)
+tests: clean ./src/unit_tests.o ./src/tests.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o $(EXE)_tests ./src/unit_tests.o ./src/tests.o $(SRCS)
 	@ echo "================="
-	@ echo "$(EXE) compilado com sucesso"
+	@ echo "$(EXE)_tests compilado com sucesso"
 
-stats: clean add_stats_variables $(SRCS) $(HEADER_FILES)
-	@ $(COMP) $(CXXFLAGS) -o $(EXE) $(SRCS)
+stats: clean ./src/stats_tests.o ./src/stats.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o $(EXE)_stats ./src/stats_tests.o ./src/stats.o $(SRCS)
 	@ echo "================="
-	@ echo "$(EXE) compilado com sucesso"
+	@ echo "$(EXE)_stats compilado com sucesso"
 
 
 
@@ -125,24 +125,9 @@ default: help credits
 
 
 # -----------------------------------------------------
-# Outras funções
-add_build_variables: ./src/main.o
-	@ $(eval SRCS += ./src/main.o)
-
-add_debug_variables: ./src/main.o
-	@ $(eval SRCS += ./src/main.o)
-	@ $(eval EXE = $(EXE)_debug)
+# Outras receitas
+add_debug_variables:
 	@ $(eval CXXFLAGS = $(CXXDEBUGFLAGS))
-
-add_stats_variables: ./src/stats_tests.o ./src/stats.o
-	@ $(eval EXE = $(EXE)_stats)
-	@ $(eval SRCS += ./src/stats_tests.o ./src/stats.o)
-
-add_tests_variables: ./src/unit_tests.o ./src/tests.o
-	@ $(eval EXE = $(EXE)_tests)
-	@ $(eval SRCS += ./src/unit_tests.o ./src/tests.o)
-
-
 
 %.o : %.cpp
 	@ echo building $@
