@@ -26,13 +26,6 @@ else ifeq ($(COMP),clang)
 CXXFLAGS += -DMSVC
 endif
 
-# - PEXT
-ifeq ($(PEXT),false)
-CXXFLAGS += -DNOT_USE_PEXT
-else ifeq ($(PEXT),FALSE)
-CXXFLAGS += -DNOT_USE_PEXT
-endif
-
 # -----------------------------------------------------
 # Objs
 SRCS = ./src/bitboard.o ./src/init.o \
@@ -103,7 +96,6 @@ help:
 	@ echo "As opções: "
 	@ echo "NAME = string: define o nome do binário"
 	@ echo "COMP = string: define o compilador (padrão=g++)"
-	@ echo "PEXT = [true/false]: define se a engine usará bitboards PEXT (experimental) (padrão=true)"
 	@ echo ""
 	@ echo "Outros comandos: "
 	@ echo "----------------------"

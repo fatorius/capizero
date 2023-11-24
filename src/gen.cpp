@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <stdio.h>
 
-#if defined(__BMI2__) && !defined(NOT_USE_PEXT)
+#if defined(__BMI2__)
     #include <immintrin.h>
     #define USE_PEXT
 #else
@@ -49,9 +49,6 @@ int rei_moves[CASAS_DO_TABULEIRO][9];
 int mc;
 
 void init_peao_lookups(){
-    #ifdef USE_PEXT
-    printf("usando pext\n");
-    #endif
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         peao_esquerda[BRANCAS][casa] = -1;
         peao_esquerda[PRETAS][casa] = -1;
