@@ -182,7 +182,7 @@ int main() {
 
   magics<<"const u64 magicas_bispos[64] = {\n";
   for(square = 0; square < 64; square++){
-    magics<<"  "<<find_magic(square, RBits[square], 0)<<"ULL,";
+    magics<<"  "<<find_magic(square, RBits[square], 0)<<",";
     if (square % 6 == 0 && square > 0){
         magics<<"\n";
     }
@@ -192,7 +192,7 @@ int main() {
 
   magics<<"const u64 magicas_torres[64] = {\n";
   for(square = 0; square < 64; square++){
-    magics<<"  "<<find_magic(square, BBits[square], 1)<<"ULL,";
+    magics<<"  "<<find_magic(square, BBits[square], 1)<<",";
     if (square % 6 == 0 && square > 0){
         magics<<"\n";
     }
@@ -201,25 +201,25 @@ int main() {
 
 
   magics<<"const int bits_indices_bispos[64] = {\n";
-  magics<<"    6, 5, 5, 5, 5, 5, 5, 6,\n";
-  magics<<"    5, 5, 5, 5, 5, 5, 5, 5,\n";
-  magics<<"    5, 5, 7, 7, 7, 7, 5, 5,\n";
-  magics<<"    5, 5, 7, 9, 9, 7, 5, 5,\n";
-  magics<<"    5, 5, 7, 9, 9, 7, 5, 5,\n";
-  magics<<"    5, 5, 7, 7, 7, 7, 5, 5,\n";
-  magics<<"    5, 5, 5, 5, 5, 5, 5, 5,\n";
-  magics<<"    6, 5, 5, 5, 5, 5, 5, 6\n";
+  magics<<"    58, 59, 59, 59, 59, 59, 59, 58,\n";
+  magics<<"    59, 59, 59, 59, 59, 59, 59, 59,\n";
+  magics<<"    59, 59, 57, 57, 57, 57, 59, 59,\n";
+  magics<<"    59, 59, 57, 55, 55, 57, 59, 59,\n";
+  magics<<"    59, 59, 57, 55, 55, 57, 59, 59,\n";
+  magics<<"    59, 59, 57, 57, 57, 57, 59, 59,\n";
+  magics<<"    59, 59, 59, 59, 59, 59, 59, 59,\n";
+  magics<<"    58, 59, 59, 59, 59, 59, 59, 58\n";
   magics<<"};\n";
   magics<<"\n\n";
   magics<<"const int bits_indices_torres[64] = {\n";
-  magics<<"    12, 11, 11, 11, 11, 11, 11, 12,\n";
-  magics<<"    11, 10, 10, 10, 10, 10, 10, 11,\n";
-  magics<<"    11, 10, 10, 10, 10, 10, 10, 11,\n";
-  magics<<"    11, 10, 10, 10, 10, 10, 10, 11,\n";
-  magics<<"    11, 10, 10, 10, 10, 10, 10, 11,\n";
-  magics<<"    11, 10, 10, 10, 10, 10, 10, 11,\n";
-  magics<<"    11, 10, 10, 10, 10, 10, 10, 11,\n";
-  magics<<"    12, 11, 11, 11, 11, 11, 11, 12,\n";
+  magics<<"    52, 53, 53, 53, 53, 53, 53, 52,\n";
+  magics<<"    53, 54, 54, 54, 54, 54, 54, 53,\n";
+  magics<<"    53, 54, 54, 54, 54, 54, 54, 53,\n";
+  magics<<"    53, 54, 54, 54, 54, 54, 54, 53,\n";
+  magics<<"    53, 54, 54, 54, 54, 54, 54, 53,\n";
+  magics<<"    53, 54, 54, 54, 54, 54, 54, 53,\n";
+  magics<<"    53, 54, 54, 54, 54, 54, 54, 53,\n";
+  magics<<"    52, 53, 53, 53, 53, 53, 53, 52\n";
   magics<<"};\n";
   magics<<"\n\n";
 
