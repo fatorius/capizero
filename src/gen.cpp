@@ -16,6 +16,8 @@
 #include "interface.h"
 #include "magics.h"
 
+#include "debug.h"
+
 u64 bit_esquerda[LADOS][CASAS_DO_TABULEIRO];
 u64 bit_direita[LADOS][CASAS_DO_TABULEIRO];
 
@@ -517,8 +519,10 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         #ifdef USE_PEXT
             ataques_deslizantes = bit_magicas_bispo[casa][_pext_u64(bit_total, bit_casas_relevantes_bispo[casa])];
         #else
-            ataques_deslizantes = bit_magicas_bispo[casa][(bit_total & bit_casas_relevantes_bispo[casa] * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa])];
+            ataques_deslizantes = bit_magicas_bispo[casa][((bit_total & bit_casas_relevantes_bispo[casa]) * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa])];
         #endif
+
+        //Debug::printBitboard(ataques_deslizantes);
 
         while (ataques_deslizantes){
             casa_destino = bitscan(ataques_deslizantes);
@@ -545,8 +549,10 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         #ifdef USE_PEXT
             ataques_deslizantes = bit_magicas_torre[casa][_pext_u64(bit_total, bit_casas_relevantes_torres[casa])];
         #else
-            ataques_deslizantes = bit_magicas_torre[casa][(bit_total & bit_casas_relevantes_torres[casa] * magicas_torres[casa]) >> (64 - bits_indices_torres[casa])];
+            ataques_deslizantes = bit_magicas_torre[casa][((bit_total & bit_casas_relevantes_torres[casa]) * magicas_torres[casa]) >> (64 - bits_indices_torres[casa])];
         #endif
+
+        //Debug::printBitboard(ataques_deslizantes);
 
         while (ataques_deslizantes){
             casa_destino = bitscan(ataques_deslizantes);
@@ -573,8 +579,10 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         #ifdef USE_PEXT
             ataques_deslizantes = bit_magicas_bispo[casa][_pext_u64(bit_total, bit_casas_relevantes_bispo[casa])] | bit_magicas_torre[casa][_pext_u64(bit_total, bit_casas_relevantes_torres[casa])];
         #else
-            ataques_deslizantes = bit_magicas_bispo[casa][(bit_total & bit_casas_relevantes_bispo[casa] * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa])] | bit_magicas_torre[casa][(bit_total & bit_casas_relevantes_torres[casa] * magicas_torres[casa]) >> (64 - bits_indices_torres[casa])];
+            ataques_deslizantes = bit_magicas_bispo[casa][((bit_total & bit_casas_relevantes_bispo[casa]) * magicas_bispos[casa]) >> (64 - bits_indices_bispos[casa])] | bit_magicas_torre[casa][((bit_total & bit_casas_relevantes_torres[casa]) * magicas_torres[casa]) >> (64 - bits_indices_torres[casa])];
         #endif
+
+        //Debug::printBitboard(ataques_deslizantes);
 
         while (ataques_deslizantes){
             casa_destino = bitscan(ataques_deslizantes);
