@@ -324,12 +324,12 @@ u64 gerarLancesTorreSemMagica(int casa, u64 bloqueadores){
 
 void init_magic_lookups(){
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
-        for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << bits_indices_bispos[casa]); pecaBloqueadora++){
+        for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << (64-bits_indices_bispos[casa])); pecaBloqueadora++){
             u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_casas_relevantes_bispo[casa]); 
             bit_magicas_bispo[casa][(bloqueadores * magicas_bispos[casa]) >> (bits_indices_bispos[casa])] = gerarLancesBispoSemMagica(casa, bloqueadores);
         }
 
-        for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << bits_indices_torres[casa]); pecaBloqueadora++){
+        for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << (64-bits_indices_torres[casa])); pecaBloqueadora++){
             u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_casas_relevantes_torres[casa]);
             bit_magicas_torre[casa][(bloqueadores * magicas_torres[casa]) >> (bits_indices_torres[casa])] = gerarLancesTorreSemMagica(casa, bloqueadores);
         }
