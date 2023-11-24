@@ -1,7 +1,6 @@
 # Contribuindo
 
 ## Adicionando novos recursos
-* PEXT bitboards
 * Pesquisa paralela
 * Null move pruning
 
