@@ -19,9 +19,9 @@ endif
 
 # - Compilador
 ifeq ($(COMP),gcc)
-CXXFLAGS += -DGNU
+CXXFLAGS += -DGNUC
 else ifeq ($(COMP),g++)
-CXXFLAGS += -DGNU
+CXXFLAGS += -DGNUC
 else ifeq ($(COMP),clang)
 CXXFLAGS += -DMSVC
 endif
