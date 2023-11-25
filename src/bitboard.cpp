@@ -6,6 +6,9 @@
 #include <stdint.h>
 #include <cstdlib>
 
+#ifdef MVSC
+#include <nmmintrin.h>
+#endif
 
 u64 mask[CASAS_DO_TABULEIRO];
 u64 not_mask[CASAS_DO_TABULEIRO];
@@ -234,12 +237,26 @@ int bitscan(u64 b){
     #elif defined(MVSC) 
         unsigned long idx;
         _BitScanForward64(&idx, b);
-        return Square(idx);
+        return idx;
     #else
         unsigned int folded;
         b ^= b - 1;
         folded = (int) b ^ (b >> 32);
         return lsb_64_table[folded * 0x78291ACF >> 26];
     #endif
-    
+}
+
+int popcount(u64 b){
+    #ifdef GNUC
+        return __builtin_popcountll(b);
+    #elif defined(MVSC)
+        return _mm_popcnt_u64(b);
+    #else
+        int count = 0;
+        while (b) {
+            count++;
+            b &= b - 1;
+        }
+        return count;
+    #endif
 }

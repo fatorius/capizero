@@ -33,6 +33,9 @@ extern u64 bit_magicas_torre[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
 extern u64 bit_peao_capturas[LADOS][CASAS_DO_TABULEIRO];
 extern u64 bit_peao_defende[LADOS][CASAS_DO_TABULEIRO];
 
+extern int peao_uma_casa[LADOS][CASAS_DO_TABULEIRO];
+extern int peao_duas_casas[LADOS][CASAS_DO_TABULEIRO];
+
 void init_lookup_tables();
 void gerar_lances(const int lado_a_mover, const int contraLado);
 void gerar_capturas(const int lado_a_mover, const int contraLado);
