@@ -36,9 +36,9 @@ const int valor_material[6] =
 
 // VALORES DAS ESTRUTURAS
 #define EN_PASSANT_SCORE 10
-#define ISOLADO_SCORE 10
-#define PEAO_PROTEGIDO_SCORE 20
-#define PEAO_PROTEGIDO_SCORE_FINAIS 40
+#define ISOLADO_SCORE 7
+#define PEAO_PROTEGIDO_SCORE 5
+#define PEAO_PROTEGIDO_SCORE_FINAIS 9
 
 #define COLUNA_SEMI_ABERTA_BONUS 11
 #define COLUNA_ABERTA_BONUS 40
@@ -355,15 +355,14 @@ const int rei_finais_score[64] =
 
 const int peao_passado_score[64] = 
 {
-	0, 0, 0, 0, 0, 0, 0, 0,
-	 10,  10,  10,  10,  10,  10,  10,  10,
-	 30,  30,  30,  30,  30,  30,  30,  30,
+	  0, 0, 0, 0, 0, 0, 0, 0,
+	 40,  40,  40,  40,  40,  40,  40,  40,
+	 40,  40,  40,  40,  40,  40,  40,  40,
+	 40,  40,  40,  40,  40,  40,  40,  40,
+	 50,  50,  50,  50,  50,  50,  50,  50,
 	 80,  80,  80,  80,  80,  80,  80,  80,
-	100, 100, 100, 100, 100, 100, 100, 100,
-	200, 200, 200, 200, 200, 200, 200, 200,
-	400, 400, 400, 400, 400, 400, 400, 400,
+	130, 130, 130, 130, 130, 130, 130, 130,
 	0, 0, 0, 0, 0, 0, 0, 0
 };
-
 
 #endif
