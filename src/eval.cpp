@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <stdio.h>
-
 #if defined(__BMI2__) && !defined(NOT_USE_PEXT)
     #include <immintrin.h>
     #define USE_PEXT
