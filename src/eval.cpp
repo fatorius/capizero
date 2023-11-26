@@ -136,9 +136,9 @@ int avaliar_peao_finais(const int l, const int casa){
 }
 
 int atividade_cavalo(const int l, const int casa){
-    u64 pulos_cavalo = bit_moves_cavalo[casa] & bit_lados[l^1];
+    u64 pulos_cavalo = bit_moves_cavalo[casa] & ~bit_lados[l];
 
-    return (popcount(pulos_cavalo) * ATIVIDADE_CAVALO);
+    return ATIVIDADE_CAVALO[popcount(pulos_cavalo)];
 }
 
 int atividade_bispo(const int l, const int casa){
@@ -148,7 +148,7 @@ int atividade_bispo(const int l, const int casa){
         u64 ataques_bispo = bit_magicas_bispo[casa][((bit_total & bit_casas_relevantes_bispo[casa]) * magicas_bispos[casa]) >> (bits_indices_bispos[casa])];
     #endif
 
-    return (popcount(ataques_bispo) * ATIVIDADE_BISPO);
+    return ATIVIDADE_BISPO[popcount(ataques_bispo)];
 }
 
 int atividade_torre(const int l, const int casa){
@@ -158,7 +158,7 @@ int atividade_torre(const int l, const int casa){
         u64 ataques_torre = bit_magicas_torre[casa][((bit_total & bit_casas_relevantes_torres[casa]) * magicas_torres[casa]) >> (bits_indices_torres[casa])];
     #endif
 
-    return (popcount(ataques_torre) * ATIVIDADE_TORRE);
+    return ATIVIDADE_TORRE[popcount(ataques_torre)];
 }
 
 int atividade_dama(const int l, const int casa){
@@ -168,7 +168,7 @@ int atividade_dama(const int l, const int casa){
         u64 ataques_dama = bit_magicas_bispo[casa][((bit_total & bit_casas_relevantes_bispo[casa]) * magicas_bispos[casa]) >> (bits_indices_bispos[casa])] | bit_magicas_torre[casa][((bit_total & bit_casas_relevantes_torres[casa]) * magicas_torres[casa]) >> (bits_indices_torres[casa])];
     #endif
 
-    return (popcount(ataques_dama) * ATIVIDADE_DAMA);
+    return ATIVIDADE_DAMA[popcount(ataques_dama)];
 }
 
 int avaliar_torre(const int l, const int casa){

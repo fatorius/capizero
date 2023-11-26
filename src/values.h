@@ -49,10 +49,10 @@ const int valor_material[6] =
 #define REI_NO_CENTRO_MEIO_JOGO -15
 
 // VALORES DE ATIVIDADE DAS PEÇAS
-#define ATIVIDADE_CAVALO 5
-#define ATIVIDADE_BISPO  4
-#define ATIVIDADE_TORRE  3
-#define ATIVIDADE_DAMA   4
+const int ATIVIDADE_CAVALO[9] = {-300, -10, 0, 5, 10, 15, 20, 30, 50};
+const int ATIVIDADE_BISPO[14] = {-300, -10, -1, 0, 0, 0, 4, 8, 12, 16, 20, 24, 30, 50};
+const int ATIVIDADE_TORRE[15] = {-500, -20, -10, 0, 0, 0, 10, 13, 16, 19, 21, 24, 27, 30, 50};  
+const int ATIVIDADE_DAMA[28] = {-900, -10, -5, -1, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 20, 50, 70, 80, 90, 100};
 
 // REDUÇÕES E CONDIÇÕES
 #define REDUCAO_IID /4
