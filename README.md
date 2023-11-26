@@ -63,11 +63,13 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 * Estrutura de peões
 
-* Posicionamento das peças
+* Tabela de peça-casa
 
-* Torres na coluna aberta ou semi aberta
+* Atividade das peças
 
-* Segurança da ala no qual o rei está rocado
+* Segurança do rei
+
+* Avaliação especifica para finais (com o uso de [Tapered eval](https://www.chessprogramming.org/Tapered_Eval))
 
 ### 6. Interface
 
