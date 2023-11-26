@@ -379,23 +379,6 @@ int avaliar(){
     if (abs(eval_material) > VANTAGEM_DECISIVA){
         lazy_eval = true;
     }
-/*
-    printf("====================\n");
-    printf("Material: %d \n", material);
-    printf("Material diff: %d\n", eval_material);
-    printf("Peso meio jogo: %.2f \n", peso_eval_meio_jogo[material]);
-    printf("Peso final: %.2f \n", peso_eval_final[material]);
-    printf("Meio jogo: %d \n", avaliar_meio_jogo(lazy_eval));
-    printf("Final: %d \n", avaliar_finais(lazy_eval));
-    printf("Eval meio jogo: %f \n", avaliar_meio_jogo(lazy_eval) * peso_eval_meio_jogo[material]);
-    printf("Eval final: %f \n", avaliar_finais(lazy_eval) * peso_eval_final[material]);
-    printf("Avaliação: %f \n",((avaliar_meio_jogo(lazy_eval) * peso_eval_meio_jogo[material])
-    +
-    (avaliar_finais(lazy_eval) * peso_eval_final[material])));
-    printf("====================\n");
-*/
-    return 
-    ((avaliar_meio_jogo(lazy_eval) * peso_eval_meio_jogo[material])
-    +
-    (avaliar_finais(lazy_eval) * peso_eval_final[material]));
+
+    return ((avaliar_meio_jogo(lazy_eval) * peso_eval_meio_jogo[material])+(avaliar_finais(lazy_eval) * peso_eval_final[material]));
 }
