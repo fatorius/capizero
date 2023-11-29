@@ -26,6 +26,11 @@ int piece_mat[LADOS];
 
 int peao_ala_da_dama[LADOS],peao_ala_do_rei[LADOS];
 
+int mobilidade_cavalo;
+int mobilidade_bispo;
+int mobilidade_torre;
+int mobilidade_dama;
+
 void init_eval_tables(){
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         score_casas[BRANCAS][P][casa] = peao_score[casa] + VALOR_PEAO;
@@ -136,7 +141,13 @@ int avaliar_peao_finais(const int l, const int casa){
 int atividade_cavalo(const int l, const int casa){
     u64 pulos_cavalo = bit_moves_cavalo[casa] & ~bit_lados[l];
 
-    return ATIVIDADE_CAVALO[popcount(pulos_cavalo)];
+    mobilidade_cavalo = popcount(pulos_cavalo);
+
+    return ATIVIDADE_CAVALO[mobilidade_cavalo];
+}
+
+int atividade_cavalo_finais(const int l, const int casa){
+    return ATIVIDADE_CAVALO_FINAIS[mobilidade_cavalo];
 }
 
 int atividade_bispo(const int l, const int casa){
@@ -146,7 +157,13 @@ int atividade_bispo(const int l, const int casa){
         u64 ataques_bispo = bit_magicas_bispo[casa][((bit_total & bit_casas_relevantes_bispo[casa]) * magicas_bispos[casa]) >> (bits_indices_bispos[casa])];
     #endif
 
-    return ATIVIDADE_BISPO[popcount(ataques_bispo)];
+    mobilidade_bispo = popcount(ataques_bispo);
+
+    return ATIVIDADE_BISPO[mobilidade_bispo];
+}
+
+int atividade_bispo_finais(const int l, const int casa){
+    return ATIVIDADE_BISPO_FINAIS[mobilidade_bispo];
 }
 
 int atividade_torre(const int l, const int casa){
@@ -156,7 +173,13 @@ int atividade_torre(const int l, const int casa){
         u64 ataques_torre = bit_magicas_torre[casa][((bit_total & bit_casas_relevantes_torres[casa]) * magicas_torres[casa]) >> (bits_indices_torres[casa])];
     #endif
 
-    return ATIVIDADE_TORRE[popcount(ataques_torre)];
+    mobilidade_torre = popcount(ataques_torre);
+
+    return ATIVIDADE_TORRE[mobilidade_torre];
+}
+
+int atividade_torre_finais(const int l, const int casa){
+    return ATIVIDADE_TORRE_FINAIS[mobilidade_torre];
 }
 
 int atividade_dama(const int l, const int casa){
@@ -166,7 +189,14 @@ int atividade_dama(const int l, const int casa){
         u64 ataques_dama = bit_magicas_bispo[casa][((bit_total & bit_casas_relevantes_bispo[casa]) * magicas_bispos[casa]) >> (bits_indices_bispos[casa])] | bit_magicas_torre[casa][((bit_total & bit_casas_relevantes_torres[casa]) * magicas_torres[casa]) >> (bits_indices_torres[casa])];
     #endif
 
-    return ATIVIDADE_DAMA[popcount(ataques_dama)];
+    mobilidade_dama = popcount(ataques_dama);
+
+    return ATIVIDADE_DAMA[mobilidade_dama];
+}
+
+
+int atividade_dama_finais(const int l, const int casa){
+    return ATIVIDADE_DAMA_FINAIS[mobilidade_dama];
 }
 
 int avaliar_torre(const int l, const int casa){
@@ -318,6 +348,11 @@ int avaliar_finais(bool lazy){
             t1 &= not_mask[casa];
 
             score[l] += score_casas_finais[l][C][casa];
+
+
+            if (!lazy){
+                score[l] += atividade_cavalo_finais(l, casa);
+            }
         }
 
         t1 = bit_pieces[l][B];
@@ -326,6 +361,11 @@ int avaliar_finais(bool lazy){
             t1 &= not_mask[casa];
 
             score[l] += score_casas_finais[l][B][casa];
+
+
+            if (!lazy){
+                score[l] += atividade_bispo_finais(l, casa);
+            }
         }
 
         t1 = bit_pieces[l][T];
@@ -334,6 +374,10 @@ int avaliar_finais(bool lazy){
             t1 &= not_mask[casa];
 
             score[l] += score_casas_finais[l][T][casa];
+
+            if (!lazy){
+                score[l] += atividade_torre_finais(l, casa); 
+            }
         }
 
         t1 = bit_pieces[l][D];
@@ -342,6 +386,10 @@ int avaliar_finais(bool lazy){
             t1 &= not_mask[casa];
 
             score[l] += score_casas_finais[l][D][casa];
+
+            if (!lazy){
+                score[l] += atividade_dama_finais(l, casa);
+            }
         }
 
         score[l] += rei_finais_score[bitscan(bit_pieces[l][R])];
