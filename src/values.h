@@ -40,6 +40,9 @@ const int valor_material[6] =
 #define PEAO_PROTEGIDO_SCORE 5
 #define PEAO_PROTEGIDO_SCORE_FINAIS 9
 
+#define PEAO_DOBRADO -11
+#define PEAO_DOBRADO_FINAIS -56
+
 #define COLUNA_SEMI_ABERTA_BONUS 11
 #define COLUNA_ABERTA_BONUS 40
 

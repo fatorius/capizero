@@ -15,6 +15,8 @@
 #include "update.h"
 #include "interface.h"
 #include "magics.h"
+#include "eval.h"
+#include "values.h"
 
 u64 bit_esquerda[LADOS][CASAS_DO_TABULEIRO];
 u64 bit_direita[LADOS][CASAS_DO_TABULEIRO];
@@ -45,6 +47,18 @@ lance lista_de_lances[PILHA_DE_LANCES];
 int dtb_moves[CASAS_DO_TABULEIRO][9];
 int cavalo_moves[CASAS_DO_TABULEIRO][9];
 int rei_moves[CASAS_DO_TABULEIRO][9];
+
+int valores_atividade_bispo_meio_jogo[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
+int valores_atividade_bispo_finais[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
+
+int valores_atividade_torre_meio_jogo[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
+int valores_atividade_torre_finais[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
+
+int valores_atividade_dama_meio_jogo[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
+int valores_atividade_dama_finais[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
+
+int contagem_bispo[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
+int contagem_torre[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
 
 int mc;
 
@@ -331,6 +345,9 @@ u64 gerarLancesTorreSemMagica(int casa, u64 bloqueadores){
 
 void init_magic_lookups(){
     int index;
+    int l_contagem;
+    int d_contagem;
+    u64 bit_lances;
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << (64-bits_indices_bispos[casa])); pecaBloqueadora++){
             u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_casas_relevantes_bispo[casa]); 
@@ -341,7 +358,17 @@ void init_magic_lookups(){
                 index = (bloqueadores * magicas_bispos[casa]) >> (bits_indices_bispos[casa]);
             #endif
 
-            bit_magicas_bispo[casa][index] = gerarLancesBispoSemMagica(casa, bloqueadores);   
+            bit_lances = gerarLancesBispoSemMagica(casa, bloqueadores); 
+
+            l_contagem = popcount(bit_lances);
+            d_contagem = l_contagem;
+
+            bit_magicas_bispo[casa][index] = bit_lances;
+
+            contagem_bispo[casa][index] = l_contagem;
+            
+            valores_atividade_bispo_meio_jogo[casa][index] = ATIVIDADE_BISPO[l_contagem];
+            valores_atividade_bispo_finais[casa][index] = ATIVIDADE_BISPO_FINAIS[l_contagem];
         }
 
         for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << (64-bits_indices_torres[casa])); pecaBloqueadora++){
@@ -353,7 +380,17 @@ void init_magic_lookups(){
                 index = (bloqueadores * magicas_torres[casa]) >> (bits_indices_torres[casa]);
             #endif
 
-            bit_magicas_torre[casa][index] = gerarLancesTorreSemMagica(casa, bloqueadores);
+            bit_lances = gerarLancesTorreSemMagica(casa, bloqueadores);
+
+            l_contagem = popcount(bit_lances);
+            d_contagem += l_contagem;
+
+            bit_magicas_torre[casa][index] = bit_lances;
+
+            contagem_torre[casa][index] = l_contagem;
+
+            valores_atividade_torre_meio_jogo[casa][index] = ATIVIDADE_TORRE[l_contagem];
+            valores_atividade_torre_finais[casa][index] = ATIVIDADE_TORRE[l_contagem];
         }
     }
 }

@@ -27,9 +27,12 @@ int piece_mat[LADOS];
 int peao_ala_da_dama[LADOS],peao_ala_do_rei[LADOS];
 
 int mobilidade_cavalo;
-int mobilidade_bispo;
-int mobilidade_torre;
 int mobilidade_dama;
+
+int magic_atividade_index_bispo;
+int magic_atividade_index_torre;
+
+int cvh;
 
 void init_eval_tables(){
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
@@ -114,6 +117,14 @@ int avaliar_peao(const int l, const int casa){
         }
     }
 
+    cvh = peao_uma_casa[l][casa];
+
+    if (bit_pieces[l][cvh] & mask[casa]){
+        if (!(mask[peao_esquerda[xl][cvh]] & bit_pieces[l][P] || mask[peao_direita[xl][cvh]] & bit_pieces[l][P])){
+            score += PEAO_DOBRADO;
+        }
+    }
+
     peao_ala_do_rei[l] += defesa_ala_do_rei[l][casa];
     peao_ala_da_dama[l] += defesa_ala_da_dama[l][casa];
 
@@ -135,6 +146,14 @@ int avaliar_peao_finais(const int l, const int casa){
         score += PEAO_PROTEGIDO_SCORE_FINAIS;
     }
 
+    cvh = peao_uma_casa[l][casa];
+
+    if (bit_pieces[l][cvh] & mask[casa]){
+        if (!(mask[peao_esquerda[xl][cvh]] & bit_pieces[l][P] || mask[peao_direita[xl][cvh]] & bit_pieces[l][P])){
+            score += PEAO_DOBRADO_FINAIS;
+        }
+    }
+
     return score;
 }
 
@@ -152,48 +171,41 @@ int atividade_cavalo_finais(const int l, const int casa){
 
 int atividade_bispo(const int l, const int casa){
     #ifdef USE_PEXT
-        u64 ataques_bispo = bit_magicas_bispo[casa][_pext_u64(bit_total, bit_casas_relevantes_bispo[casa])];
+        magic_atividade_index_bispo = _pext_u64(bit_total, bit_casas_relevantes_bispo[casa]);
     #else
-        u64 ataques_bispo = bit_magicas_bispo[casa][((bit_total & bit_casas_relevantes_bispo[casa]) * magicas_bispos[casa]) >> (bits_indices_bispos[casa])];
+        magic_atividade_index_bispo = ((bit_total & bit_casas_relevantes_bispo[casa]) * magicas_bispos[casa]) >> (bits_indices_bispos[casa]);
     #endif
 
-    mobilidade_bispo = popcount(ataques_bispo);
-
-    return ATIVIDADE_BISPO[mobilidade_bispo];
+    return valores_atividade_bispo_meio_jogo[casa][magic_atividade_index_bispo];
 }
 
 int atividade_bispo_finais(const int l, const int casa){
-    return ATIVIDADE_BISPO_FINAIS[mobilidade_bispo];
+    return valores_atividade_bispo_finais[casa][magic_atividade_index_bispo];
 }
 
 int atividade_torre(const int l, const int casa){
     #ifdef USE_PEXT
-        u64 ataques_torre = bit_magicas_torre[casa][_pext_u64(bit_total, bit_casas_relevantes_torres[casa])];
+        magic_atividade_index_torre = _pext_u64(bit_total, bit_casas_relevantes_torres[casa]);
     #else
-        u64 ataques_torre = bit_magicas_torre[casa][((bit_total & bit_casas_relevantes_torres[casa]) * magicas_torres[casa]) >> (bits_indices_torres[casa])];
+        magic_atividade_index_torre = ((bit_total & bit_casas_relevantes_torres[casa]) * magicas_torres[casa]) >> (bits_indices_torres[casa]);
     #endif
 
-    mobilidade_torre = popcount(ataques_torre);
-
-    return ATIVIDADE_TORRE[mobilidade_torre];
+    return valores_atividade_torre_meio_jogo[casa][magic_atividade_index_torre];
 }
 
 int atividade_torre_finais(const int l, const int casa){
-    return ATIVIDADE_TORRE_FINAIS[mobilidade_torre];
+    return valores_atividade_torre_finais[casa][magic_atividade_index_torre];
 }
 
 int atividade_dama(const int l, const int casa){
     #ifdef USE_PEXT
-        u64 ataques_dama = bit_magicas_bispo[casa][_pext_u64(bit_total, bit_casas_relevantes_bispo[casa])] | bit_magicas_torre[casa][_pext_u64(bit_total, bit_casas_relevantes_torres[casa])];
+        mobilidade_dama = contagem_bispo[casa][_pext_u64(bit_total, bit_casas_relevantes_bispo[casa])] + contagem_torre[casa][_pext_u64(bit_total, bit_casas_relevantes_torres[casa])];
     #else
-        u64 ataques_dama = bit_magicas_bispo[casa][((bit_total & bit_casas_relevantes_bispo[casa]) * magicas_bispos[casa]) >> (bits_indices_bispos[casa])] | bit_magicas_torre[casa][((bit_total & bit_casas_relevantes_torres[casa]) * magicas_torres[casa]) >> (bits_indices_torres[casa])];
+        mobilidade_dama = contagem_bispo[casa][((bit_total & bit_casas_relevantes_bispo[casa]) * magicas_bispos[casa]) >> (bits_indices_bispos[casa])] + contagem_torre[casa][((bit_total & bit_casas_relevantes_torres[casa]) * magicas_torres[casa]) >> (bits_indices_torres[casa])];
     #endif
-
-    mobilidade_dama = popcount(ataques_dama);
 
     return ATIVIDADE_DAMA[mobilidade_dama];
 }
-
 
 int atividade_dama_finais(const int l, const int casa){
     return ATIVIDADE_DAMA_FINAIS[mobilidade_dama];
