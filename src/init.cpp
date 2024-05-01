@@ -1,5 +1,7 @@
 #include "init.h"
 
+#include <stdio.h>
+
 #include "bitboard.h"
 #include "gen.h"
 #include "eval.h"
@@ -22,4 +24,6 @@ void init(){
     profundidade_maxima = 4;
 
     novo_jogo();
+    
+    fflush(stdout);
 }
