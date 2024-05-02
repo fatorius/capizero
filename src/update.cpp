@@ -492,16 +492,16 @@ void setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4], char 
 
         switch (roques[j]){
             case 'K':
-                roque |= 4;
-                break;
-            case 'Q':
-                roque |= 8;
-                break;
-            case 'k':
                 roque |= 1;
                 break;
-            case 'q':
+            case 'Q':
                 roque |= 2;
+                break;
+            case 'k':
+                roque |= 3;
+                break;
+            case 'q':
+                roque |= 4;
                 break;
             default:
                 break;
