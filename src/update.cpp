@@ -150,6 +150,7 @@ bool fazer_lance(const int inicio, const int destino){
     j->cinquenta = cinquenta;
     j->hash = chaveAtual;
     j->lock = lockAtual;
+    j->promove = P;
     
     roque &= roque_mask[inicio] & roque_mask[destino];
 
@@ -158,30 +159,41 @@ bool fazer_lance(const int inicio, const int destino){
     cinquenta++;
 
     // 3. realiza o lance 
-
     if (tabuleiro[inicio] == P){
         cinquenta = 0;
         // captura de peao en passant
         if (tabuleiro[destino] == VAZIO && colunas[inicio] != colunas[destino]){
             remover_piece(xlado, P, destino + casa_reversa[lado]);
+            mover_piece(lado, tabuleiro[inicio], inicio, destino);
+        }
+        // lances com promoções
+        else if ((linhas[destino] == FILEIRA_1 || linhas[destino] == FILEIRA_8)){
+            remover_piece(lado, P, inicio);
+
+            if (tabuleiro[destino] < VAZIO){
+                remover_piece(xlado, tabuleiro[destino], destino);
+            }
+
+            adicionar_piece(lado, D, destino);
+            j->promove = D;
+        }
+        // capturas
+        else if (tabuleiro[destino] < VAZIO){
+            remover_piece(xlado, tabuleiro[destino], destino);
+            mover_piece(lado, tabuleiro[inicio], inicio, destino);
+        }
+        // lances sem promoções
+        else{
+            mover_piece(lado, tabuleiro[inicio], inicio, destino);
         }
     }
-
-    // capturas (reseta a contagem de 50 lances)
-    if (tabuleiro[destino] < VAZIO){
-        cinquenta = 0;
-        remover_piece(xlado, tabuleiro[destino], destino);
-    }
-
-    // lances com promoções
-    if (tabuleiro[inicio] == P && (linhas[destino] == FILEIRA_1 || linhas[destino] == FILEIRA_8)){
-        remover_piece(lado, P, inicio);
-        adicionar_piece(lado, D, destino);
-        j->promove = D;
-    }
-    // lances sem promoções
     else{
-        j->promove = P;
+        // capturas (reseta a contagem de 50 lances)
+        if (tabuleiro[destino] < VAZIO){
+            cinquenta = 0;
+            remover_piece(xlado, tabuleiro[destino], destino);
+        }
+
         mover_piece(lado, tabuleiro[inicio], inicio, destino);
     }
 
