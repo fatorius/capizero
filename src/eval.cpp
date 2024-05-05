@@ -211,40 +211,6 @@ int atividade_dama_finais(const int l, const int casa){
     return ATIVIDADE_DAMA_FINAIS[mobilidade_dama];
 }
 
-int avaliar_torre(const int l, const int casa){
-    int xl = l^1;
-
-    if (!(mask_cols[casa] & bit_pieces[l][P])){
-        if (!(mask_cols[casa] & bit_pieces[xl][P])){
-            return COLUNA_ABERTA_BONUS;
-        }
-
-        return COLUNA_SEMI_ABERTA_BONUS;
-    }
-    else if (!(mask_cols[casa] & bit_pieces[xl][P])){
-        return COLUNA_SEMI_ABERTA_BONUS;
-    }
-
-    return 0;
-}
-
-int avaliar_dama(const int l, const int casa){
-    int xl = l^1;
-
-    if (!(mask_cols[casa] & bit_pieces[l][P])){
-        if (!(mask_cols[casa] & bit_pieces[xl][P])){
-            return COLUNA_ABERTA_BONUS_DAMA;
-        }
-
-        return COLUNA_SEMI_ABERTA_BONUS_DAMA;
-    }
-    else if (!(mask_cols[casa] & bit_pieces[xl][P])){
-        return COLUNA_SEMI_ABERTA_BONUS_DAMA;
-    }
-
-    return 0;
-}
-
 int seguranca_do_rei(const int l){
     if (bit_pieces[l][R] & mask_ala_do_rei){
         return peao_ala_do_rei[l];
@@ -310,7 +276,6 @@ int avaliar_meio_jogo(bool lazy){
             score[l] += score_casas[l][T][casa];
 
             if (!lazy){
-                score[l] += avaliar_torre(l, casa);
                 score[l] += atividade_torre(l, casa); 
             }
         }
@@ -323,7 +288,6 @@ int avaliar_meio_jogo(bool lazy){
             score[l] += score_casas[l][D][casa];
 
             if (!lazy){
-                score[l] += avaliar_dama(l, casa);
                 score[l] += atividade_dama(l, casa);
             }
         }
