@@ -378,6 +378,9 @@ void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
 }
 
 bool ler_comando(){
+
+    fflush(stdout);
+    
     char cmd[TAMANHO_MAXIMO_COMANDO];
 
     if (scanf("%s", cmd) == EOF){
