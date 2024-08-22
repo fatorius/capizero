@@ -52,7 +52,7 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/xboard.h ./src/help.h \
 		./src/consts.h ./src/params.h \
 		./src/tests.h ./src/values.h \
-		./src/stats.h ./src/debug.h ./src/magics.h
+		./src/bench.h ./src/debug.h ./src/magics.h
 
 
 # -----------------------------------------------------
@@ -98,7 +98,7 @@ help:
 	@ echo "build: compila o capizero com todas as optimizações recomendadas para o uso em jogos"
 	@ echo "tests: compila um binário para testes unitários"
 	@ echo "debug: compila o capizero sem optimizações e com flags para debug"
-	@ echo "stats: compila um binário para testar a performance da engine no seu computador"
+	@ echo "bench: compila um binário para testar a performance da engine no seu computador"
 	@ echo "======================"
 	@ echo "As opções: "
 	@ echo "NAME = string: define o nome do binário"
