@@ -20,7 +20,7 @@ void xboard(){
 
 	signal(SIGINT, SIG_IGN);
 	printf("\n");
-	novo_jogo();
+	Game::novo_jogo();
 
 	tempo_fixo = 0;
 	lado_do_computador = VAZIO;
@@ -29,11 +29,11 @@ void xboard(){
 
 		fflush(stdout);
 
-		if (lado == lado_do_computador){
+		if (Game::lado == lado_do_computador){
 			prom = 0;
 			pensar(true);
 			Eval::atualizar_materiais();
-			gerar_lances(lado, xlado);
+			gerar_lances(Game::lado, Game::xlado);
 			chaveAtual = obter_chave();
 			lockAtual = obter_lock();
 
@@ -48,7 +48,7 @@ void xboard(){
 			lista_de_lances[0].inicio = hash_inicio;
             lista_de_lances[0].destino = hash_destino;
             
-			if ((Bitboard::tabuleiro[hash_inicio] == P) && (Consts::linhas[hash_destino] == fileira_de_promocao[lado])){
+			if ((Bitboard::tabuleiro[hash_inicio] == P) && (Consts::linhas[hash_destino] == fileira_de_promocao[Game::lado])){
 				prom = D; // ASSUME QUE O JOGADOR IRÁ PROMOVER SEMPRE PARA DAMA
 			}
 
@@ -56,8 +56,8 @@ void xboard(){
 	
 			fazer_lance(hash_inicio,hash_destino);
   
-			ply = 0;
-			gerar_lances(lado, xlado);
+			Game::ply = 0;
+			gerar_lances(Game::lado, Game::xlado);
 			print_resultado();
 			continue;
 		}
@@ -77,7 +77,7 @@ void xboard(){
         }
 		
         if (!strcmp(comando, "new")){
-			novo_jogo();
+			Game::novo_jogo();
 			lado_do_computador = PRETAS;
 			continue;
 		}
@@ -91,25 +91,23 @@ void xboard(){
 			continue;
 		}
 
-		if (!strcmp(comando, "white")) {
-			lado = BRANCAS;
-			xlado = PRETAS;
-			gerar_lances(lado, xlado);
+		if (!strcmp(comando, "white")){
+			Game::lado = BRANCAS;
+			Game::xlado = PRETAS;
+			gerar_lances(Game::lado, Game::xlado);
 			lado_do_computador = PRETAS;
 			continue;
 		}
 
-		if (!strcmp(comando, "black")) 
-		{
-			lado = PRETAS;
-			xlado = BRANCAS;
-			gerar_lances(lado, xlado);
+		if (!strcmp(comando, "black")){
+			Game::lado = PRETAS;
+			Game::xlado = BRANCAS;
+			gerar_lances(Game::lado, Game::xlado);
 			lado_do_computador = BRANCAS;
 			continue;
 		}
 
-		if (!strcmp(comando, "d")) 
-		{
+		if (!strcmp(comando, "d")){
 			display_tabuleiro();
 			continue;
 		}
@@ -145,7 +143,7 @@ void xboard(){
 		}
 
 		if (!strcmp(comando, "go")) {
-			lado_do_computador = lado;
+			lado_do_computador = Game::lado;
 			continue;
 		}
 
@@ -180,29 +178,29 @@ void xboard(){
 		}
 		
         if (!strcmp(comando, "undo")){
-			if (!hply){
+			if (!Game::hply){
 				continue;
             }
 
 			desfaz_lance();
-			ply = 0;
+			Game::ply = 0;
 
-			gerar_lances(lado, xlado);
+			gerar_lances(Game::lado, Game::xlado);
 			
             continue;
 		}
 
 		if (!strcmp(comando, "remove")) {
-			if (hply < 2){
+			if (Game::hply < 2){
 				continue;
             }
 			
             desfaz_lance();
 			desfaz_lance();
 
-			ply = 0;
+			Game::ply = 0;
 
-			gerar_lances(lado, xlado);
+			gerar_lances(Game::lado, Game::xlado);
 			continue;
 		}
 		if (!strcmp(comando, "post")){
@@ -232,16 +230,16 @@ void xboard(){
 			continue;
 		}
 
-		qntt_lances_totais[0] = 0;
-		gerar_lances(lado, xlado);
+		Game::qntt_lances_totais[0] = 0;
+		gerar_lances(Game::lado, Game::xlado);
 
 		m = converter_lance(linha);
 		if (m == -1 || !fazer_lance(lista_de_lances[m].inicio, lista_de_lances[m].destino)){
 			printf("Error (unknown comand): %s\n", comando);
         }
 		else {
-			ply = 0;
- 			gerar_lances(lado, xlado);
+			Game::ply = 0;
+ 			gerar_lances(Game::lado, Game::xlado);
 			print_resultado();
 		}
 	}

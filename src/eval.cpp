@@ -178,5 +178,5 @@ int Eval::avaliar(){
         }
     }
 
-    return score[lado] - score[xlado];
+    return score[Game::lado] - score[Game::xlado];
 }

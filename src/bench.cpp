@@ -25,7 +25,7 @@ void Bench::movegen_performance_test(){
 }
 
 void Bench::search_performance_test(){
-    novo_jogo();
+    Game::novo_jogo();
 
     profundidade_maxima = 11;
     tempo_maximo = 1 << 25;
@@ -45,7 +45,7 @@ void Bench::search_performance_test(){
     printf("Pesquisa de lances: %dK posições por segundo\n", nps_search);
     printf("Tempo para chegar pesquisar na profundidade 11: %f segundos\n", (float) delta / 1000.0);
     printf("Lances avaliados: %dK\n", lances_avaliados / 1000);
-    printf("Lance do computador: %s \n", lance_para_string(lista_do_jogo[0].inicio, lista_do_jogo[0].destino, 0));
+    printf("Lance do computador: %s \n", lance_para_string(Game::lista_do_jogo[0].inicio, Game::lista_do_jogo[0].destino, 0));
 }
 
 void Bench::eval_performance_test(){

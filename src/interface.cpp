@@ -43,7 +43,7 @@ void exibir_melhor_linha(int profundidade){
      lance_destino = hash_destino;
 
      for (int x = 0; x < profundidade; x++){
-        if (hash_lookup(lado) == false){
+        if (hash_lookup(Game::lado) == false){
             break;
         }
 
@@ -52,7 +52,7 @@ void exibir_melhor_linha(int profundidade){
         fazer_lance(hash_inicio, hash_destino);
      }
 
-     while (ply){
+     while (Game::ply){
         desfaz_lance();
      }
 }
@@ -171,8 +171,8 @@ char *lance_para_string(int inicio, int destino, int promove){
 int repeticoes(){
     int r = 0;
 
-    for (int i = hply; i >= hply-cinquenta; i -= 2){
-        if (lista_do_jogo[i].hash == chaveAtual && lista_do_jogo[i].lock == lockAtual){
+    for (int i = Game::hply; i >= Game::hply-Game::cinquenta; i -= 2){
+        if (Game::lista_do_jogo[i].hash == chaveAtual && Game::lista_do_jogo[i].lock == lockAtual){
             r++;
         }
     }
@@ -185,9 +185,9 @@ void print_resultado(){
     bool existem_lances_legais = false;
 
     Eval::atualizar_materiais();
-    gerar_lances(lado, xlado);
+    gerar_lances(Game::lado, Game::xlado);
 
-    for (i = 0; i < qntt_lances_totais[1]; ++i){
+    for (i = 0; i < Game::qntt_lances_totais[1]; ++i){
         if (fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
             desfaz_lance();
             existem_lances_legais = true;
@@ -198,19 +198,19 @@ void print_resultado(){
     if (Eval::peao_mat[BRANCAS] == 0 && Eval::peao_mat[PRETAS] == 0 && Eval::piece_mat[BRANCAS] <= VALOR_BISPO && Eval::piece_mat[PRETAS] <= VALOR_BISPO){
         printf("1/2 - 1/2 {Material insuficiente} \n");
 
-        novo_jogo();
+        Game::novo_jogo();
 
-        lado_do_computador = VAZIO;
+        Game::lado_do_computador = VAZIO;
 
         return;
     } 
-    else if (i == qntt_lances_totais[1] && !existem_lances_legais){
+    else if (i == Game::qntt_lances_totais[1] && !existem_lances_legais){
         display_tabuleiro();
 
         printf("Fim do jogo \n");
 
-        if (Attacks::casa_esta_sendo_atacada(xlado, Bitboard::bitscan(Bitboard::bit_pieces[lado][R]))){
-            if (lado == BRANCAS){
+        if (Attacks::casa_esta_sendo_atacada(Game::xlado, Bitboard::bitscan(Bitboard::bit_pieces[Game::lado][R]))){
+            if (Game::lado == BRANCAS){
                 printf("0-1 {Pretas dao xeque-mate} \n");
             }
             else{
@@ -221,25 +221,25 @@ void print_resultado(){
             printf("1/2 - 1/2 {Empate por afogamento} \n");
         }
 
-        novo_jogo();
-        lado_do_computador = VAZIO;
+        Game::novo_jogo();
+        Game::lado_do_computador = VAZIO;
     }
     else if (repeticoes() >= 3){
         printf("1/2 - 1/2 - {Empate por repeticao} \n");
         
-        novo_jogo();
-        lado_do_computador = VAZIO;
+        Game::novo_jogo();
+        Game::lado_do_computador = VAZIO;
     }
-    else if (cinquenta >= 100){
+    else if (Game::cinquenta >= 100){
         printf("1/2 - 1/2 {Empate por cinquenta lances}");
 
-        novo_jogo();
-        lado_do_computador = VAZIO;
+        Game::novo_jogo();
+        Game::lado_do_computador = VAZIO;
     }
 }
 
 void lance_computador(bool verbose){
-    jogador[lado] = 1;
+    Game::jogador[Game::lado] = 1;
 
     pensar(verbose);
 
@@ -248,7 +248,7 @@ void lance_computador(bool verbose){
     chaveAtual = obter_chave();
     lockAtual = obter_lock();
 
-    lookup = hash_lookup(lado);
+    lookup = hash_lookup(Game::lado);
 
     tempo_gasto = obter_tempo() - tempo_do_inicio;
 
@@ -259,11 +259,11 @@ void lance_computador(bool verbose){
         }
         else{
             printf("(Sem lances legais) \n");
-            lado_do_computador = VAZIO;
+            Game::lado_do_computador = VAZIO;
 
             display_tabuleiro();
 
-            gerar_lances(lado, xlado);
+            gerar_lances(Game::lado, Game::xlado);
 
             return;
         }
@@ -273,11 +273,10 @@ void lance_computador(bool verbose){
 
     Eval::atualizar_materiais();
 
-    ply = 0;
+    Game::ply = 0;
+    Game::qntt_lances_totais[0] = 0;
 
-    qntt_lances_totais[0] = 0;
-
-    gerar_lances(lado, xlado);
+    gerar_lances(Game::lado, Game::xlado);
 
     if (verbose){
         printf("Lance do computador: %s \n", lance_para_string(hash_inicio, hash_destino, 0));
@@ -321,7 +320,7 @@ int converter_lance(char *lnc){
     destino = lnc[2] - 'a';
     destino += ((lnc[3] - '0') - 1) * 8;
 
-    for (i = 0; i < qntt_lances_totais[1]; i++){
+    for (i = 0; i < Game::qntt_lances_totais[1]; i++){
         if (lista_de_lances[i].inicio == inicio && lista_de_lances[i].destino == destino){
             if (lnc[4] == 'n' || lnc[4]=='N'){
                 lista_de_lances[i].promove = C;
@@ -341,10 +340,9 @@ int converter_lance(char *lnc){
 }
 
 void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
-
-    ply = 0;
-    qntt_lances_totais[0] = 0;
-    gerar_lances(lado, xlado);
+    Game::ply = 0;
+    Game::qntt_lances_totais[0] = 0;
+    gerar_lances(Game::lado, Game::xlado);
 
     lance_usuario = converter_lance(lnc);
 
@@ -357,20 +355,20 @@ void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
     }
 
     // atualiza peça promovida
-    if (lista_de_lances[hply - 1].promove > P && (Consts::colunas[lista_de_lances[lance_usuario].destino] == FILEIRA_1 || Consts::colunas[lista_de_lances[lance_usuario].destino] == FILEIRA_8)){
-        remover_piece(xlado, D, lista_de_lances[lance_usuario].destino);
+    if (lista_de_lances[Game::hply - 1].promove > P && (Consts::colunas[lista_de_lances[lance_usuario].destino] == FILEIRA_1 || Consts::colunas[lista_de_lances[lance_usuario].destino] == FILEIRA_8)){
+        remover_piece(Game::xlado, D, lista_de_lances[lance_usuario].destino);
 
         if (lnc[PROMOCAO] == 'n' || lnc[PROMOCAO] == 'N'){
-            adicionar_piece(xlado, C, lista_de_lances[lance_usuario].destino);
+            adicionar_piece(Game::xlado, C, lista_de_lances[lance_usuario].destino);
         }
         else if (lnc[PROMOCAO] == 'b' || lnc[PROMOCAO] == 'B'){
-            adicionar_piece(xlado, B, lista_de_lances[lance_usuario].destino);
+            adicionar_piece(Game::xlado, B, lista_de_lances[lance_usuario].destino);
         }
         else if (lnc[PROMOCAO] == 'r' || lnc[PROMOCAO] == 'R'){
-            adicionar_piece(xlado, T, lista_de_lances[lance_usuario].destino);
+            adicionar_piece(Game::xlado, T, lista_de_lances[lance_usuario].destino);
         }
         else{
-            adicionar_piece(xlado, D, lista_de_lances[lance_usuario].destino);
+            adicionar_piece(Game::xlado, D, lista_de_lances[lance_usuario].destino);
         }
     }
 
@@ -378,7 +376,6 @@ void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
 }
 
 bool ler_comando(){
-
     fflush(stdout);
     
     char cmd[TAMANHO_MAXIMO_COMANDO];
@@ -399,20 +396,20 @@ bool ler_comando(){
     else if (!strcmp(cmd, COMANDO_EXIBIR_LANCES)){
         printf("Lances legais: \n");
 
-        for (int i = 0; i < qntt_lances_totais[1]; i++){
+        for (int i = 0; i < Game::qntt_lances_totais[1]; i++){
             printf("%s", lance_para_string(lista_de_lances[i].inicio, lista_de_lances[i].destino, lista_de_lances[i].promove));
             printf("\n");
         }
     }
     else if (!strcmp(cmd, COMANDO_NOVA_PARTIDA)){
-        novo_jogo();
-        lado_do_computador = VAZIO;
+        Game::novo_jogo();
+        Game::lado_do_computador = VAZIO;
     }
     else if (!strcmp(cmd, COMANDO_ATIVAR_ENGINE) || !strcmp(cmd, COMANDO_FAZER_LANCE) || !strcmp(cmd, COMANDO_COMPUTADOR_CALCULAR)){
-        lado_do_computador = lado;
+        Game::lado_do_computador = Game::lado;
     }
     else if (!strcmp(cmd, COMANDO_DESATIVAR_ENGINE)){
-        lado_do_computador = VAZIO;
+        Game::lado_do_computador = VAZIO;
     }
     else if (!strcmp(cmd, COMANDO_QUIT)){
         return false;
@@ -465,23 +462,23 @@ bool ler_comando(){
         profundidade_fixa = false;
     }
     else if (!strcmp(cmd, COMANDO_TROCAR_DE_LADO)){
-        lado ^= 1;
-        xlado ^= 1;
+        Game::lado ^= 1;
+        Game::xlado ^= 1;
     }
     else if (!strcmp(cmd, COMANDO_DESFAZER_LANCE)){
-        if (!hply){
+        if (!Game::hply){
             return true;
         }
         
-        lado_do_computador = VAZIO;
+        Game::lado_do_computador = VAZIO;
         desfaz_lance();
-        ply = 0;
+        Game::ply = 0;
 
-        if (qntt_lances_totais[0] != 0){
-            qntt_lances_totais[0] = 0;
+        if (Game::qntt_lances_totais[0] != 0){
+            Game::qntt_lances_totais[0] = 0;
         }
 
-        gerar_lances(lado, xlado);
+        gerar_lances(Game::lado, Game::xlado);
     }
     else if (!strcmp(cmd, COMANDO_INICIA_XBOARD)){
         xboard();

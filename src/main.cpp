@@ -26,7 +26,7 @@ int main(){
     printf("\n\nalgoritmo iniciado\n\n");
     
     while (ler_comando()){
-        if (lado_do_computador == lado){
+        if (Game::lado_do_computador == Game::lado){
             lance_computador(true);
         }
     }

@@ -27,7 +27,7 @@ bool parar_pesquisa;
 int lance_inicio, lance_destino;
 
 void verificar_tempo(){
-    if ((obter_tempo() >= tempo_do_fim || (tempo_maximo < 50 && ply > 1)) && profundidade_fixa == 0 && ply > 1){
+    if ((obter_tempo() >= tempo_do_fim || (tempo_maximo < 50 && Game::ply > 1)) && profundidade_fixa == 0 && Game::ply > 1){
         parar_pesquisa = true;
         longjmp(env, 0);
     }
@@ -39,7 +39,7 @@ void ordenar_lances(const int desde){
     int maior_score = lista_de_lances[desde].score;
     int indice_do_maior_score = desde;
 
-    for (int i = desde + 1; i < qntt_lances_totais[ply + 1]; ++i){
+    for (int i = desde + 1; i < Game::qntt_lances_totais[Game::ply + 1]; ++i){
         if (lista_de_lances[i].score > maior_score){
             maior_score = lista_de_lances[i].score;
             indice_do_maior_score = i;
@@ -74,7 +74,7 @@ int pesquisa_quiescence(int inicio, const int destino){
         lances_avaliados++;
         recaptura++;
 
-        menor_recaptura = Attacks::menor_atacante(lado, xlado, destino); // ordena por MVA/LVV
+        menor_recaptura = Attacks::menor_atacante(Game::lado, Game::xlado, destino); // ordena por MVA/LVV
 
         if (menor_recaptura > -1){
             score[recaptura + 1] = pieces_valor[Bitboard::tabuleiro[menor_recaptura]];
@@ -138,9 +138,9 @@ int pesquisa_rapida(int alpha, int beta){
     int melhorlance = 0;
     int melhorscore = 0;
 
-    gerar_capturas(lado, xlado);
+    gerar_capturas(Game::lado, Game::xlado);
 
-    for (int i = qntt_lances_totais[ply]; i < qntt_lances_totais[ply+1]; ++i){
+    for (int i = Game::qntt_lances_totais[Game::ply]; i < Game::qntt_lances_totais[Game::ply+1]; ++i){
         ordenar_lances(i);
 
         if (score_capturas + pieces_valor[Bitboard::tabuleiro[lista_de_lances[i].destino]] < alpha){
@@ -162,7 +162,7 @@ int pesquisa_rapida(int alpha, int beta){
     if (score_capturas > alpha){
         if (score_capturas >= beta){
             if (melhorscore > 0){
-                adicionar_hash(lado, lista_de_lances[melhorlance]);
+                adicionar_hash(Game::lado, lista_de_lances[melhorlance]);
             }
 
             return score_capturas;
@@ -173,13 +173,13 @@ int pesquisa_rapida(int alpha, int beta){
 }
 
 void adicionar_pontuacao_iid(int alpha, int beta, int profundidade){
-    for (int candidato = qntt_lances_totais[ply]; candidato < qntt_lances_totais[ply + 1]; ++candidato){
+    for (int candidato = Game::qntt_lances_totais[Game::ply]; candidato < Game::qntt_lances_totais[Game::ply + 1]; ++candidato){
         lista_de_lances[candidato].score = -pesquisa(-beta, -alpha, profundidade REDUCAO_IID, false);
     }
 }   
 
 int pesquisa(int alpha, int beta, int profundidade, bool pv){
-    if (ply && checar_repeticoes()){
+    if (Game::ply && Game::checar_repeticoes()){
         return VALOR_EMPATE;
     }
 
@@ -193,7 +193,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
         verificar_tempo();
     }
 
-    if (ply > MAX_PLY-2){
+    if (Game::ply > MAX_PLY-2){
         return Eval::avaliar();
     }
 
@@ -206,13 +206,13 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
 
     int check = 0;
 
-    if (Attacks::casa_esta_sendo_atacada(xlado, Bitboard::bitscan(Bitboard::bit_pieces[lado][R]))){
+    if (Attacks::casa_esta_sendo_atacada(Game::xlado, Bitboard::bitscan(Bitboard::bit_pieces[Game::lado][R]))){
         check = 1;
     }
 
-    gerar_lances(lado, xlado);
+    gerar_lances(Game::lado, Game::xlado);
 
-    if (hash_lookup(lado)){
+    if (hash_lookup(Game::lado)){
         adicionar_pontuacao_de_hash(); // ordena por lances hash, pv é pesquisado primeiro
     } else if (profundidade > PROFUNDIDADE_CONDICAO_IID && pv){
         adicionar_pontuacao_iid(alpha, beta, profundidade);
@@ -224,7 +224,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
 
     bool pesquisandoPV = true;
 
-    for (int candidato = qntt_lances_totais[ply]; candidato < qntt_lances_totais[ply + 1]; ++candidato){
+    for (int candidato = Game::qntt_lances_totais[Game::ply]; candidato < Game::qntt_lances_totais[Game::ply + 1]; ++candidato){
         ordenar_lances(candidato);
 
         // verifica se o lance é legal
@@ -277,13 +277,13 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
 
                 if (!(Bitboard::mask[lista_de_lances[candidato].destino] & Bitboard::bit_total)){ // adiciona no historico se não for uma captura
                     historico_heuristica[lista_de_lances[candidato].inicio][lista_de_lances[candidato].destino] += 1 << profundidade; 
-                    contraLance_heuristica[lista_do_jogo[hply].inicio][lista_do_jogo[hply].destino] = lista_de_lances[candidato];
+                    contraLance_heuristica[Game::lista_do_jogo[Game::hply].inicio][Game::lista_do_jogo[Game::hply].destino] = lista_de_lances[candidato];
 
-                    killers_secundarios[ply] = killers_primarios[ply];
-                    killers_primarios[ply] = lista_de_lances[candidato];
+                    killers_secundarios[Game::ply] = killers_primarios[Game::ply];
+                    killers_primarios[Game::ply] = lista_de_lances[candidato];
                 }
 
-                adicionar_hash(lado, lista_de_lances[candidato]);
+                adicionar_hash(Game::lado, lista_de_lances[candidato]);
 
                 return beta;
             }
@@ -293,19 +293,19 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
     }
 
     if (!lances_legais_na_posicao){
-        if (Attacks::casa_esta_sendo_atacada(xlado, Bitboard::bitscan(Bitboard::bit_pieces[lado][R]))){
-            return VALOR_XEQUE_MATE_PADRAO - ply;
+        if (Attacks::casa_esta_sendo_atacada(Game::xlado, Bitboard::bitscan(Bitboard::bit_pieces[Game::lado][R]))){
+            return VALOR_XEQUE_MATE_PADRAO - Game::ply;
         }
         else{
             return VALOR_EMPATE;
         }
     }
 
-    if (cinquenta >= 100){
+    if (Game::cinquenta >= 100){
         return VALOR_EMPATE;
     }
 
-    adicionar_hash(lado, melhorlance);
+    adicionar_hash(Game::lado, melhorlance);
 
     return alpha;
 }
@@ -318,7 +318,7 @@ void pensar(bool verbose){
 
     setjmp(env);
     if (parar_pesquisa){
-        while (ply){
+        while (Game::ply){
             desfaz_lance();
         }
 
@@ -326,7 +326,7 @@ void pensar(bool verbose){
     }
 
     if (!tempo_fixo){
-        if (Attacks::casa_esta_sendo_atacada(xlado, Bitboard::bitscan(Bitboard::bit_pieces[lado][R]))){
+        if (Attacks::casa_esta_sendo_atacada(Game::xlado, Bitboard::bitscan(Bitboard::bit_pieces[Game::lado][R]))){
             tempo_maximo = tempo_maximo / 2;
         }
     }
@@ -334,10 +334,10 @@ void pensar(bool verbose){
     tempo_do_inicio = obter_tempo();
     tempo_do_fim = tempo_do_inicio + tempo_maximo;
 
-    ply = 0;
+    Game::ply = 0;
     lances_avaliados = 0;
 
-    nova_posicao();
+    Game::nova_posicao();
 
     memset(historico_heuristica, 0, sizeof(historico_heuristica));
     memset(contraLance_heuristica, 0, sizeof(contraLance_heuristica));
@@ -385,7 +385,7 @@ void pensar(bool verbose){
             melhor_linha = pesquisa(alpha, beta, profundidade, true);
         }
 
-        if (hash_lookup(lado)){
+        if (hash_lookup(Game::lado)){
             if (verbose){
                 printf("%d %d %d %d ", profundidade, melhor_linha, (obter_tempo() - tempo_do_inicio) / 10, lances_avaliados);
                 exibir_melhor_linha(profundidade);    

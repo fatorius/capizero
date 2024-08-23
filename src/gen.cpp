@@ -368,12 +368,12 @@ void init_lookup_tables(){
 }
 
 int calcularBonusHeuristicas(const int origem, const int destino){
-    lance contraLance = contraLance_heuristica[lista_do_jogo[hply].inicio][lista_do_jogo[hply].destino];
+    lance contraLance = contraLance_heuristica[Game::lista_do_jogo[Game::hply].inicio][Game::lista_do_jogo[Game::hply].destino];
 
-    if (killers_primarios[ply].inicio == origem && killers_primarios[ply].destino == destino){
+    if (killers_primarios[Game::ply].inicio == origem && killers_primarios[Game::ply].destino == destino){
         return SCORE_KILLER_1;
     }
-    if (killers_secundarios[ply].inicio == origem && killers_secundarios[ply].destino == destino){
+    if (killers_secundarios[Game::ply].inicio == origem && killers_secundarios[Game::ply].destino == destino){
         return SCORE_KILLER_2;
     }
     if (contraLance.inicio == origem && contraLance.destino == destino){
@@ -405,32 +405,32 @@ void adicionar_lance(const int origem, const int destino){
 }
 
 void gerar_en_passant(){
-    int ep = lista_do_jogo[hply - 1].destino;
+    int ep = Game::lista_do_jogo[Game::hply - 1].destino;
 
-    if (Bitboard::tabuleiro[ep] == P && abs(lista_do_jogo[hply - 1].inicio - ep) == AVANCO_DUPLO){
-        if (Consts::colunas[ep] > COLUNA_A && Bitboard::mask[ep-1] & Bitboard::bit_pieces[lado][P]){
-            adicionar_captura(ep-1, peao_uma_casa[lado][ep], EN_PASSANT_SCORE);
+    if (Bitboard::tabuleiro[ep] == P && abs(Game::lista_do_jogo[Game::hply - 1].inicio - ep) == AVANCO_DUPLO){
+        if (Consts::colunas[ep] > COLUNA_A && Bitboard::mask[ep-1] & Bitboard::bit_pieces[Game::lado][P]){
+            adicionar_captura(ep-1, peao_uma_casa[Game::lado][ep], EN_PASSANT_SCORE);
         }
-        if (Consts::colunas[ep] < COLUNA_H && Bitboard::mask[ep+1] & Bitboard::bit_pieces[lado][P]){
-            adicionar_captura(ep+1, peao_uma_casa[lado][ep], EN_PASSANT_SCORE);
+        if (Consts::colunas[ep] < COLUNA_H && Bitboard::mask[ep+1] & Bitboard::bit_pieces[Game::lado][P]){
+            adicionar_captura(ep+1, peao_uma_casa[Game::lado][ep], EN_PASSANT_SCORE);
         }
     }
 }
 
 void gerar_roques(){
-    if (lado == BRANCAS){
-        if (roque & BRANCAS_ROQUE_MENOR && !(Bitboard::bit_entre[H1][E1] & Bitboard::bit_total)){
+    if (Game::lado == BRANCAS){
+        if (Game::roque & BRANCAS_ROQUE_MENOR && !(Bitboard::bit_entre[H1][E1] & Bitboard::bit_total)){
             adicionar_roque(E1, G1);
         }
-        if (roque & BRANCAS_ROQUE_MAIOR && !(Bitboard::bit_entre[A1][E1] & Bitboard::bit_total)){
+        if (Game::roque & BRANCAS_ROQUE_MAIOR && !(Bitboard::bit_entre[A1][E1] & Bitboard::bit_total)){
             adicionar_roque(E1, C1);
         }
     }
     else{
-        if (roque & PRETAS_ROQUE_MENOR && !(Bitboard::bit_entre[H8][E8] & Bitboard::bit_total)){
+        if (Game::roque & PRETAS_ROQUE_MENOR && !(Bitboard::bit_entre[H8][E8] & Bitboard::bit_total)){
             adicionar_roque(E8, G8);
         }
-        if (roque & PRETAS_ROQUE_MAIOR && !(Bitboard::bit_entre[A8][E8] & Bitboard::bit_total)){
+        if (Game::roque & PRETAS_ROQUE_MAIOR && !(Bitboard::bit_entre[A8][E8] & Bitboard::bit_total)){
             adicionar_roque(E8, C8);
         }
     }
@@ -443,7 +443,7 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
 
     Bitboard::u64 ataques_deslizantes;
 
-    mc = qntt_lances_totais[ply];
+    mc = Game::qntt_lances_totais[Game::ply];
 
     gerar_en_passant();
     gerar_roques();
@@ -620,13 +620,13 @@ void gerar_lances(const int lado_a_mover, const int contraLado){
         adicionar_lance(casa, casa_destino);
     }
 
-    qntt_lances_totais[ply + 1] = mc;
+    Game::qntt_lances_totais[Game::ply + 1] = mc;
 }
 
 void gerar_capturas(const int lado_a_mover, const int contraLado){
     int casa, casa_destino;
     Bitboard::u64 t1, t2;
-    mc = qntt_lances_totais[ply];
+    mc = Game::qntt_lances_totais[Game::ply];
 
 
     // 1. gera capturas de peao
@@ -734,7 +734,7 @@ void gerar_capturas(const int lado_a_mover, const int contraLado){
     }
 
 
-    qntt_lances_totais[ply + 1] = mc;
+    Game::qntt_lances_totais[Game::ply + 1] = mc;
 }
 
 unsigned long long perft_node(int profunidade){
@@ -744,9 +744,9 @@ unsigned long long perft_node(int profunidade){
 
     unsigned long long total = 0;
 
-    gerar_lances(lado, xlado);
+    gerar_lances(Game::lado, Game::xlado);
 
-    for (int i = qntt_lances_totais[ply]; i < qntt_lances_totais[ply+1]; i++){
+    for (int i = Game::qntt_lances_totais[Game::ply]; i < Game::qntt_lances_totais[Game::ply+1]; i++){
         if (!fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
             continue;
         }
@@ -764,9 +764,9 @@ unsigned long long perft(int profunidade){
 
     unsigned long long total = 0;
 
-    gerar_lances(lado, xlado);
+    gerar_lances(Game::lado, Game::xlado);
 
-    for (int i = qntt_lances_totais[ply]; i < qntt_lances_totais[ply+1]; i++){
+    for (int i = Game::qntt_lances_totais[Game::ply]; i < Game::qntt_lances_totais[Game::ply+1]; i++){
         if (!fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
             continue;
         }

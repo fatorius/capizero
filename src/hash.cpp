@@ -56,7 +56,7 @@ void adicionar_hash(const int ld, const lance lc){
 }
 
 void adicionar_pontuacao_de_hash(){
-    for (int lance = qntt_lances_totais[ply]; lance < qntt_lances_totais[ply + 1]; lance++){
+    for (int lance = Game::qntt_lances_totais[Game::ply]; lance < Game::qntt_lances_totais[Game::ply + 1]; lance++){
         if (lista_de_lances[lance].inicio == hash_inicio && lista_de_lances[lance].destino == hash_destino){
             lista_de_lances[lance].score = PONTUACAO_HASH;
             return;

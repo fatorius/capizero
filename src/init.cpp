@@ -15,11 +15,12 @@ void init(){
     Bitboard::init_vetores();
     iniciar_hash();
 
-    lado_do_computador = VAZIO;
-    jogador[BRANCAS] = 0;
-    jogador[PRETAS] = 0;
+    Game::lado_do_computador = VAZIO;
+    Game::jogador[BRANCAS] = 0;
+    Game::jogador[PRETAS] = 0;
+    
     tempo_maximo = 1 << 25;
     profundidade_maxima = 4;
 
-    novo_jogo();
+    Game::novo_jogo();
 }
