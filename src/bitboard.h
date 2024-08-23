@@ -47,6 +47,8 @@ void init_vetores();
 void set_bit(u64 &bitboard, int bit);
 
 int obter_borda(int casa, int soma);
+
+int popcount(u64 b);
 int bitscan(u64 b);
 
 #endif

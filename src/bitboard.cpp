@@ -6,6 +6,9 @@
 #include <stdint.h>
 #include <cstdlib>
 
+#ifdef MVSC
+#include <nmmintrin.h>
+#endif
 
 u64 mask[CASAS_DO_TABULEIRO];
 u64 not_mask[CASAS_DO_TABULEIRO];
@@ -49,9 +52,11 @@ void init_bits(){
 
                 if (linhas[casa] < linhas[casa2]){
                     set_bit(mask_path[BRANCAS][casa], casa2);
+                    set_bit(mask_passados[BRANCAS][casa], casa2);
                 }
                 if (linhas[casa] > linhas[casa2]){
                     set_bit(mask_path[PRETAS][casa], casa2);
+                    set_bit(mask_passados[PRETAS][casa], casa2);
                 }
             }
 
@@ -59,12 +64,12 @@ void init_bits(){
                 set_bit(mask_rows[casa], casa2);
             }
 
-            if (abs(colunas[casa] - colunas[casa2]) < 2){
-                if (linhas[casa] < linhas[casa2] && linhas[casa2] < COLUNA_H){
+            if (abs(colunas[casa] - colunas[casa2]) == 1){
+                if (linhas[casa] < linhas[casa2]){
                     set_bit(mask_passados[BRANCAS][casa], casa2);
                 }
-                if (linhas[casa] > linhas[casa2] && linhas[casa] > COLUNA_A){
-                    set_bit(mask_passados[BRANCAS][casa], casa2);
+                else if (linhas[casa] > linhas[casa2]){
+                    set_bit(mask_passados[PRETAS][casa], casa2);
                 }
             }
 
@@ -232,12 +237,29 @@ int bitscan(u64 b){
     #elif defined(MVSC) 
         unsigned long idx;
         _BitScanForward64(&idx, b);
-        return Square(idx);
+        return idx;
     #else
         unsigned int folded;
         b ^= b - 1;
         folded = (int) b ^ (b >> 32);
         return lsb_64_table[folded * 0x78291ACF >> 26];
     #endif
-    
+}
+
+int popcount(u64 b){
+    #ifdef GNUC
+        return __builtin_popcountll(b);
+    #elif defined(MVSC)
+        return _mm_popcnt_u64(b);
+    #else
+        int count = 0;
+        int i;
+        while (b) {
+            i = bitscan(b);
+            b &= not_mask[i];
+
+            count++;
+        }
+        return count;
+    #endif
 }
