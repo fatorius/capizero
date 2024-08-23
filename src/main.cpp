@@ -31,7 +31,7 @@ int main(){
         }
     }
 
-    liberar_memoria();
+    Hash::liberar_memoria();
 
     return 0;
 }

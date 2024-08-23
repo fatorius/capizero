@@ -30,12 +30,12 @@ void mover_piece(const int l, const int p, const int inicio, const int destino){
     Bitboard::tabuleiro[destino] = p;
     Bitboard::tabuleiro[inicio] = VAZIO;
 
-    adicionar_chave(l, p, inicio);
-    adicionar_chave(l, p, destino);
+    Hash::adicionar_chave(l, p, inicio);
+    Hash::adicionar_chave(l, p, destino);
 }
 
 void remover_piece(const int l, const int p, const int casa){
-    adicionar_chave(l, p, casa);
+    Hash::adicionar_chave(l, p, casa);
 
     Bitboard::tabuleiro[casa] = VAZIO;
 
@@ -148,8 +148,8 @@ bool fazer_lance(const int inicio, const int destino){
     j->captura = Bitboard::tabuleiro[destino];
     j->roque = Game::roque;
     j->cinquenta = Game::cinquenta;
-    j->hash = chaveAtual;
-    j->lock = lockAtual;
+    j->hash = Hash::chaveAtual;
+    j->lock = Hash::lockAtual;
     j->promove = P;
     
     Game::roque &= Consts::roque_mask[inicio] & Consts::roque_mask[destino];
@@ -213,7 +213,7 @@ bool fazer_lance(const int inicio, const int destino){
 void adicionar_piece(const int l, const int piece, const int casa){
     Bitboard::tabuleiro[casa] = piece;
 
-    adicionar_chave(l, piece, casa);
+    Hash::adicionar_chave(l, piece, casa);
 
     Bitboard::bit_lados[l] |= Bitboard::mask[casa];
     Bitboard::bit_pieces[l][piece] |= Bitboard::mask[casa];

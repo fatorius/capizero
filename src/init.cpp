@@ -13,7 +13,7 @@ void init(){
     Eval::init_eval_tables();
     Gen::init_lookup_tables();
     Bitboard::init_vetores();
-    iniciar_hash();
+    Hash::iniciar_hash();
 
     Game::lado_do_computador = VAZIO;
     Game::jogador[BRANCAS] = 0;

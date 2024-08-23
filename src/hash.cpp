@@ -11,13 +11,12 @@
 Bitboard::u64 hash[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 Bitboard::u64 lock[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 
-Bitboard::u64 chaveAtual, lockAtual;
+Bitboard::u64 Hash::chaveAtual, Hash::lockAtual;
+int Hash::hash_inicio, Hash::hash_destino;
 
-hashp *hashpos[LADOS];
+Hash::hashp *hashpos[LADOS];
 
-int hash_inicio, hash_destino;
-
-void liberar_memoria(){
+void Hash::liberar_memoria(){
     delete hashpos[BRANCAS];
     delete hashpos[PRETAS];
 }
@@ -26,7 +25,7 @@ int aleatorio(const int x){
     return rand() % x;
 }
 
-void iniciar_hash(){
+void Hash::iniciar_hash(){
     int piece, casa;
 
     for (piece = 0; piece < TIPOS_DE_PIECES; piece++){
@@ -38,16 +37,16 @@ void iniciar_hash(){
         }
     }
 
-    hashpos[BRANCAS] = new hashp[MAXHASH];
-    hashpos[PRETAS] = new hashp[MAXHASH];
+    hashpos[BRANCAS] = new Hash::hashp[MAXHASH];
+    hashpos[PRETAS] = new Hash::hashp[MAXHASH];
 }
 
-void adicionar_chave(const int l, const int piece, const int casa){
+void Hash::adicionar_chave(const int l, const int piece, const int casa){
     chaveAtual ^= hash[l][piece][casa];
     lockAtual ^= lock[l][piece][casa];
 }
 
-void adicionar_hash(const int ld, const Gen::lance lc){
+void Hash::adicionar_hash(const int ld, const Gen::lance lc){
     hashp* ptr = &hashpos[ld][chaveAtual];
 
     ptr->hashlock = lockAtual;
@@ -55,7 +54,7 @@ void adicionar_hash(const int ld, const Gen::lance lc){
     ptr->dest = lc.destino;
 }
 
-void adicionar_pontuacao_de_hash(){
+void Hash::adicionar_pontuacao_de_hash(){
     for (int lance = Game::qntt_lances_totais[Game::ply]; lance < Game::qntt_lances_totais[Game::ply + 1]; lance++){
         if (Gen::lista_de_lances[lance].inicio == hash_inicio && Gen::lista_de_lances[lance].destino == hash_destino){
             Gen::lista_de_lances[lance].score = PONTUACAO_HASH;
@@ -64,7 +63,7 @@ void adicionar_pontuacao_de_hash(){
     }
 }
 
-Bitboard::u64 obter_lock(){
+Bitboard::u64 Hash::obter_lock(){
     Bitboard::u64 loc = 0;
     int l;
 
@@ -82,7 +81,7 @@ Bitboard::u64 obter_lock(){
     return loc;
 }
 
-Bitboard::u64 obter_chave(){
+Bitboard::u64 Hash::obter_chave(){
     Bitboard::u64 chave = 0;
     int l;
 
@@ -100,7 +99,7 @@ Bitboard::u64 obter_chave(){
     return chave;
 }
 
-bool hash_lookup(const int l){
+bool Hash::hash_lookup(const int l){
     if (hashpos[l][chaveAtual].hashlock != lockAtual){
         return false;
     }

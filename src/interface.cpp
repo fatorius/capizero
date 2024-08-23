@@ -39,17 +39,17 @@ bool tempo_fixo, profundidade_fixa;
 int profundidade_perft;
 
 void exibir_melhor_linha(int profundidade){
-     lance_inicio = hash_inicio;
-     lance_destino = hash_destino;
+     lance_inicio = Hash::hash_inicio;
+     lance_destino = Hash::hash_destino;
 
      for (int x = 0; x < profundidade; x++){
-        if (hash_lookup(Game::lado) == false){
+        if (Hash::hash_lookup(Game::lado) == false){
             break;
         }
 
         printf(" ");
-        print_lance_algebrico(hash_inicio, hash_destino);
-        fazer_lance(hash_inicio, hash_destino);
+        print_lance_algebrico(Hash::hash_inicio, Hash::hash_destino);
+        fazer_lance(Hash::hash_inicio, Hash::hash_destino);
      }
 
      while (Game::ply){
@@ -172,7 +172,7 @@ int repeticoes(){
     int r = 0;
 
     for (int i = Game::hply; i >= Game::hply-Game::cinquenta; i -= 2){
-        if (Game::lista_do_jogo[i].hash == chaveAtual && Game::lista_do_jogo[i].lock == lockAtual){
+        if (Game::lista_do_jogo[i].hash == Hash::chaveAtual && Game::lista_do_jogo[i].lock == Hash::lockAtual){
             r++;
         }
     }
@@ -245,17 +245,17 @@ void lance_computador(bool verbose){
 
     no_lances++;
 
-    chaveAtual = obter_chave();
-    lockAtual = obter_lock();
+    Hash::chaveAtual = Hash::obter_chave();
+    Hash::lockAtual = Hash::obter_lock();
 
-    lookup = hash_lookup(Game::lado);
+    lookup = Hash::hash_lookup(Game::lado);
 
     tempo_gasto = obter_tempo() - tempo_do_inicio;
 
     if (verbose){
         if (lance_inicio != 0 || lance_destino != 0){
-            hash_inicio = lance_inicio;
-            hash_destino = lance_destino;
+            Hash::hash_inicio = lance_inicio;
+            Hash::hash_destino = lance_destino;
         }
         else{
             printf("(Sem lances legais) \n");
@@ -269,7 +269,7 @@ void lance_computador(bool verbose){
         }
     }
     
-    fazer_lance(hash_inicio, hash_destino);
+    fazer_lance(Hash::hash_inicio, Hash::hash_destino);
 
     Eval::atualizar_materiais();
 
@@ -279,7 +279,7 @@ void lance_computador(bool verbose){
     Gen::gerar_lances(Game::lado, Game::xlado);
 
     if (verbose){
-        printf("Lance do computador: %s \n", lance_para_string(hash_inicio, hash_destino, 0));
+        printf("Lance do computador: %s \n", lance_para_string(Hash::hash_inicio, Hash::hash_destino, 0));
         printf("\n");
 
         printf("\nTempo gasto: %d ms \n", tempo_gasto);

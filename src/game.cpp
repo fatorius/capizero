@@ -41,7 +41,7 @@ void Game::novo_jogo(){
 
 bool Game::checar_repeticoes(){
     for (int i = hply-4; i >= hply - cinquenta; i -=2){
-        if (lista_do_jogo[i].hash == chaveAtual && lista_do_jogo[i].lock == lockAtual){
+        if (lista_do_jogo[i].hash == Hash::chaveAtual && lista_do_jogo[i].lock == Hash::lockAtual){
             return true;
         }
     }
@@ -67,6 +67,6 @@ void Game::nova_posicao(){
         }
     }
 
-    chaveAtual = obter_chave();
-    lockAtual = obter_lock();
+    Hash::chaveAtual = Hash::obter_chave();
+    Hash::lockAtual = Hash::obter_lock();
 }

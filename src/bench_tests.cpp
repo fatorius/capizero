@@ -21,7 +21,7 @@ int main(){
     Bench::eval_performance_test();
     Bench::search_performance_test();
 
-    liberar_memoria();
+    Hash::liberar_memoria();
 
     return 0;
 }

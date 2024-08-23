@@ -162,7 +162,7 @@ int pesquisa_rapida(int alpha, int beta){
     if (score_capturas > alpha){
         if (score_capturas >= beta){
             if (melhorscore > 0){
-                adicionar_hash(Game::lado, Gen::lista_de_lances[melhorlance]);
+                Hash::adicionar_hash(Game::lado, Gen::lista_de_lances[melhorlance]);
             }
 
             return score_capturas;
@@ -212,8 +212,8 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
 
     Gen::gerar_lances(Game::lado, Game::xlado);
 
-    if (hash_lookup(Game::lado)){
-        adicionar_pontuacao_de_hash(); // ordena por lances hash, pv é pesquisado primeiro
+    if (Hash::hash_lookup(Game::lado)){
+        Hash::adicionar_pontuacao_de_hash(); // ordena por lances hash, pv é pesquisado primeiro
     } else if (profundidade > PROFUNDIDADE_CONDICAO_IID && pv){
         adicionar_pontuacao_iid(alpha, beta, profundidade);
     }
@@ -283,7 +283,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
                     killers_primarios[Game::ply] = Gen::lista_de_lances[candidato];
                 }
 
-                adicionar_hash(Game::lado, Gen::lista_de_lances[candidato]);
+                Hash::adicionar_hash(Game::lado, Gen::lista_de_lances[candidato]);
 
                 return beta;
             }
@@ -305,7 +305,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
         return VALOR_EMPATE;
     }
 
-    adicionar_hash(Game::lado, melhorlance);
+    Hash::adicionar_hash(Game::lado, melhorlance);
 
     return alpha;
 }
@@ -385,7 +385,7 @@ void pensar(bool verbose){
             melhor_linha = pesquisa(alpha, beta, profundidade, true);
         }
 
-        if (hash_lookup(Game::lado)){
+        if (Hash::hash_lookup(Game::lado)){
             if (verbose){
                 printf("%d %d %d %d ", profundidade, melhor_linha, (obter_tempo() - tempo_do_inicio) / 10, lances_avaliados);
                 exibir_melhor_linha(profundidade);    

@@ -34,27 +34,27 @@ void xboard(){
 			pensar(true);
 			Eval::atualizar_materiais();
 			Gen::gerar_lances(Game::lado, Game::xlado);
-			chaveAtual = obter_chave();
-			lockAtual = obter_lock();
+			Hash::chaveAtual = Hash::obter_chave();
+			Hash::lockAtual = Hash::obter_lock();
 
 			if(lance_inicio != 0 || lance_destino != 0){
-				hash_inicio = lance_inicio;
-				hash_destino = lance_destino;
+				Hash::hash_inicio = lance_inicio;
+				Hash::hash_destino = lance_destino;
 			}
 			else{
 				printf(" lookup=0 ");
             }
 
-			Gen::lista_de_lances[0].inicio = hash_inicio;
-            Gen::lista_de_lances[0].destino = hash_destino;
+			Gen::lista_de_lances[0].inicio = Hash::hash_inicio;
+            Gen::lista_de_lances[0].destino = Hash::hash_destino;
             
-			if ((Bitboard::tabuleiro[hash_inicio] == P) && (Consts::linhas[hash_destino] == fileira_de_promocao[Game::lado])){
+			if ((Bitboard::tabuleiro[Hash::hash_inicio] == P) && (Consts::linhas[Hash::hash_destino] == fileira_de_promocao[Game::lado])){
 				prom = D; // ASSUME QUE O JOGADOR IRÁ PROMOVER SEMPRE PARA DAMA
 			}
 
-			printf("move %s\n", lance_para_string(hash_inicio,hash_destino,prom));
+			printf("move %s\n", lance_para_string(Hash::hash_inicio,Hash::hash_destino,prom));
 	
-			fazer_lance(hash_inicio,hash_destino);
+			fazer_lance(Hash::hash_inicio,Hash::hash_destino);
   
 			Game::ply = 0;
 			Gen::gerar_lances(Game::lado, Game::xlado);
@@ -165,14 +165,14 @@ void xboard(){
 
 		if (!strcmp(comando, "hint")) {
 			pensar(true);
-			chaveAtual = obter_chave();
-			lockAtual = obter_lock();
+			Hash::chaveAtual = Hash::obter_chave();
+			Hash::lockAtual = Hash::obter_lock();
             
-			if(hash_inicio==0 && hash_destino==0){
+			if(Hash::hash_inicio==0 && Hash::hash_destino==0){
 				continue;
             }
 			
-            printf("Hint: %s\n", lance_para_string(hash_inicio,hash_destino,0));
+            printf("Hint: %s\n", lance_para_string(Hash::hash_inicio, Hash::hash_destino, 0));
 			
             continue;
 		}
