@@ -63,7 +63,7 @@ void Game::nova_posicao(){
                 c = PRETAS;
             }
 
-            adicionar_piece(c, Bitboard::tabuleiro[casa], casa);
+            Update::adicionar_piece(c, Bitboard::tabuleiro[casa], casa);
         }
     }
 

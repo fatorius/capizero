@@ -45,11 +45,11 @@ void Interface::exibir_melhor_linha(int profundidade){
 
         printf(" ");
         print_lance_algebrico(Hash::hash_inicio, Hash::hash_destino);
-        fazer_lance(Hash::hash_inicio, Hash::hash_destino);
+        Update::fazer_lance(Hash::hash_inicio, Hash::hash_destino);
      }
 
      while (Game::ply){
-        desfaz_lance();
+        Update::desfaz_lance();
      }
 }
 
@@ -184,8 +184,8 @@ void Interface::print_resultado(){
     Gen::gerar_lances(Game::lado, Game::xlado);
 
     for (i = 0; i < Game::qntt_lances_totais[1]; ++i){
-        if (fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino)){
-            desfaz_lance();
+        if (Update::fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino)){
+            Update::desfaz_lance();
             existem_lances_legais = true;
             break;
         }
@@ -237,7 +237,7 @@ void Interface::print_resultado(){
 void Interface::lance_computador(bool verbose){
     Game::jogador[Game::lado] = 1;
 
-    pensar(verbose);
+    Search::pensar(verbose);
 
     Interface::no_lances++;
 
@@ -246,7 +246,7 @@ void Interface::lance_computador(bool verbose){
 
     Interface::lookup = Hash::hash_lookup(Game::lado);
 
-    Interface::tempo_gasto = Interface::obter_tempo() - tempo_do_inicio;
+    Interface::tempo_gasto = Interface::obter_tempo() - Search::tempo_do_inicio;
 
     if (verbose){
         if (Interface::lance_inicio != 0 || Interface::lance_destino != 0){
@@ -265,7 +265,7 @@ void Interface::lance_computador(bool verbose){
         }
     }
     
-    fazer_lance(Hash::hash_inicio, Hash::hash_destino);
+    Update::fazer_lance(Hash::hash_inicio, Hash::hash_destino);
 
     Eval::atualizar_materiais();
 
@@ -281,7 +281,7 @@ void Interface::lance_computador(bool verbose){
         printf("\nTempo gasto: %d ms \n", Interface::tempo_gasto);
 
         if (Interface::tempo_gasto > 0){
-            nps = (double) lances_avaliados / (double) Interface::tempo_gasto;
+            nps = (double) Search::lances_avaliados / (double) Interface::tempo_gasto;
             nps *= 1000.0;
         }
         else{
@@ -342,7 +342,7 @@ void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
 
     lance_usuario = Interface::converter_lance(lnc);
 
-    if (lance_usuario == -1 || !fazer_lance(Gen::lista_de_lances[lance_usuario].inicio, Gen::lista_de_lances[lance_usuario].destino)){
+    if (lance_usuario == -1 || !Update::fazer_lance(Gen::lista_de_lances[lance_usuario].inicio, Gen::lista_de_lances[lance_usuario].destino)){
         printf("Comando / Lance inválido\n");
         printf("Digite 'ajuda' para exibir uma lista de comandos válidos ou\n");
         printf("Digite 'lances' para exibir uma lista de lances legais\n");
@@ -352,19 +352,19 @@ void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
 
     // atualiza peça promovida
     if (Gen::lista_de_lances[Game::hply - 1].promove > P && (Consts::colunas[Gen::lista_de_lances[lance_usuario].destino] == FILEIRA_1 || Consts::colunas[Gen::lista_de_lances[lance_usuario].destino] == FILEIRA_8)){
-        remover_piece(Game::xlado, D, Gen::lista_de_lances[lance_usuario].destino);
+        Update::remover_piece(Game::xlado, D, Gen::lista_de_lances[lance_usuario].destino);
 
         if (lnc[PROMOCAO] == 'n' || lnc[PROMOCAO] == 'N'){
-            adicionar_piece(Game::xlado, C, Gen::lista_de_lances[lance_usuario].destino);
+            Update::adicionar_piece(Game::xlado, C, Gen::lista_de_lances[lance_usuario].destino);
         }
         else if (lnc[PROMOCAO] == 'b' || lnc[PROMOCAO] == 'B'){
-            adicionar_piece(Game::xlado, B, Gen::lista_de_lances[lance_usuario].destino);
+            Update::adicionar_piece(Game::xlado, B, Gen::lista_de_lances[lance_usuario].destino);
         }
         else if (lnc[PROMOCAO] == 'r' || lnc[PROMOCAO] == 'R'){
-            adicionar_piece(Game::xlado, T, Gen::lista_de_lances[lance_usuario].destino);
+            Update::adicionar_piece(Game::xlado, T, Gen::lista_de_lances[lance_usuario].destino);
         }
         else{
-            adicionar_piece(Game::xlado, D, Gen::lista_de_lances[lance_usuario].destino);
+            Update::adicionar_piece(Game::xlado, D, Gen::lista_de_lances[lance_usuario].destino);
         }
     }
 
@@ -435,7 +435,7 @@ bool Interface::ler_comando(){
             return false;
         }
 
-		setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
+		Update::setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
         return true;
     }
     else if (!strcmp(cmd, COMANDO_CONFIGURAR_PROFUNDIDADE)){
@@ -467,7 +467,7 @@ bool Interface::ler_comando(){
         }
         
         Game::lado_do_computador = VAZIO;
-        desfaz_lance();
+        Update::desfaz_lance();
         Game::ply = 0;
 
         if (Game::qntt_lances_totais[0] != 0){
@@ -477,7 +477,7 @@ bool Interface::ler_comando(){
         Gen::gerar_lances(Game::lado, Game::xlado);
     }
     else if (!strcmp(cmd, COMANDO_INICIA_XBOARD)){
-        xboard();
+        Xboard::xboard();
 
         return false;
     }

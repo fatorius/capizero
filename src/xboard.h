@@ -1,6 +1,8 @@
 #ifndef XBOARD
 #define XBOARD
 
-void xboard();
+namespace Xboard{
+    void xboard();
+};
 
 #endif

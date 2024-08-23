@@ -16,25 +16,25 @@ int peao_ala_da_dama[LADOS],peao_ala_do_rei[LADOS];
 
 void Eval::init_eval_tables(){
     for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
-        score_casas[BRANCAS][P][x] = peao_score[x] + VALOR_PEAO;
-        score_casas[BRANCAS][C][x] = cavalo_score[x] + VALOR_CAVALO;
-        score_casas[BRANCAS][B][x] = bispo_score[x] + VALOR_BISPO;
-        score_casas[BRANCAS][T][x] = torre_score[x] + VALOR_TORRE;
-        score_casas[BRANCAS][D][x] = dama_score[x] + VALOR_DAMA;
-        score_casas[BRANCAS][R][x] = rei_score[x];
+        score_casas[BRANCAS][P][x] = Values::peao_score[x] + VALOR_PEAO;
+        score_casas[BRANCAS][C][x] = Values::cavalo_score[x] + VALOR_CAVALO;
+        score_casas[BRANCAS][B][x] = Values::bispo_score[x] + VALOR_BISPO;
+        score_casas[BRANCAS][T][x] = Values::torre_score[x] + VALOR_TORRE;
+        score_casas[BRANCAS][D][x] = Values::dama_score[x] + VALOR_DAMA;
+        score_casas[BRANCAS][R][x] = Values::rei_score[x];
 
-        score_casas[PRETAS][P][x] = peao_score[Consts::flip[x]] + VALOR_PEAO;
-        score_casas[PRETAS][C][x] = cavalo_score[Consts::flip[x]] + VALOR_CAVALO;
-        score_casas[PRETAS][B][x] = bispo_score[Consts::flip[x]] + VALOR_BISPO;
-        score_casas[PRETAS][T][x] = torre_score[Consts::flip[x]] + VALOR_TORRE;
-        score_casas[PRETAS][D][x] = dama_score[Consts::flip[x]] + VALOR_DAMA;
-        score_casas[PRETAS][R][x] = rei_score[Consts::flip[x]];
+        score_casas[PRETAS][P][x] = Values::peao_score[Consts::flip[x]] + VALOR_PEAO;
+        score_casas[PRETAS][C][x] = Values::cavalo_score[Consts::flip[x]] + VALOR_CAVALO;
+        score_casas[PRETAS][B][x] = Values::bispo_score[Consts::flip[x]] + VALOR_BISPO;
+        score_casas[PRETAS][T][x] = Values::torre_score[Consts::flip[x]] + VALOR_TORRE;
+        score_casas[PRETAS][D][x] = Values::dama_score[Consts::flip[x]] + VALOR_DAMA;
+        score_casas[PRETAS][R][x] = Values::rei_score[Consts::flip[x]];
         
-        reis_score_finais[BRANCAS][x] = rei_finais_score[x] - score_casas[BRANCAS][R][x];
-        reis_score_finais[PRETAS][x] = rei_finais_score[x] - score_casas[PRETAS][R][x];
+        reis_score_finais[BRANCAS][x] = Values::rei_finais_score[x] - score_casas[BRANCAS][R][x];
+        reis_score_finais[PRETAS][x] = Values::rei_finais_score[x] - score_casas[PRETAS][R][x];
 
-        passados[BRANCAS][x] = peao_passado_score[Consts::flip[x]];
-        passados[PRETAS][x] = peao_passado_score[x];
+        passados[BRANCAS][x] = Values::peao_passado_score[Consts::flip[x]];
+        passados[PRETAS][x] = Values::peao_passado_score[x];
     }
 }
 
@@ -60,7 +60,7 @@ void Eval::atualizar_materiais(){
                 peao_mat[cor] += VALOR_PEAO;
             }
             else{
-                piece_mat[cor] += pieces_valor[Bitboard::tabuleiro[casa]];
+                piece_mat[cor] += Values::pieces_valor[Bitboard::tabuleiro[casa]];
             }
         }
     }
@@ -78,8 +78,8 @@ int avaliar_peao(const int l, const int casa){
         score -= ISOLADO_SCORE;
     }
 
-    peao_ala_do_rei[l] = defesa_ala_do_rei[l][casa];
-    peao_ala_da_dama[l] = defesa_ala_da_dama[l][casa];
+    peao_ala_do_rei[l] = Values::defesa_ala_do_rei[l][casa];
+    peao_ala_da_dama[l] = Values::defesa_ala_da_dama[l][casa];
 
     return score;
 }

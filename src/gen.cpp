@@ -332,25 +332,25 @@ Bitboard::u64 gerarLancesTorreSemMagica(int casa, Bitboard::u64 bloqueadores){
 void init_magic_lookups(){
     int index;
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
-        for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << (64-bits_indices_bispos[casa])); pecaBloqueadora++){
+        for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << (64-Magics::bits_indices_bispos[casa])); pecaBloqueadora++){
             Bitboard::u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_casas_relevantes_bispo[casa]); 
           
             #ifdef USE_PEXT
                 index = _pext_u64(bloqueadores, bit_casas_relevantes_bispo[casa]);
             #else
-                index = (bloqueadores * magicas_bispos[casa]) >> (bits_indices_bispos[casa]);
+                index = (bloqueadores * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa]);
             #endif
 
             Gen::bit_magicas_bispo[casa][index] = gerarLancesBispoSemMagica(casa, bloqueadores);   
         }
 
-        for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << (64-bits_indices_torres[casa])); pecaBloqueadora++){
+        for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << (64-Magics::bits_indices_torres[casa])); pecaBloqueadora++){
             Bitboard::u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_casas_relevantes_torres[casa]);
           
             #ifdef USE_PEXT
                 index = _pext_u64(bloqueadores, bit_casas_relevantes_torres[casa]);
             #else
-                index = (bloqueadores * magicas_torres[casa]) >> (bits_indices_torres[casa]);
+                index = (bloqueadores * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa]);
             #endif
 
             Gen::bit_magicas_torre[casa][index] = gerarLancesTorreSemMagica(casa, bloqueadores);
@@ -368,19 +368,19 @@ void Gen::init_lookup_tables(){
 }
 
 int calcularBonusHeuristicas(const int origem, const int destino){
-    Gen::lance contraLance = contraLance_heuristica[Game::lista_do_jogo[Game::hply].inicio][Game::lista_do_jogo[Game::hply].destino];
+    Gen::lance contraLance = Search::contraLance_heuristica[Game::lista_do_jogo[Game::hply].inicio][Game::lista_do_jogo[Game::hply].destino];
 
-    if (killers_primarios[Game::ply].inicio == origem && killers_primarios[Game::ply].destino == destino){
+    if (Search::killers_primarios[Game::ply].inicio == origem && Search::killers_primarios[Game::ply].destino == destino){
         return SCORE_KILLER_1;
     }
-    if (killers_secundarios[Game::ply].inicio == origem && killers_secundarios[Game::ply].destino == destino){
+    if (Search::killers_secundarios[Game::ply].inicio == origem && Search::killers_secundarios[Game::ply].destino == destino){
         return SCORE_KILLER_2;
     }
     if (contraLance.inicio == origem && contraLance.destino == destino){
         return SCORE_CONTRALANCE;
     }
 
-    return historico_heuristica[origem][destino];
+    return Search::historico_heuristica[origem][destino];
 }
 
 void adicionar_captura(const int origem, const int destino, const int score){
@@ -466,7 +466,7 @@ void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_esquerda[lado_a_mover][casa];
-        adicionar_captura(casa, casa_destino, px[Bitboard::tabuleiro[casa_destino]]);
+        adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
     }
 
     // 1.3 adiciona capturas de peao para a direita
@@ -474,7 +474,7 @@ void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
         casa = Bitboard::bitscan(t2);
         t2 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_direita[lado_a_mover][casa];
-        adicionar_captura(casa, casa_destino, px[Bitboard::tabuleiro[casa_destino]]);
+        adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
     }
     
     // 1.4 adiciona avanços de peao
@@ -501,7 +501,7 @@ void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
             casa_destino = Bitboard::bitscan(t2);
             t2 &= Bitboard::not_mask[casa_destino];
 
-            adicionar_captura(casa, casa_destino, cx[Bitboard::tabuleiro[casa_destino]]);
+            adicionar_captura(casa, casa_destino, Values::cx[Bitboard::tabuleiro[casa_destino]]);
         }
 
         // 2.2 gera lances de cavalo
@@ -523,7 +523,7 @@ void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
         #ifdef USE_PEXT
             ataques_deslizantes = Gen::bit_magicas_bispo[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_bispo[casa])];
         #else
-            ataques_deslizantes = Gen::bit_magicas_bispo[casa][((Bitboard::bit_total & bit_casas_relevantes_bispo[casa]) * magicas_bispos[casa]) >> (bits_indices_bispos[casa])];
+            ataques_deslizantes = Gen::bit_magicas_bispo[casa][((Bitboard::bit_total & bit_casas_relevantes_bispo[casa]) * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa])];
         #endif
 
 
@@ -533,7 +533,7 @@ void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
 
             if (Bitboard::mask[casa_destino] & Bitboard::bit_total){
                 if (Bitboard::mask[casa_destino] & Bitboard::bit_lados[contraLado]){
-                    adicionar_captura(casa, casa_destino, bx[Bitboard::tabuleiro[casa_destino]]);
+                    adicionar_captura(casa, casa_destino, Values::bx[Bitboard::tabuleiro[casa_destino]]);
                 }
                 
                 continue;
@@ -552,7 +552,7 @@ void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
         #ifdef USE_PEXT
             ataques_deslizantes = Gen::bit_magicas_torre[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_torres[casa])];
         #else
-            ataques_deslizantes = Gen::bit_magicas_torre[casa][((Bitboard::bit_total & bit_casas_relevantes_torres[casa]) * magicas_torres[casa]) >> (bits_indices_torres[casa])];
+            ataques_deslizantes = Gen::bit_magicas_torre[casa][((Bitboard::bit_total & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])];
         #endif
 
         while (ataques_deslizantes){
@@ -561,7 +561,7 @@ void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
 
             if (Bitboard::mask[casa_destino] & Bitboard::bit_total){
                 if (Bitboard::mask[casa_destino] & Bitboard::bit_lados[contraLado]){
-                    adicionar_captura(casa, casa_destino, tx[Bitboard::tabuleiro[casa_destino]]);
+                    adicionar_captura(casa, casa_destino, Values::tx[Bitboard::tabuleiro[casa_destino]]);
                 }
 
                 continue;
@@ -580,7 +580,7 @@ void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
         #ifdef USE_PEXT
             ataques_deslizantes = bit_magicas_bispo[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_bispo[casa])] | bit_magicas_torre[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_torres[casa])];
         #else
-            ataques_deslizantes = Gen::bit_magicas_bispo[casa][((Bitboard::bit_total & bit_casas_relevantes_bispo[casa]) * magicas_bispos[casa]) >> (bits_indices_bispos[casa])] | Gen::bit_magicas_torre[casa][((Bitboard::bit_total & bit_casas_relevantes_torres[casa]) * magicas_torres[casa]) >> (bits_indices_torres[casa])];
+            ataques_deslizantes = Gen::bit_magicas_bispo[casa][((Bitboard::bit_total & bit_casas_relevantes_bispo[casa]) * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa])] | Gen::bit_magicas_torre[casa][((Bitboard::bit_total & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])];
         #endif
 
         while (ataques_deslizantes){
@@ -589,7 +589,7 @@ void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
 
             if (Bitboard::mask[casa_destino] & Bitboard::bit_total){
                 if (Bitboard::mask[casa_destino] & Bitboard::bit_lados[contraLado]){
-                    adicionar_captura(casa, casa_destino, dx[Bitboard::tabuleiro[casa_destino]]);
+                    adicionar_captura(casa, casa_destino, Values::dx[Bitboard::tabuleiro[casa_destino]]);
                 }
 
                 continue;
@@ -608,7 +608,7 @@ void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
         casa_destino = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa_destino];
 
-        adicionar_captura(casa, casa_destino, rx[Bitboard::tabuleiro[casa_destino]]);
+        adicionar_captura(casa, casa_destino, Values::rx[Bitboard::tabuleiro[casa_destino]]);
     }
 
     // 6.2 gera lances sem capturas
@@ -645,7 +645,7 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_esquerda[lado_a_mover][casa];
-        adicionar_captura(casa, casa_destino, px[Bitboard::tabuleiro[casa_destino]]);
+        adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
     }
 
     // 1.3 adiciona capturas de peao para a direita
@@ -653,7 +653,7 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
         casa = Bitboard::bitscan(t2);
         t2 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_direita[lado_a_mover][casa];
-        adicionar_captura(casa, casa_destino, px[Bitboard::tabuleiro[casa_destino]]);
+        adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
     }
     
     // 2. gera capturas de cavalo
@@ -668,7 +668,7 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
             casa_destino = Bitboard::bitscan(t2);
             t2 &= Bitboard::not_mask[casa_destino];
 
-            adicionar_captura(casa, casa_destino, cx[Bitboard::tabuleiro[casa_destino]]);
+            adicionar_captura(casa, casa_destino, Values::cx[Bitboard::tabuleiro[casa_destino]]);
         }
     }
 
@@ -684,7 +684,7 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
             t2 &= Bitboard::not_mask[casa_destino];
 
             if (!(Bitboard::bit_entre[casa][casa_destino] & Bitboard::bit_total)){
-                adicionar_captura(casa, casa_destino, bx[Bitboard::tabuleiro[casa_destino]]);
+                adicionar_captura(casa, casa_destino, Values::bx[Bitboard::tabuleiro[casa_destino]]);
             }
         }
     }
@@ -701,7 +701,7 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
             t2 &= Bitboard::not_mask[casa_destino];
 
             if (!(Bitboard::bit_entre[casa][casa_destino] & Bitboard::bit_total)){
-                adicionar_captura(casa, casa_destino, tx[Bitboard::tabuleiro[casa_destino]]);
+                adicionar_captura(casa, casa_destino, Values::tx[Bitboard::tabuleiro[casa_destino]]);
             }
         }
     }
@@ -718,7 +718,7 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
             t2 &= Bitboard::not_mask[casa_destino];
 
             if (!(Bitboard::bit_entre[casa][casa_destino] & Bitboard::bit_total)){
-                adicionar_captura(casa, casa_destino, dx[Bitboard::tabuleiro[casa_destino]]);
+                adicionar_captura(casa, casa_destino, Values::dx[Bitboard::tabuleiro[casa_destino]]);
             }
         }
     }
@@ -730,7 +730,7 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
         casa_destino = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa_destino];
 
-        adicionar_captura(casa, casa_destino, rx[Bitboard::tabuleiro[casa_destino]]);
+        adicionar_captura(casa, casa_destino, Values::rx[Bitboard::tabuleiro[casa_destino]]);
     }
 
 
@@ -747,11 +747,11 @@ unsigned long long Gen::perft_node(int profunidade){
     gerar_lances(Game::lado, Game::xlado);
 
     for (int i = Game::qntt_lances_totais[Game::ply]; i < Game::qntt_lances_totais[Game::ply+1]; i++){
-        if (!fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino)){
+        if (!Update::fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino)){
             continue;
         }
         total += perft_node(profunidade - 1);
-        desfaz_lance();
+        Update::desfaz_lance();
     }
 
     return total;
@@ -767,12 +767,12 @@ unsigned long long Gen::perft(int profunidade){
     gerar_lances(Game::lado, Game::xlado);
 
     for (int i = Game::qntt_lances_totais[Game::ply]; i < Game::qntt_lances_totais[Game::ply+1]; i++){
-        if (!fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino)){
+        if (!Update::fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino)){
             continue;
         }
 
         unsigned long long no_lances = perft_node(profunidade - 1);
-        desfaz_lance();
+        Update::desfaz_lance();
 
         printf("%s: %llu \n", Interface::lance_para_string(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino, Gen::lista_de_lances[i].promove), no_lances);
         total += no_lances;

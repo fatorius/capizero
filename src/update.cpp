@@ -34,7 +34,7 @@ void mover_piece(const int l, const int p, const int inicio, const int destino){
     Hash::adicionar_chave(l, p, destino);
 }
 
-void remover_piece(const int l, const int p, const int casa){
+void Update::remover_piece(const int l, const int p, const int casa){
     Hash::adicionar_chave(l, p, casa);
 
     Bitboard::tabuleiro[casa] = VAZIO;
@@ -44,7 +44,7 @@ void remover_piece(const int l, const int p, const int casa){
     Bitboard::bit_total = Bitboard::bit_lados[BRANCAS] | Bitboard::bit_lados[PRETAS];
 }
 
-void desfaz_lance(){
+void Update::desfaz_lance(){
     Game::lado ^= 1;
     Game::xlado ^= 1;
     Game::ply--;
@@ -98,8 +98,7 @@ void desfaz_lance(){
     }
 }
 
-bool fazer_lance(const int inicio, const int destino){
-
+bool Update::fazer_lance(const int inicio, const int destino){
     // 1. lida com o roque do rei, movendo também a torre
     if (abs(inicio - destino) == ROQUE && Bitboard::tabuleiro[inicio] == R){
 
@@ -210,7 +209,7 @@ bool fazer_lance(const int inicio, const int destino){
     return true;
 }
 
-void adicionar_piece(const int l, const int piece, const int casa){
+void Update::adicionar_piece(const int l, const int piece, const int casa){
     Bitboard::tabuleiro[casa] = piece;
 
     Hash::adicionar_chave(l, piece, casa);
@@ -220,7 +219,7 @@ void adicionar_piece(const int l, const int piece, const int casa){
     Bitboard::bit_total = Bitboard::bit_lados[BRANCAS] | Bitboard::bit_lados[PRETAS];
 }
 
-void desfaz_captura(){
+void Update::desfaz_captura(){
     Game::lado ^= 1;
     Game::xlado ^= 1;
 
@@ -231,7 +230,7 @@ void desfaz_captura(){
     adicionar_piece(Game::xlado, Game::lista_do_jogo[Game::hply].captura, Game::lista_do_jogo[Game::hply].destino);
 }
 
-int fazer_captura(const int inicio, const int destino){
+int Update::fazer_captura(const int inicio, const int destino){
     Game::lista_do_jogo[Game::hply].inicio = inicio;
     Game::lista_do_jogo[Game::hply].destino = destino;
     Game::lista_do_jogo[Game::hply].captura = Bitboard::tabuleiro[destino];
@@ -449,7 +448,7 @@ int obter_casa_destino_por_en_passant(char ep[2]){
     }
 }
 
-void setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4], char casa_en_passant[2], char hm[4], char fm[4]){
+void Update::setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4], char casa_en_passant[2], char hm[4], char fm[4]){
     //1. LIMPA O TABULEIRO
     memset(Bitboard::bit_pieces, 0, sizeof(Bitboard::bit_pieces));
     memset(Bitboard::bit_lados, 0, sizeof(Bitboard::bit_lados));

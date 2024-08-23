@@ -213,7 +213,7 @@ void Bitboard::init_board(){
         tabuleiro[casa] = VAZIO;
 
         if(Consts::tabuleiro_inicial[casa] < 6){
-            adicionar_piece(Consts::cor_inicial[casa], Consts::tabuleiro_inicial[casa], casa);
+            Update::adicionar_piece(Consts::cor_inicial[casa], Consts::tabuleiro_inicial[casa], casa);
         }
     }
 }

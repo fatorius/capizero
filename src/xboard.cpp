@@ -11,7 +11,7 @@
 #include "hash.h"
 #include "update.h"
 
-void xboard(){
+void Xboard::xboard(){
 	int lado_do_computador;
 	char linha[256], comando[256];
 	int m;
@@ -31,7 +31,7 @@ void xboard(){
 
 		if (Game::lado == lado_do_computador){
 			prom = 0;
-			pensar(true);
+			Search::pensar(true);
 			Eval::atualizar_materiais();
 			Gen::gerar_lances(Game::lado, Game::xlado);
 			Hash::chaveAtual = Hash::obter_chave();
@@ -48,13 +48,13 @@ void xboard(){
 			Gen::lista_de_lances[0].inicio = Hash::hash_inicio;
             Gen::lista_de_lances[0].destino = Hash::hash_destino;
             
-			if ((Bitboard::tabuleiro[Hash::hash_inicio] == P) && (Consts::linhas[Hash::hash_destino] == fileira_de_promocao[Game::lado])){
+			if ((Bitboard::tabuleiro[Hash::hash_inicio] == P) && (Consts::linhas[Hash::hash_destino] == Update::fileira_de_promocao[Game::lado])){
 				prom = D; // ASSUME QUE O JOGADOR IRÁ PROMOVER SEMPRE PARA DAMA
 			}
 
 			printf("move %s\n", Interface::lance_para_string(Hash::hash_inicio,Hash::hash_destino,prom));
 	
-			fazer_lance(Hash::hash_inicio,Hash::hash_destino);
+			Update::fazer_lance(Hash::hash_inicio,Hash::hash_destino);
   
 			Game::ply = 0;
 			Gen::gerar_lances(Game::lado, Game::xlado);
@@ -164,7 +164,7 @@ void xboard(){
         }
 
 		if (!strcmp(comando, "hint")) {
-			pensar(true);
+			Search::pensar(true);
 			Hash::chaveAtual = Hash::obter_chave();
 			Hash::lockAtual = Hash::obter_lock();
             
@@ -182,7 +182,7 @@ void xboard(){
 				continue;
             }
 
-			desfaz_lance();
+			Update::desfaz_lance();
 			Game::ply = 0;
 
 			Gen::gerar_lances(Game::lado, Game::xlado);
@@ -195,8 +195,8 @@ void xboard(){
 				continue;
             }
 			
-            desfaz_lance();
-			desfaz_lance();
+            Update::desfaz_lance();
+			Update::desfaz_lance();
 
 			Game::ply = 0;
 
@@ -220,7 +220,7 @@ void xboard(){
 		if (!strcmp(comando, "setboard")){
 			char posicao[80], lado_a_jogar[1], roques[4], casa_en_passant[2], hm[4], fm[4];
 			sscanf(linha, "setboard %s %s %s %s %s %s", posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
-			setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
+			Update::setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
 			continue;
 		}
 
@@ -234,7 +234,7 @@ void xboard(){
 		Gen::gerar_lances(Game::lado, Game::xlado);
 
 		m = Interface::converter_lance(linha);
-		if (m == -1 || !fazer_lance(Gen::lista_de_lances[m].inicio, Gen::lista_de_lances[m].destino)){
+		if (m == -1 || !Update::fazer_lance(Gen::lista_de_lances[m].inicio, Gen::lista_de_lances[m].destino)){
 			printf("Error (unknown comand): %s\n", comando);
         }
 		else {

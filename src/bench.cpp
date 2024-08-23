@@ -40,11 +40,11 @@ void Bench::search_performance_test(){
 
     int nps_search;
 
-    nps_search = (double) lances_avaliados / (double) delta;
+    nps_search = (double) Search::lances_avaliados / (double) delta;
 
     printf("Pesquisa de lances: %dK posições por segundo\n", nps_search);
     printf("Tempo para chegar pesquisar na profundidade 11: %f segundos\n", (float) delta / 1000.0);
-    printf("Lances avaliados: %dK\n", lances_avaliados / 1000);
+    printf("Lances avaliados: %dK\n", Search::lances_avaliados / 1000);
     printf("Lance do computador: %s \n", Interface::lance_para_string(Game::lista_do_jogo[0].inicio, Game::lista_do_jogo[0].destino, 0));
 }
 
