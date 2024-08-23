@@ -104,7 +104,7 @@ bool fazer_lance(const int inicio, const int destino){
     if (abs(inicio - destino) == ROQUE && tabuleiro[inicio] == R){
 
         // 1.1 verifica se o rei está em xeque
-        if (casa_esta_sendo_atacada(xlado, inicio)){
+        if (Attacks::casa_esta_sendo_atacada(xlado, inicio)){
             return false;
         }
 
@@ -112,28 +112,28 @@ bool fazer_lance(const int inicio, const int destino){
 
         // 1.2.1 roque menor brancas
         if (destino == G1){
-            if (casa_esta_sendo_atacada(xlado, F1)){
+            if (Attacks::casa_esta_sendo_atacada(xlado, F1)){
                 return false;
             }
             mover_piece(lado, T, H1, F1);
         }
         // 1.2.2 roque maior brancas
         else if (destino == C1){
-            if (casa_esta_sendo_atacada(xlado, D1)){
+            if (Attacks::casa_esta_sendo_atacada(xlado, D1)){
                 return false;
             }
             mover_piece(lado, T, A1, D1);
         }
         // 1.2.3 roque menor pretas
         else if (destino == G8){
-            if (casa_esta_sendo_atacada(xlado, F8)){
+            if (Attacks::casa_esta_sendo_atacada(xlado, F8)){
                 return false;
             }
             mover_piece(lado, T, H8, F8);
         }
         // 1.2.4 roque maior pretas
         else if (destino == C8){
-            if (casa_esta_sendo_atacada(xlado, D8)){
+            if (Attacks::casa_esta_sendo_atacada(xlado, D8)){
                 return false;
             }
             mover_piece(lado, T, A8, D8);
@@ -202,7 +202,7 @@ bool fazer_lance(const int inicio, const int destino){
 
     // 4. verifica se o lance deixou o rei em xeque
 
-    if (casa_esta_sendo_atacada(lado, bitscan(bit_pieces[xlado][R]))){
+    if (Attacks::casa_esta_sendo_atacada(lado, bitscan(bit_pieces[xlado][R]))){
         desfaz_lance();
         return false;
     }
@@ -245,7 +245,7 @@ int fazer_captura(const int inicio, const int destino){
     lado ^= 1;
     xlado ^= 1;
 
-    if (casa_esta_sendo_atacada(lado, bitscan(bit_pieces[xlado][R]))){
+    if (Attacks::casa_esta_sendo_atacada(lado, bitscan(bit_pieces[xlado][R]))){
         desfaz_captura();
         return false;
     }

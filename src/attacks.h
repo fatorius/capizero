@@ -1,7 +1,9 @@
 #ifndef ATTACKS
 #define ATTACKS
 
-bool casa_esta_sendo_atacada(const int l, const int casa);
-int menor_atacante(const int l, const int xl, const int casa);
+namespace Attacks{
+    bool casa_esta_sendo_atacada(const int l, const int casa);
+    int menor_atacante(const int l, const int xl, const int casa);
+};
 
 #endif

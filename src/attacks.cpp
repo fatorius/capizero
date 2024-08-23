@@ -3,7 +3,7 @@
 #include "gen.h"
 #include "bitboard.h"
 
-int menor_atacante(const int l, const int xl, const int casa){
+int Attacks::menor_atacante(const int l, const int xl, const int casa){
     // Peões atacantes automaticamente serão os menores atacantes
     if (bit_esquerda[xl][casa] & bit_pieces[l][P]){
         return peao_esquerda[xl][casa];
@@ -53,7 +53,7 @@ int menor_atacante(const int l, const int xl, const int casa){
     return -1;
 }
 
-bool casa_esta_sendo_atacada(const int l, const int casa){
+bool Attacks::casa_esta_sendo_atacada(const int l, const int casa){
     if (bit_peao_defende[l][casa] & bit_pieces[l][P]){
         return true;
     }

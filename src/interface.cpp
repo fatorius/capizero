@@ -209,7 +209,7 @@ void print_resultado(){
 
         printf("Fim do jogo \n");
 
-        if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
+        if (Attacks::casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
             if (lado == BRANCAS){
                 printf("0-1 {Pretas dao xeque-mate} \n");
             }

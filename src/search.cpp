@@ -74,7 +74,7 @@ int pesquisa_quiescence(int inicio, const int destino){
         lances_avaliados++;
         recaptura++;
 
-        menor_recaptura = menor_atacante(lado, xlado, destino); // ordena por MVA/LVV
+        menor_recaptura = Attacks::menor_atacante(lado, xlado, destino); // ordena por MVA/LVV
 
         if (menor_recaptura > -1){
             score[recaptura + 1] = pieces_valor[tabuleiro[menor_recaptura]];
@@ -206,7 +206,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
 
     int check = 0;
 
-    if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
+    if (Attacks::casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
         check = 1;
     }
 
@@ -293,7 +293,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
     }
 
     if (!lances_legais_na_posicao){
-        if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
+        if (Attacks::casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
             return VALOR_XEQUE_MATE_PADRAO - ply;
         }
         else{
@@ -326,7 +326,7 @@ void pensar(bool verbose){
     }
 
     if (!tempo_fixo){
-        if (casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
+        if (Attacks::casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
             tempo_maximo = tempo_maximo / 2;
         }
     }
