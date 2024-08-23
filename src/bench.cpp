@@ -13,7 +13,7 @@
 void Bench::movegen_performance_test(){
     int tempoInicial = obter_tempo();
 
-    unsigned long long lances_gerados = perft_node(5);
+    unsigned long long lances_gerados = Gen::perft_node(5);
 
     int delta = obter_tempo() - tempoInicial;
 

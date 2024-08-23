@@ -16,7 +16,7 @@ extern int hash_inicio, hash_destino;
 
 void iniciar_hash();
 void liberar_memoria();
-void adicionar_hash(const int ld, const lance lc);
+void adicionar_hash(const int ld, const Gen::lance lc);
 void adicionar_chave(const int l, const int piece, const int casa);
 
 void adicionar_pontuacao_de_hash();

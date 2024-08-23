@@ -36,7 +36,7 @@ void Game::novo_jogo(){
     
     Bitboard::init_board();
     
-    gerar_lances(lado, xlado);
+    Gen::gerar_lances(lado, xlado);
 }
 
 bool Game::checar_repeticoes(){

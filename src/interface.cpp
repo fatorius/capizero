@@ -185,10 +185,10 @@ void print_resultado(){
     bool existem_lances_legais = false;
 
     Eval::atualizar_materiais();
-    gerar_lances(Game::lado, Game::xlado);
+    Gen::gerar_lances(Game::lado, Game::xlado);
 
     for (i = 0; i < Game::qntt_lances_totais[1]; ++i){
-        if (fazer_lance(lista_de_lances[i].inicio, lista_de_lances[i].destino)){
+        if (fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino)){
             desfaz_lance();
             existem_lances_legais = true;
             break;
@@ -263,7 +263,7 @@ void lance_computador(bool verbose){
 
             display_tabuleiro();
 
-            gerar_lances(Game::lado, Game::xlado);
+            Gen::gerar_lances(Game::lado, Game::xlado);
 
             return;
         }
@@ -276,7 +276,7 @@ void lance_computador(bool verbose){
     Game::ply = 0;
     Game::qntt_lances_totais[0] = 0;
 
-    gerar_lances(Game::lado, Game::xlado);
+    Gen::gerar_lances(Game::lado, Game::xlado);
 
     if (verbose){
         printf("Lance do computador: %s \n", lance_para_string(hash_inicio, hash_destino, 0));
@@ -321,15 +321,15 @@ int converter_lance(char *lnc){
     destino += ((lnc[3] - '0') - 1) * 8;
 
     for (i = 0; i < Game::qntt_lances_totais[1]; i++){
-        if (lista_de_lances[i].inicio == inicio && lista_de_lances[i].destino == destino){
+        if (Gen::lista_de_lances[i].inicio == inicio && Gen::lista_de_lances[i].destino == destino){
             if (lnc[4] == 'n' || lnc[4]=='N'){
-                lista_de_lances[i].promove = C;
+                Gen::lista_de_lances[i].promove = C;
             }
             if (lnc[4] == 'b' || lnc[4]=='B'){
-                lista_de_lances[i].promove = B;
+                Gen::lista_de_lances[i].promove = B;
             }
             if (lnc[4] == 'r' || lnc[4]=='R'){
-                lista_de_lances[i].promove = T;
+                Gen::lista_de_lances[i].promove = T;
             }
 
             return i;
@@ -342,11 +342,11 @@ int converter_lance(char *lnc){
 void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
     Game::ply = 0;
     Game::qntt_lances_totais[0] = 0;
-    gerar_lances(Game::lado, Game::xlado);
+    Gen::gerar_lances(Game::lado, Game::xlado);
 
     lance_usuario = converter_lance(lnc);
 
-    if (lance_usuario == -1 || !fazer_lance(lista_de_lances[lance_usuario].inicio, lista_de_lances[lance_usuario].destino)){
+    if (lance_usuario == -1 || !fazer_lance(Gen::lista_de_lances[lance_usuario].inicio, Gen::lista_de_lances[lance_usuario].destino)){
         printf("Comando / Lance inválido\n");
         printf("Digite 'ajuda' para exibir uma lista de comandos válidos ou\n");
         printf("Digite 'lances' para exibir uma lista de lances legais\n");
@@ -355,20 +355,20 @@ void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
     }
 
     // atualiza peça promovida
-    if (lista_de_lances[Game::hply - 1].promove > P && (Consts::colunas[lista_de_lances[lance_usuario].destino] == FILEIRA_1 || Consts::colunas[lista_de_lances[lance_usuario].destino] == FILEIRA_8)){
-        remover_piece(Game::xlado, D, lista_de_lances[lance_usuario].destino);
+    if (Gen::lista_de_lances[Game::hply - 1].promove > P && (Consts::colunas[Gen::lista_de_lances[lance_usuario].destino] == FILEIRA_1 || Consts::colunas[Gen::lista_de_lances[lance_usuario].destino] == FILEIRA_8)){
+        remover_piece(Game::xlado, D, Gen::lista_de_lances[lance_usuario].destino);
 
         if (lnc[PROMOCAO] == 'n' || lnc[PROMOCAO] == 'N'){
-            adicionar_piece(Game::xlado, C, lista_de_lances[lance_usuario].destino);
+            adicionar_piece(Game::xlado, C, Gen::lista_de_lances[lance_usuario].destino);
         }
         else if (lnc[PROMOCAO] == 'b' || lnc[PROMOCAO] == 'B'){
-            adicionar_piece(Game::xlado, B, lista_de_lances[lance_usuario].destino);
+            adicionar_piece(Game::xlado, B, Gen::lista_de_lances[lance_usuario].destino);
         }
         else if (lnc[PROMOCAO] == 'r' || lnc[PROMOCAO] == 'R'){
-            adicionar_piece(Game::xlado, T, lista_de_lances[lance_usuario].destino);
+            adicionar_piece(Game::xlado, T, Gen::lista_de_lances[lance_usuario].destino);
         }
         else{
-            adicionar_piece(Game::xlado, D, lista_de_lances[lance_usuario].destino);
+            adicionar_piece(Game::xlado, D, Gen::lista_de_lances[lance_usuario].destino);
         }
     }
 
@@ -397,7 +397,7 @@ bool ler_comando(){
         printf("Lances legais: \n");
 
         for (int i = 0; i < Game::qntt_lances_totais[1]; i++){
-            printf("%s", lance_para_string(lista_de_lances[i].inicio, lista_de_lances[i].destino, lista_de_lances[i].promove));
+            printf("%s", lance_para_string(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino, Gen::lista_de_lances[i].promove));
             printf("\n");
         }
     }
@@ -478,7 +478,7 @@ bool ler_comando(){
             Game::qntt_lances_totais[0] = 0;
         }
 
-        gerar_lances(Game::lado, Game::xlado);
+        Gen::gerar_lances(Game::lado, Game::xlado);
     }
     else if (!strcmp(cmd, COMANDO_INICIA_XBOARD)){
         xboard();
@@ -492,7 +492,7 @@ bool ler_comando(){
 
         int tempoInicial = obter_tempo();
 
-        unsigned long long perft_results = perft(profundidade_perft);
+        unsigned long long perft_results = Gen::perft(profundidade_perft);
 
         int delta = obter_tempo() - tempoInicial;
 

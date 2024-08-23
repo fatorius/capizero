@@ -33,7 +33,7 @@ void xboard(){
 			prom = 0;
 			pensar(true);
 			Eval::atualizar_materiais();
-			gerar_lances(Game::lado, Game::xlado);
+			Gen::gerar_lances(Game::lado, Game::xlado);
 			chaveAtual = obter_chave();
 			lockAtual = obter_lock();
 
@@ -45,8 +45,8 @@ void xboard(){
 				printf(" lookup=0 ");
             }
 
-			lista_de_lances[0].inicio = hash_inicio;
-            lista_de_lances[0].destino = hash_destino;
+			Gen::lista_de_lances[0].inicio = hash_inicio;
+            Gen::lista_de_lances[0].destino = hash_destino;
             
 			if ((Bitboard::tabuleiro[hash_inicio] == P) && (Consts::linhas[hash_destino] == fileira_de_promocao[Game::lado])){
 				prom = D; // ASSUME QUE O JOGADOR IRÁ PROMOVER SEMPRE PARA DAMA
@@ -57,7 +57,7 @@ void xboard(){
 			fazer_lance(hash_inicio,hash_destino);
   
 			Game::ply = 0;
-			gerar_lances(Game::lado, Game::xlado);
+			Gen::gerar_lances(Game::lado, Game::xlado);
 			print_resultado();
 			continue;
 		}
@@ -94,7 +94,7 @@ void xboard(){
 		if (!strcmp(comando, "white")){
 			Game::lado = BRANCAS;
 			Game::xlado = PRETAS;
-			gerar_lances(Game::lado, Game::xlado);
+			Gen::gerar_lances(Game::lado, Game::xlado);
 			lado_do_computador = PRETAS;
 			continue;
 		}
@@ -102,7 +102,7 @@ void xboard(){
 		if (!strcmp(comando, "black")){
 			Game::lado = PRETAS;
 			Game::xlado = BRANCAS;
-			gerar_lances(Game::lado, Game::xlado);
+			Gen::gerar_lances(Game::lado, Game::xlado);
 			lado_do_computador = BRANCAS;
 			continue;
 		}
@@ -185,7 +185,7 @@ void xboard(){
 			desfaz_lance();
 			Game::ply = 0;
 
-			gerar_lances(Game::lado, Game::xlado);
+			Gen::gerar_lances(Game::lado, Game::xlado);
 			
             continue;
 		}
@@ -200,7 +200,7 @@ void xboard(){
 
 			Game::ply = 0;
 
-			gerar_lances(Game::lado, Game::xlado);
+			Gen::gerar_lances(Game::lado, Game::xlado);
 			continue;
 		}
 		if (!strcmp(comando, "post")){
@@ -231,15 +231,15 @@ void xboard(){
 		}
 
 		Game::qntt_lances_totais[0] = 0;
-		gerar_lances(Game::lado, Game::xlado);
+		Gen::gerar_lances(Game::lado, Game::xlado);
 
 		m = converter_lance(linha);
-		if (m == -1 || !fazer_lance(lista_de_lances[m].inicio, lista_de_lances[m].destino)){
+		if (m == -1 || !fazer_lance(Gen::lista_de_lances[m].inicio, Gen::lista_de_lances[m].destino)){
 			printf("Error (unknown comand): %s\n", comando);
         }
 		else {
 			Game::ply = 0;
- 			gerar_lances(Game::lado, Game::xlado);
+ 			Gen::gerar_lances(Game::lado, Game::xlado);
 			print_resultado();
 		}
 	}

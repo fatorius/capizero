@@ -17,9 +17,9 @@ int lances_avaliados;
 int tempo_do_inicio, tempo_do_fim;
 
 int historico_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
-lance contraLance_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
-lance killers_primarios[MAX_PLY];
-lance killers_secundarios[MAX_PLY];
+Gen::lance contraLance_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
+Gen::lance killers_primarios[MAX_PLY];
+Gen::lance killers_secundarios[MAX_PLY];
 
 jmp_buf env;
 bool parar_pesquisa;
@@ -34,21 +34,21 @@ void verificar_tempo(){
 }
 
 void ordenar_lances(const int desde){
-    lance l;
+    Gen::lance l;
 
-    int maior_score = lista_de_lances[desde].score;
+    int maior_score = Gen::lista_de_lances[desde].score;
     int indice_do_maior_score = desde;
 
     for (int i = desde + 1; i < Game::qntt_lances_totais[Game::ply + 1]; ++i){
-        if (lista_de_lances[i].score > maior_score){
-            maior_score = lista_de_lances[i].score;
+        if (Gen::lista_de_lances[i].score > maior_score){
+            maior_score = Gen::lista_de_lances[i].score;
             indice_do_maior_score = i;
         }
     }
 
-    l = lista_de_lances[desde];
-    lista_de_lances[desde] = lista_de_lances[indice_do_maior_score];
-    lista_de_lances[indice_do_maior_score] = l; 
+    l = Gen::lista_de_lances[desde];
+    Gen::lista_de_lances[desde] = Gen::lista_de_lances[indice_do_maior_score];
+    Gen::lista_de_lances[indice_do_maior_score] = l; 
 }
 
 int pesquisa_quiescence(int inicio, const int destino){
@@ -138,16 +138,16 @@ int pesquisa_rapida(int alpha, int beta){
     int melhorlance = 0;
     int melhorscore = 0;
 
-    gerar_capturas(Game::lado, Game::xlado);
+    Gen::gerar_capturas(Game::lado, Game::xlado);
 
     for (int i = Game::qntt_lances_totais[Game::ply]; i < Game::qntt_lances_totais[Game::ply+1]; ++i){
         ordenar_lances(i);
 
-        if (score_capturas + pieces_valor[Bitboard::tabuleiro[lista_de_lances[i].destino]] < alpha){
+        if (score_capturas + pieces_valor[Bitboard::tabuleiro[Gen::lista_de_lances[i].destino]] < alpha){
             continue;
         }
 
-        score = pesquisa_quiescence(lista_de_lances[i].inicio, lista_de_lances[i].destino);
+        score = pesquisa_quiescence(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino);
 
         if (score > melhorscore){
             melhorscore = score;
@@ -162,7 +162,7 @@ int pesquisa_rapida(int alpha, int beta){
     if (score_capturas > alpha){
         if (score_capturas >= beta){
             if (melhorscore > 0){
-                adicionar_hash(Game::lado, lista_de_lances[melhorlance]);
+                adicionar_hash(Game::lado, Gen::lista_de_lances[melhorlance]);
             }
 
             return score_capturas;
@@ -174,7 +174,7 @@ int pesquisa_rapida(int alpha, int beta){
 
 void adicionar_pontuacao_iid(int alpha, int beta, int profundidade){
     for (int candidato = Game::qntt_lances_totais[Game::ply]; candidato < Game::qntt_lances_totais[Game::ply + 1]; ++candidato){
-        lista_de_lances[candidato].score = -pesquisa(-beta, -alpha, profundidade REDUCAO_IID, false);
+        Gen::lista_de_lances[candidato].score = -pesquisa(-beta, -alpha, profundidade REDUCAO_IID, false);
     }
 }   
 
@@ -200,7 +200,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
 
     // pesquisa alpha-beta
 
-    lance melhorlance;
+    Gen::lance melhorlance;
 
     int melhorscore = MELHOR_SCORE_INICIAL;
 
@@ -210,7 +210,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
         check = 1;
     }
 
-    gerar_lances(Game::lado, Game::xlado);
+    Gen::gerar_lances(Game::lado, Game::xlado);
 
     if (hash_lookup(Game::lado)){
         adicionar_pontuacao_de_hash(); // ordena por lances hash, pv é pesquisado primeiro
@@ -228,7 +228,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
         ordenar_lances(candidato);
 
         // verifica se o lance é legal
-        if (!fazer_lance(lista_de_lances[candidato].inicio, lista_de_lances[candidato].destino)){
+        if (!fazer_lance(Gen::lista_de_lances[candidato].inicio, Gen::lista_de_lances[candidato].destino)){
             continue;
         }
 
@@ -240,10 +240,10 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
             nova_profundidade = profundidade; // extensões de xeques
         }
         else{ // reduções
-            if (lista_de_lances[candidato].score > SCORE_DE_CAPTURA_VANTAJOSAS || lances_legais_na_posicao == 1){
+            if (Gen::lista_de_lances[candidato].score > SCORE_DE_CAPTURA_VANTAJOSAS || lances_legais_na_posicao == 1){
                 nova_profundidade = profundidade - 1;
             }
-            else if (lista_de_lances[candidato].score > 0){
+            else if (Gen::lista_de_lances[candidato].score > 0){
                 nova_profundidade = profundidade - 2;
             }
             else{
@@ -269,21 +269,21 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
 
         if (score_candidato > melhorscore){
             melhorscore = score_candidato;
-            melhorlance = lista_de_lances[candidato];
+            melhorlance = Gen::lista_de_lances[candidato];
         }
 
         if (score_candidato > alpha){
             if (score_candidato >= beta){ // beta-cutoff
 
-                if (!(Bitboard::mask[lista_de_lances[candidato].destino] & Bitboard::bit_total)){ // adiciona no historico se não for uma captura
-                    historico_heuristica[lista_de_lances[candidato].inicio][lista_de_lances[candidato].destino] += 1 << profundidade; 
-                    contraLance_heuristica[Game::lista_do_jogo[Game::hply].inicio][Game::lista_do_jogo[Game::hply].destino] = lista_de_lances[candidato];
+                if (!(Bitboard::mask[Gen::lista_de_lances[candidato].destino] & Bitboard::bit_total)){ // adiciona no historico se não for uma captura
+                    historico_heuristica[Gen::lista_de_lances[candidato].inicio][Gen::lista_de_lances[candidato].destino] += 1 << profundidade; 
+                    contraLance_heuristica[Game::lista_do_jogo[Game::hply].inicio][Game::lista_do_jogo[Game::hply].destino] = Gen::lista_de_lances[candidato];
 
                     killers_secundarios[Game::ply] = killers_primarios[Game::ply];
-                    killers_primarios[Game::ply] = lista_de_lances[candidato];
+                    killers_primarios[Game::ply] = Gen::lista_de_lances[candidato];
                 }
 
-                adicionar_hash(Game::lado, lista_de_lances[candidato]);
+                adicionar_hash(Game::lado, Gen::lista_de_lances[candidato]);
 
                 return beta;
             }

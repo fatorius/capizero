@@ -11,7 +11,7 @@ void init(){
     Bitboard::init_bits();
     Bitboard::init_board();
     Eval::init_eval_tables();
-    init_lookup_tables();
+    Gen::init_lookup_tables();
     Bitboard::init_vetores();
     iniciar_hash();
 
