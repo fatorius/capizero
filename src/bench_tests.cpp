@@ -15,7 +15,7 @@ int main(){
     printf("compilado em %s \n\n", __TIMESTAMP__);
     printf("executando testes de performance \n\n\n");
 
-    init();
+    Init::init();
 
     Bench::movegen_performance_test();
     Bench::eval_performance_test();

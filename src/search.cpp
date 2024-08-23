@@ -24,10 +24,10 @@ Gen::lance killers_secundarios[MAX_PLY];
 jmp_buf env;
 bool parar_pesquisa;
 
-int lance_inicio, lance_destino;
+int Interface::lance_inicio, Interface::lance_destino;
 
 void verificar_tempo(){
-    if ((obter_tempo() >= tempo_do_fim || (tempo_maximo < 50 && Game::ply > 1)) && profundidade_fixa == 0 && Game::ply > 1){
+    if ((Interface::obter_tempo() >= tempo_do_fim || (Interface::tempo_maximo < 50 && Game::ply > 1)) && Interface::profundidade_fixa == 0 && Game::ply > 1){
         parar_pesquisa = true;
         longjmp(env, 0);
     }
@@ -325,14 +325,14 @@ void pensar(bool verbose){
         return;
     }
 
-    if (!tempo_fixo){
+    if (!Interface::tempo_fixo){
         if (Attacks::casa_esta_sendo_atacada(Game::xlado, Bitboard::bitscan(Bitboard::bit_pieces[Game::lado][R]))){
-            tempo_maximo = tempo_maximo / 2;
+            Interface::tempo_maximo = Interface::tempo_maximo / 2;
         }
     }
 
-    tempo_do_inicio = obter_tempo();
-    tempo_do_fim = tempo_do_inicio + tempo_maximo;
+    tempo_do_inicio = Interface::obter_tempo();
+    tempo_do_fim = tempo_do_inicio + Interface::tempo_maximo;
 
     Game::ply = 0;
     lances_avaliados = 0;
@@ -346,15 +346,15 @@ void pensar(bool verbose){
         printf("ply score time nodes pv\n");
     }
 
-    for (int profundidade = 1; profundidade <= profundidade_maxima; ++profundidade){
-        if (!profundidade_fixa && profundidade_maxima > 1){
-            if (tempo_fixo){
-                if (obter_tempo() >= tempo_do_inicio + tempo_maximo){
+    for (int profundidade = 1; profundidade <= Interface::profundidade_maxima; ++profundidade){
+        if (!Interface::profundidade_fixa && Interface::profundidade_maxima > 1){
+            if (Interface::tempo_fixo){
+                if (Interface::obter_tempo() >= tempo_do_inicio + Interface::tempo_maximo){
                     parar_pesquisa = true;
                     return;
                 }
             }
-            else if (obter_tempo() >= tempo_do_inicio + tempo_maximo/4){
+            else if (Interface::obter_tempo() >= tempo_do_inicio + Interface::tempo_maximo/4){
                 parar_pesquisa = true;
                 return;
             }
@@ -387,15 +387,15 @@ void pensar(bool verbose){
 
         if (Hash::hash_lookup(Game::lado)){
             if (verbose){
-                printf("%d %d %d %d ", profundidade, melhor_linha, (obter_tempo() - tempo_do_inicio) / 10, lances_avaliados);
-                exibir_melhor_linha(profundidade);    
+                printf("%d %d %d %d ", profundidade, melhor_linha, (Interface::obter_tempo() - tempo_do_inicio) / 10, lances_avaliados);
+                Interface::exibir_melhor_linha(profundidade);    
                 printf("\n");
                 fflush(stdout);    
             }  
         }
         else{
-            lance_inicio = 0;
-            lance_destino = 0;
+            Interface::lance_inicio = 0;
+            Interface::lance_destino = 0;
         }
 
 

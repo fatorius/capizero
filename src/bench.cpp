@@ -11,11 +11,11 @@
 #include "hash.h"
 
 void Bench::movegen_performance_test(){
-    int tempoInicial = obter_tempo();
+    int tempoInicial = Interface::obter_tempo();
 
     unsigned long long lances_gerados = Gen::perft_node(5);
 
-    int delta = obter_tempo() - tempoInicial;
+    int delta = Interface::obter_tempo() - tempoInicial;
 
     int nps_perft;
 
@@ -27,16 +27,16 @@ void Bench::movegen_performance_test(){
 void Bench::search_performance_test(){
     Game::novo_jogo();
 
-    profundidade_maxima = 11;
-    tempo_maximo = 1 << 25;
-    profundidade_fixa = true;
-    tempo_fixo = false;
+    Interface::profundidade_maxima = 11;
+    Interface::tempo_maximo = 1 << 25;
+    Interface::profundidade_fixa = true;
+    Interface::tempo_fixo = false;
 
-    int tempoInicial = obter_tempo();
+    int tempoInicial = Interface::obter_tempo();
 
-    lance_computador(false);
+    Interface::lance_computador(false);
 
-    int delta = obter_tempo() - tempoInicial;
+    int delta = Interface::obter_tempo() - tempoInicial;
 
     int nps_search;
 
@@ -45,15 +45,15 @@ void Bench::search_performance_test(){
     printf("Pesquisa de lances: %dK posições por segundo\n", nps_search);
     printf("Tempo para chegar pesquisar na profundidade 11: %f segundos\n", (float) delta / 1000.0);
     printf("Lances avaliados: %dK\n", lances_avaliados / 1000);
-    printf("Lance do computador: %s \n", lance_para_string(Game::lista_do_jogo[0].inicio, Game::lista_do_jogo[0].destino, 0));
+    printf("Lance do computador: %s \n", Interface::lance_para_string(Game::lista_do_jogo[0].inicio, Game::lista_do_jogo[0].destino, 0));
 }
 
 void Bench::eval_performance_test(){
-    int tempoInicial = obter_tempo();
+    int tempoInicial = Interface::obter_tempo();
 
     long avals = 0;
 
-    while ((obter_tempo() - tempoInicial) < 5000){
+    while ((Interface::obter_tempo() - tempoInicial) < 5000){
 
         for (int i = 0; i < 4000; i++){
             Eval::avaliar();

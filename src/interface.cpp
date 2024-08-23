@@ -18,29 +18,25 @@
 
 using namespace std;
 
-int no_lances = 0;
-
-int lookup;
-
 int nps;
-
 int lance_usuario;
 int tabuleiro_invertido = 0;
 
-extern int lance_inicio, lance_destino;
+int Interface::no_lances = 0;
+int Interface::lookup;
 
-int tempo_gasto;
+extern int Interface::lance_inicio, Interface::lance_destino;
 
-int tempo_maximo;
-int profundidade_maxima;
+int Interface::tempo_gasto;
 
-bool tempo_fixo, profundidade_fixa;
+int Interface::tempo_maximo, Interface::profundidade_maxima;
+bool Interface::tempo_fixo, Interface::profundidade_fixa;
 
 int profundidade_perft;
 
-void exibir_melhor_linha(int profundidade){
-     lance_inicio = Hash::hash_inicio;
-     lance_destino = Hash::hash_destino;
+void Interface::exibir_melhor_linha(int profundidade){
+     Interface::lance_inicio = Hash::hash_inicio;
+     Interface::lance_destino = Hash::hash_destino;
 
      for (int x = 0; x < profundidade; x++){
         if (Hash::hash_lookup(Game::lado) == false){
@@ -68,16 +64,16 @@ void converter_casa_para_algebrico(int a){
     printf("%s%d", c, Consts::linhas[a]+1);
 }
 
-void print_lance_algebrico(int a, int b){
+void Interface::print_lance_algebrico(int a, int b){
     converter_casa_para_algebrico(a);
     converter_casa_para_algebrico(b);
 }
 
-int obter_tempo(){
+int Interface::obter_tempo(){
     return chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
 }
 
-void display_tabuleiro() {
+void Interface::display_tabuleiro() {
     printf("\n");
 
     int i;
@@ -129,7 +125,7 @@ void display_tabuleiro() {
     printf("\n\n");
 }
 
-char *lance_para_string(int inicio, int destino, int promove){
+char *Interface::lance_para_string(int inicio, int destino, int promove){
     static char str[6];
 
     char c;
@@ -180,7 +176,7 @@ int repeticoes(){
     return r;
 }
 
-void print_resultado(){
+void Interface::print_resultado(){
     int i;
     bool existem_lances_legais = false;
 
@@ -238,24 +234,24 @@ void print_resultado(){
     }
 }
 
-void lance_computador(bool verbose){
+void Interface::lance_computador(bool verbose){
     Game::jogador[Game::lado] = 1;
 
     pensar(verbose);
 
-    no_lances++;
+    Interface::no_lances++;
 
     Hash::chaveAtual = Hash::obter_chave();
     Hash::lockAtual = Hash::obter_lock();
 
-    lookup = Hash::hash_lookup(Game::lado);
+    Interface::lookup = Hash::hash_lookup(Game::lado);
 
-    tempo_gasto = obter_tempo() - tempo_do_inicio;
+    Interface::tempo_gasto = Interface::obter_tempo() - tempo_do_inicio;
 
     if (verbose){
-        if (lance_inicio != 0 || lance_destino != 0){
-            Hash::hash_inicio = lance_inicio;
-            Hash::hash_destino = lance_destino;
+        if (Interface::lance_inicio != 0 || Interface::lance_destino != 0){
+            Hash::hash_inicio = Interface::lance_inicio;
+            Hash::hash_destino = Interface::lance_destino;
         }
         else{
             printf("(Sem lances legais) \n");
@@ -282,10 +278,10 @@ void lance_computador(bool verbose){
         printf("Lance do computador: %s \n", lance_para_string(Hash::hash_inicio, Hash::hash_destino, 0));
         printf("\n");
 
-        printf("\nTempo gasto: %d ms \n", tempo_gasto);
+        printf("\nTempo gasto: %d ms \n", Interface::tempo_gasto);
 
-        if (tempo_gasto > 0){
-            nps = (double) lances_avaliados / (double) tempo_gasto;
+        if (Interface::tempo_gasto > 0){
+            nps = (double) lances_avaliados / (double) Interface::tempo_gasto;
             nps *= 1000.0;
         }
         else{
@@ -297,13 +293,13 @@ void lance_computador(bool verbose){
         print_resultado();
 
         printf("Lance ");
-        printf("%d", no_lances++);
+        printf("%d", Interface::no_lances++);
 
         display_tabuleiro();
     }
 }
 
-int converter_lance(char *lnc){
+int Interface::converter_lance(char *lnc){
     int inicio, destino, i;
 
     if (
@@ -344,7 +340,7 @@ void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
     Game::qntt_lances_totais[0] = 0;
     Gen::gerar_lances(Game::lado, Game::xlado);
 
-    lance_usuario = converter_lance(lnc);
+    lance_usuario = Interface::converter_lance(lnc);
 
     if (lance_usuario == -1 || !fazer_lance(Gen::lista_de_lances[lance_usuario].inicio, Gen::lista_de_lances[lance_usuario].destino)){
         printf("Comando / Lance inválido\n");
@@ -375,7 +371,7 @@ void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
     return;
 }
 
-bool ler_comando(){
+bool Interface::ler_comando(){
     fflush(stdout);
     
     char cmd[TAMANHO_MAXIMO_COMANDO];
@@ -391,7 +387,7 @@ bool ler_comando(){
         tabuleiro_invertido = 1 - tabuleiro_invertido;
     }
     else if (!strcmp(cmd, COMANDO_EXIBIR_AJUDA)){
-        exibir_ajuda();
+        Help::exibir_ajuda();
     }
     else if (!strcmp(cmd, COMANDO_EXIBIR_LANCES)){
         printf("Lances legais: \n");
@@ -443,23 +439,23 @@ bool ler_comando(){
         return true;
     }
     else if (!strcmp(cmd, COMANDO_CONFIGURAR_PROFUNDIDADE)){
-        if (scanf("%d", &profundidade_maxima) == EOF){
+        if (scanf("%d", &Interface::profundidade_maxima) == EOF){
             return false;
         }
 
-        tempo_maximo = 1 << 25;
-        profundidade_fixa = true;
-        tempo_fixo = false;
+        Interface::tempo_maximo = 1 << 25;
+        Interface::profundidade_fixa = true;
+        Interface::tempo_fixo = false;
     }
     else if (!strcmp(cmd, COMANDO_CONFIGURAR_TEMPO)){
-        if (scanf("%d", &tempo_maximo) == EOF){
+        if (scanf("%d", &Interface::tempo_maximo) == EOF){
             return false;
         }
 
-        tempo_maximo *= SEGUNDO;
-        profundidade_maxima = MAX_PLY;
-        tempo_fixo = true;
-        profundidade_fixa = false;
+        Interface::tempo_maximo *= SEGUNDO;
+        Interface::profundidade_maxima = MAX_PLY;
+        Interface::tempo_fixo = true;
+        Interface::profundidade_fixa = false;
     }
     else if (!strcmp(cmd, COMANDO_TROCAR_DE_LADO)){
         Game::lado ^= 1;

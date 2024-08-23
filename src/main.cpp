@@ -21,13 +21,13 @@ int main(){
 
     printf("\n");
 
-    init();
+    Init::init();
 
     printf("\n\nalgoritmo iniciado\n\n");
     
-    while (ler_comando()){
+    while (Interface::ler_comando()){
         if (Game::lado_do_computador == Game::lado){
-            lance_computador(true);
+            Interface::lance_computador(true);
         }
     }
 

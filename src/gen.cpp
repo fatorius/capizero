@@ -774,7 +774,7 @@ unsigned long long Gen::perft(int profunidade){
         unsigned long long no_lances = perft_node(profunidade - 1);
         desfaz_lance();
 
-        printf("%s: %llu \n", lance_para_string(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino, Gen::lista_de_lances[i].promove), no_lances);
+        printf("%s: %llu \n", Interface::lance_para_string(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino, Gen::lista_de_lances[i].promove), no_lances);
         total += no_lances;
     }
 

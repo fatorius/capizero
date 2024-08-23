@@ -32,7 +32,7 @@ void Game::novo_jogo(){
     qntt_lances_totais[0] = 0;
     jogada = 0;
 
-    no_lances = 0;
+    Interface::no_lances = 0;
     
     Bitboard::init_board();
     

@@ -1,6 +1,8 @@
 #ifndef INIT
 #define INIT
 
-void init();
+namespace Init{
+    void init();
+};
 
 #endif

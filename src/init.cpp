@@ -7,7 +7,7 @@
 #include "hash.h"
 #include "interface.h"
 
-void init(){
+void Init::init(){
     Bitboard::init_bits();
     Bitboard::init_board();
     Eval::init_eval_tables();
@@ -19,8 +19,8 @@ void init(){
     Game::jogador[BRANCAS] = 0;
     Game::jogador[PRETAS] = 0;
     
-    tempo_maximo = 1 << 25;
-    profundidade_maxima = 4;
+    Interface::tempo_maximo = 1 << 25;
+    Interface::profundidade_maxima = 4;
 
     Game::novo_jogo();
 }

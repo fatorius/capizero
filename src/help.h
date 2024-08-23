@@ -1,6 +1,8 @@
 #ifndef HELP
 #define HELP
 
-void exibir_ajuda();
+namespace Help{
+    void exibir_ajuda();
+};
 
 #endif
