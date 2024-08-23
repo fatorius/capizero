@@ -4,16 +4,17 @@
 #include "consts.h"
 #include "game.h"
 
-int score_casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
-int reis_score_finais[LADOS][CASAS_DO_TABULEIRO];
-int passados[LADOS][CASAS_DO_TABULEIRO];
 
-int peao_mat[LADOS];
-int piece_mat[LADOS];
+int Eval::score_casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
+int Eval::reis_score_finais[LADOS][CASAS_DO_TABULEIRO];
+int Eval::passados[LADOS][CASAS_DO_TABULEIRO];
+
+int Eval::peao_mat[LADOS];
+int Eval::piece_mat[LADOS];
 
 int peao_ala_da_dama[LADOS],peao_ala_do_rei[LADOS];
 
-void init_eval_tables(){
+void Eval::init_eval_tables(){
     for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
         score_casas[BRANCAS][P][x] = peao_score[x] + VALOR_PEAO;
         score_casas[BRANCAS][C][x] = cavalo_score[x] + VALOR_CAVALO;
@@ -37,7 +38,7 @@ void init_eval_tables(){
     }
 }
 
-void atualizar_materiais(){
+void Eval::atualizar_materiais(){
     int cor;
 
     peao_mat[BRANCAS] = 0;
@@ -70,7 +71,7 @@ int avaliar_peao(const int l, const int casa){
     int xl = l^1;
 
     if (!(Bitboard::mask_passados[l][casa] & Bitboard::bit_pieces[xl][P]) && !(Bitboard::mask_path[l][casa] & Bitboard::bit_pieces[l][P])){
-        score += passados[l][casa];
+        score += Eval::passados[l][casa];
     }
 
     if ((Bitboard::mask_isolados[casa] & Bitboard::bit_pieces[l][P]) == 0){
@@ -97,7 +98,7 @@ int avaliar_torre(const int l, const int casa){
     return score;
 }
 
-int avaliar(){
+int Eval::avaliar(){
     int score[LADOS] = {0, 0};
 
     peao_ala_da_dama[BRANCAS] = 0;

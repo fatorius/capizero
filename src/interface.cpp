@@ -184,7 +184,7 @@ void print_resultado(){
     int i;
     bool existem_lances_legais = false;
 
-    atualizar_materiais();
+    Eval::atualizar_materiais();
     gerar_lances(lado, xlado);
 
     for (i = 0; i < qntt_lances_totais[1]; ++i){
@@ -195,7 +195,7 @@ void print_resultado(){
         }
     }
 
-    if (peao_mat[BRANCAS] == 0 && peao_mat[PRETAS] == 0 && piece_mat[BRANCAS] <= VALOR_BISPO && piece_mat[PRETAS] <= VALOR_BISPO){
+    if (Eval::peao_mat[BRANCAS] == 0 && Eval::peao_mat[PRETAS] == 0 && Eval::piece_mat[BRANCAS] <= VALOR_BISPO && Eval::piece_mat[PRETAS] <= VALOR_BISPO){
         printf("1/2 - 1/2 {Material insuficiente} \n");
 
         novo_jogo();
@@ -271,7 +271,7 @@ void lance_computador(bool verbose){
     
     fazer_lance(hash_inicio, hash_destino);
 
-    atualizar_materiais();
+    Eval::atualizar_materiais();
 
     ply = 0;
 

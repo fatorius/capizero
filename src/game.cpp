@@ -51,8 +51,8 @@ bool checar_repeticoes(){
 void nova_posicao(){
     int c = 0;
 
-    piece_mat[BRANCAS] = peao_mat[BRANCAS] = 0;
-    piece_mat[PRETAS] = peao_mat[PRETAS] = 0;
+    Eval::piece_mat[BRANCAS] = Eval::peao_mat[BRANCAS] = 0;
+    Eval::piece_mat[PRETAS] = Eval::peao_mat[PRETAS] = 0;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         if (Bitboard::tabuleiro[casa] < VAZIO){

@@ -121,7 +121,7 @@ int pesquisa_rapida(int alpha, int beta){
     
     lances_avaliados++;
 
-    int score_capturas = avaliar();
+    int score_capturas = Eval::avaliar();
 
     if (score_capturas > alpha){
         if (score_capturas >= beta){
@@ -194,7 +194,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
     }
 
     if (ply > MAX_PLY-2){
-        return avaliar();
+        return Eval::avaliar();
     }
 
 

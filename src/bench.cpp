@@ -56,7 +56,7 @@ void Bench::eval_performance_test(){
     while ((obter_tempo() - tempoInicial) < 5000){
 
         for (int i = 0; i < 4000; i++){
-            avaliar();
+            Eval::avaliar();
         }
         
         avals += 4000;

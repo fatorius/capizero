@@ -32,7 +32,7 @@ void xboard(){
 		if (lado == lado_do_computador){
 			prom = 0;
 			pensar(true);
-			atualizar_materiais();
+			Eval::atualizar_materiais();
 			gerar_lances(lado, xlado);
 			chaveAtual = obter_chave();
 			lockAtual = obter_lock();
