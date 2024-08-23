@@ -5,13 +5,13 @@
 #include "gen.h"
 
 struct hashp{
-    u64 hashlock;
+    Bitboard::u64 hashlock;
     int inicio;
     int dest;
     int num;
 };
 
-extern u64 chaveAtual, lockAtual;
+extern Bitboard::u64 chaveAtual, lockAtual;
 extern int hash_inicio, hash_destino;
 
 void iniciar_hash();
@@ -23,7 +23,7 @@ void adicionar_pontuacao_de_hash();
 
 bool hash_lookup(const int l);
 
-u64 obter_lock();
-u64 obter_chave();
+Bitboard::u64 obter_lock();
+Bitboard::u64 obter_chave();
 
 #endif

@@ -19,16 +19,16 @@ int casa_reversa[LADOS] = {-8,8};
 jogo* j;
 
 void mover_piece(const int l, const int p, const int inicio, const int destino){
-    bit_pieces[l][p] &= not_mask[inicio];
-    bit_pieces[l][p] |= mask[destino];
+    Bitboard::bit_pieces[l][p] &= Bitboard::not_mask[inicio];
+    Bitboard::bit_pieces[l][p] |= Bitboard::mask[destino];
 
-    bit_lados[l] &= not_mask[inicio];
-    bit_lados[l] |= mask[destino];
+    Bitboard::bit_lados[l] &= Bitboard::not_mask[inicio];
+    Bitboard::bit_lados[l] |= Bitboard::mask[destino];
 
-    bit_total = bit_lados[BRANCAS] | bit_lados[PRETAS];
+    Bitboard::bit_total = Bitboard::bit_lados[BRANCAS] | Bitboard::bit_lados[PRETAS];
 
-    tabuleiro[destino] = p;
-    tabuleiro[inicio] = VAZIO;
+    Bitboard::tabuleiro[destino] = p;
+    Bitboard::tabuleiro[inicio] = VAZIO;
 
     adicionar_chave(l, p, inicio);
     adicionar_chave(l, p, destino);
@@ -37,11 +37,11 @@ void mover_piece(const int l, const int p, const int inicio, const int destino){
 void remover_piece(const int l, const int p, const int casa){
     adicionar_chave(l, p, casa);
 
-    tabuleiro[casa] = VAZIO;
+    Bitboard::tabuleiro[casa] = VAZIO;
 
-    bit_lados[l] &= not_mask[casa];
-    bit_pieces[l][p] &= not_mask[casa];
-    bit_total = bit_lados[BRANCAS] | bit_lados[PRETAS];
+    Bitboard::bit_lados[l] &= Bitboard::not_mask[casa];
+    Bitboard::bit_pieces[l][p] &= Bitboard::not_mask[casa];
+    Bitboard::bit_total = Bitboard::bit_lados[BRANCAS] | Bitboard::bit_lados[PRETAS];
 }
 
 void desfaz_lance(){
@@ -58,18 +58,18 @@ void desfaz_lance(){
     cinquenta = ultimo_lance->cinquenta;
 
     // desfaz captura em passant
-    if (tabuleiro[destino] == P && ultimo_lance->captura == VAZIO && colunas[inicio] != colunas[destino]){
+    if (Bitboard::tabuleiro[destino] == P && ultimo_lance->captura == VAZIO && colunas[inicio] != colunas[destino]){
         adicionar_piece(xlado, P, destino + casa_reversa[lado]);
     }
 
     // desfaz promoção
     if (ultimo_lance->promove == D){
         adicionar_piece(lado, P, inicio);
-        remover_piece(lado, tabuleiro[destino], destino);
+        remover_piece(lado, Bitboard::tabuleiro[destino], destino);
     }
     // outros lances
     else{
-        mover_piece(lado, tabuleiro[destino], destino, inicio);
+        mover_piece(lado, Bitboard::tabuleiro[destino], destino, inicio);
     }
 
     // desfaz capturas
@@ -78,7 +78,7 @@ void desfaz_lance(){
     }
 
     // desfaz roque movendo a torre
-    if (abs(inicio - destino) == ROQUE && tabuleiro[inicio] == R){
+    if (abs(inicio - destino) == ROQUE && Bitboard::tabuleiro[inicio] == R){
         // roque menor brancas
         if (destino == G1){
             mover_piece(lado, T, F1, H1);
@@ -101,7 +101,7 @@ void desfaz_lance(){
 bool fazer_lance(const int inicio, const int destino){
 
     // 1. lida com o roque do rei, movendo também a torre
-    if (abs(inicio - destino) == ROQUE && tabuleiro[inicio] == R){
+    if (abs(inicio - destino) == ROQUE && Bitboard::tabuleiro[inicio] == R){
 
         // 1.1 verifica se o rei está em xeque
         if (Attacks::casa_esta_sendo_atacada(xlado, inicio)){
@@ -145,7 +145,7 @@ bool fazer_lance(const int inicio, const int destino){
 
     j->inicio = inicio;
     j->destino = destino;
-    j->captura = tabuleiro[destino];
+    j->captura = Bitboard::tabuleiro[destino];
     j->roque = roque;
     j->cinquenta = cinquenta;
     j->hash = chaveAtual;
@@ -159,42 +159,42 @@ bool fazer_lance(const int inicio, const int destino){
     cinquenta++;
 
     // 3. realiza o lance 
-    if (tabuleiro[inicio] == P){
+    if (Bitboard::tabuleiro[inicio] == P){
         cinquenta = 0;
         // captura de peao en passant
-        if (tabuleiro[destino] == VAZIO && colunas[inicio] != colunas[destino]){
+        if (Bitboard::tabuleiro[destino] == VAZIO && colunas[inicio] != colunas[destino]){
             remover_piece(xlado, P, destino + casa_reversa[lado]);
-            mover_piece(lado, tabuleiro[inicio], inicio, destino);
+            mover_piece(lado, Bitboard::tabuleiro[inicio], inicio, destino);
         }
         // lances com promoções
         else if ((linhas[destino] == FILEIRA_1 || linhas[destino] == FILEIRA_8)){
             remover_piece(lado, P, inicio);
 
-            if (tabuleiro[destino] < VAZIO){
-                remover_piece(xlado, tabuleiro[destino], destino);
+            if (Bitboard::tabuleiro[destino] < VAZIO){
+                remover_piece(xlado, Bitboard::tabuleiro[destino], destino);
             }
 
             adicionar_piece(lado, D, destino);
             j->promove = D;
         }
         // capturas
-        else if (tabuleiro[destino] < VAZIO){
-            remover_piece(xlado, tabuleiro[destino], destino);
-            mover_piece(lado, tabuleiro[inicio], inicio, destino);
+        else if (Bitboard::tabuleiro[destino] < VAZIO){
+            remover_piece(xlado, Bitboard::tabuleiro[destino], destino);
+            mover_piece(lado, Bitboard::tabuleiro[inicio], inicio, destino);
         }
         // lances sem promoções
         else{
-            mover_piece(lado, tabuleiro[inicio], inicio, destino);
+            mover_piece(lado, Bitboard::tabuleiro[inicio], inicio, destino);
         }
     }
     else{
         // capturas (reseta a contagem de 50 lances)
-        if (tabuleiro[destino] < VAZIO){
+        if (Bitboard::tabuleiro[destino] < VAZIO){
             cinquenta = 0;
-            remover_piece(xlado, tabuleiro[destino], destino);
+            remover_piece(xlado, Bitboard::tabuleiro[destino], destino);
         }
 
-        mover_piece(lado, tabuleiro[inicio], inicio, destino);
+        mover_piece(lado, Bitboard::tabuleiro[inicio], inicio, destino);
     }
 
     lado ^= 1;
@@ -202,7 +202,7 @@ bool fazer_lance(const int inicio, const int destino){
 
     // 4. verifica se o lance deixou o rei em xeque
 
-    if (Attacks::casa_esta_sendo_atacada(lado, bitscan(bit_pieces[xlado][R]))){
+    if (Attacks::casa_esta_sendo_atacada(lado, Bitboard::bitscan(Bitboard::bit_pieces[xlado][R]))){
         desfaz_lance();
         return false;
     }
@@ -211,13 +211,13 @@ bool fazer_lance(const int inicio, const int destino){
 }
 
 void adicionar_piece(const int l, const int piece, const int casa){
-    tabuleiro[casa] = piece;
+    Bitboard::tabuleiro[casa] = piece;
 
     adicionar_chave(l, piece, casa);
 
-    bit_lados[l] |= mask[casa];
-    bit_pieces[l][piece] |= mask[casa];
-    bit_total = bit_lados[BRANCAS] | bit_lados[PRETAS];
+    Bitboard::bit_lados[l] |= Bitboard::mask[casa];
+    Bitboard::bit_pieces[l][piece] |= Bitboard::mask[casa];
+    Bitboard::bit_total = Bitboard::bit_lados[BRANCAS] | Bitboard::bit_lados[PRETAS];
 }
 
 void desfaz_captura(){
@@ -227,25 +227,25 @@ void desfaz_captura(){
     --ply;
     --hply;
 
-    mover_piece(lado, tabuleiro[lista_do_jogo[hply].destino], lista_do_jogo[hply].destino, lista_do_jogo[hply].inicio);
+    mover_piece(lado, Bitboard::tabuleiro[lista_do_jogo[hply].destino], lista_do_jogo[hply].destino, lista_do_jogo[hply].inicio);
     adicionar_piece(xlado, lista_do_jogo[hply].captura, lista_do_jogo[hply].destino);
 }
 
 int fazer_captura(const int inicio, const int destino){
     lista_do_jogo[hply].inicio = inicio;
     lista_do_jogo[hply].destino = destino;
-    lista_do_jogo[hply].captura = tabuleiro[destino];
+    lista_do_jogo[hply].captura = Bitboard::tabuleiro[destino];
 
     ++ply;
     ++hply;
     
-    remover_piece(xlado, tabuleiro[destino], destino);
-    mover_piece(lado, tabuleiro[inicio], inicio, destino);
+    remover_piece(xlado, Bitboard::tabuleiro[destino], destino);
+    mover_piece(lado, Bitboard::tabuleiro[inicio], inicio, destino);
 
     lado ^= 1;
     xlado ^= 1;
 
-    if (Attacks::casa_esta_sendo_atacada(lado, bitscan(bit_pieces[xlado][R]))){
+    if (Attacks::casa_esta_sendo_atacada(lado, Bitboard::bitscan(Bitboard::bit_pieces[xlado][R]))){
         desfaz_captura();
         return false;
     }
@@ -451,12 +451,12 @@ int obter_casa_destino_por_en_passant(char ep[2]){
 
 void setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4], char casa_en_passant[2], char hm[4], char fm[4]){
     //1. LIMPA O TABULEIRO
-    memset(bit_pieces, 0, sizeof(bit_pieces));
-    memset(bit_lados, 0, sizeof(bit_lados));
-    bit_total = 0;
+    memset(Bitboard::bit_pieces, 0, sizeof(Bitboard::bit_pieces));
+    memset(Bitboard::bit_lados, 0, sizeof(Bitboard::bit_lados));
+    Bitboard::bit_total = 0;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
-        tabuleiro[casa] = VAZIO;
+        Bitboard::tabuleiro[casa] = VAZIO;
     }
 
 

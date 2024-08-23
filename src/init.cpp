@@ -8,11 +8,11 @@
 #include "interface.h"
 
 void init(){
-    init_bits();
-    init_board();
+    Bitboard::init_bits();
+    Bitboard::init_board();
     init_eval_tables();
     init_lookup_tables();
-    init_vetores();
+    Bitboard::init_vetores();
     iniciar_hash();
 
     lado_do_computador = VAZIO;

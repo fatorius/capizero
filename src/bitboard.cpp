@@ -10,71 +10,71 @@
 #include <nmmintrin.h>
 #endif
 
-u64 mask[CASAS_DO_TABULEIRO];
-u64 not_mask[CASAS_DO_TABULEIRO];
+Bitboard::u64 Bitboard::mask[CASAS_DO_TABULEIRO];
+Bitboard::u64 Bitboard::not_mask[CASAS_DO_TABULEIRO];
 
-u64 mask_cols[CASAS_DO_TABULEIRO];
-u64 mask_rows[CASAS_DO_TABULEIRO];
-u64 mask_isolados[CASAS_DO_TABULEIRO];
+Bitboard::u64 Bitboard::mask_cols[CASAS_DO_TABULEIRO];
+Bitboard::u64 Bitboard::mask_rows[CASAS_DO_TABULEIRO];
+Bitboard::u64 Bitboard::mask_isolados[CASAS_DO_TABULEIRO];
 
-u64 mask_ala_do_rei;
-u64 mask_ala_da_dama;
+Bitboard::u64 Bitboard::mask_ala_do_rei;
+Bitboard::u64 Bitboard::mask_ala_da_dama;
 
-u64 bordas;
-u64 bordas_neg;
+Bitboard::u64 Bitboard::bordas;
+Bitboard::u64 Bitboard::bordas_neg;
 
-u64 mask_passados[LADOS][CASAS_DO_TABULEIRO];
-u64 mask_path[LADOS][CASAS_DO_TABULEIRO];
+Bitboard::u64 Bitboard::mask_passados[LADOS][CASAS_DO_TABULEIRO];
+Bitboard::u64 Bitboard::mask_path[LADOS][CASAS_DO_TABULEIRO];
 
-u64 not_coluna_a;
-u64 not_coluna_h;
+Bitboard::u64 Bitboard::not_coluna_a;
+Bitboard::u64 Bitboard::not_coluna_h;
 
-u64 bit_pieces[LADOS][TIPOS_DE_PIECES];
-u64 bit_lados[LADOS];
-u64 bit_total;
+Bitboard::u64 Bitboard::bit_pieces[LADOS][TIPOS_DE_PIECES];
+Bitboard::u64 Bitboard::bit_lados[LADOS];
+Bitboard::u64 Bitboard::bit_total;
 
-u64 bit_entre[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
-u64 vetor_bits[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
-u64 mask_vetores[CASAS_DO_TABULEIRO][8];
+Bitboard::u64 Bitboard::bit_entre[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
+Bitboard::u64 Bitboard::vetor_bits[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
+Bitboard::u64 Bitboard::mask_vetores[CASAS_DO_TABULEIRO][8];
 
-int fileiras[LADOS][CASAS_DO_TABULEIRO];
+int Bitboard::fileiras[LADOS][CASAS_DO_TABULEIRO];
 
-int tabuleiro[CASAS_DO_TABULEIRO];
+int Bitboard::tabuleiro[CASAS_DO_TABULEIRO];
 
-void init_bits(){
+void Bitboard::init_bits(){
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
-        set_bit(mask[casa], casa);
+        Bitboard::set_bit(mask[casa], casa);
         not_mask[casa] = ~mask[casa];
 
         for (int casa2 = 0; casa2 < CASAS_DO_TABULEIRO; casa2++){
             if (colunas[casa] == colunas[casa2]){
-                set_bit(mask_cols[casa], casa2);
+                Bitboard::set_bit(mask_cols[casa], casa2);
 
                 if (linhas[casa] < linhas[casa2]){
-                    set_bit(mask_path[BRANCAS][casa], casa2);
-                    set_bit(mask_passados[BRANCAS][casa], casa2);
+                    Bitboard::set_bit(mask_path[BRANCAS][casa], casa2);
+                    Bitboard::set_bit(mask_passados[BRANCAS][casa], casa2);
                 }
                 if (linhas[casa] > linhas[casa2]){
-                    set_bit(mask_path[PRETAS][casa], casa2);
-                    set_bit(mask_passados[PRETAS][casa], casa2);
+                    Bitboard::set_bit(mask_path[PRETAS][casa], casa2);
+                    Bitboard::set_bit(mask_passados[PRETAS][casa], casa2);
                 }
             }
 
             if (linhas[casa] == linhas[casa2]){
-                set_bit(mask_rows[casa], casa2);
+                Bitboard::set_bit(mask_rows[casa], casa2);
             }
 
             if (abs(colunas[casa] - colunas[casa2]) == 1){
                 if (linhas[casa] < linhas[casa2]){
-                    set_bit(mask_passados[BRANCAS][casa], casa2);
+                    Bitboard::set_bit(mask_passados[BRANCAS][casa], casa2);
                 }
                 else if (linhas[casa] > linhas[casa2]){
-                    set_bit(mask_passados[PRETAS][casa], casa2);
+                    Bitboard::set_bit(mask_passados[PRETAS][casa], casa2);
                 }
             }
 
             if (abs(colunas[casa] - colunas[casa2]) == 1){
-                set_bit(mask_isolados[casa], casa2);
+                Bitboard::set_bit(mask_isolados[casa], casa2);
             }
         }
 
@@ -82,11 +82,11 @@ void init_bits(){
         fileiras[PRETAS][casa] = 7 - linhas[casa];
 
         if (colunas[casa] < COLUNA_D){
-            set_bit(mask_ala_da_dama, casa);
+            Bitboard::set_bit(mask_ala_da_dama, casa);
         }
 
         if (colunas[casa] > COLUNA_E){
-            set_bit(mask_ala_do_rei, casa);
+            Bitboard::set_bit(mask_ala_do_rei, casa);
         }
 
 
@@ -99,7 +99,7 @@ void init_bits(){
     bordas_neg = ~bordas;
 }
 
-void init_vetores(){
+void Bitboard::init_vetores(){
     int casaInicio, casaDestino;
     int bit;
 
@@ -108,18 +108,18 @@ void init_vetores(){
             if (linhas[casaInicio] == linhas[casaDestino]){
                 if (casaDestino > casaInicio){
                     for (bit = casaInicio + 1; bit < casaDestino; bit++){
-                        set_bit(bit_entre[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(bit_entre[casaInicio][casaDestino], bit);
                     }
                     for (bit = casaInicio + 1; bit <= casaDestino; bit++){
-                        set_bit(vetor_bits[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(vetor_bits[casaInicio][casaDestino], bit);
                     }
                 }
                 else{
                     for (bit = casaDestino + 1; bit < casaInicio; bit++){
-                        set_bit(bit_entre[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(bit_entre[casaInicio][casaDestino], bit);
                     }
                     for (bit = casaDestino; bit < casaInicio; bit++){
-                        set_bit(vetor_bits[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(vetor_bits[casaInicio][casaDestino], bit);
                     }
                 }
             }
@@ -127,18 +127,18 @@ void init_vetores(){
             if (colunas[casaInicio] == colunas[casaDestino]){
                 if (casaDestino > casaInicio){
                     for (bit = casaInicio + 8; bit < casaDestino; bit += 8){
-                        set_bit(bit_entre[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(bit_entre[casaInicio][casaDestino], bit);
                     }
                     for (bit = casaInicio + 8; bit <= casaDestino; bit += 8){
-                        set_bit(vetor_bits[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(vetor_bits[casaInicio][casaDestino], bit);
                     }
                 }
                 else{
                     for (bit = casaDestino + 8; bit < casaInicio; bit += 8){
-                        set_bit(bit_entre[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(bit_entre[casaInicio][casaDestino], bit);
                     }
                     for (bit = casaDestino; bit < casaInicio; bit += 8){
-                        set_bit(vetor_bits[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(vetor_bits[casaInicio][casaDestino], bit);
                     }
                 }
             }
@@ -146,18 +146,18 @@ void init_vetores(){
             if (no_diag[casaInicio] == no_diag[casaDestino]){
                 if (casaDestino > casaInicio){
                     for (bit = casaInicio + 7; bit < casaDestino; bit += 7){
-                        set_bit(bit_entre[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(bit_entre[casaInicio][casaDestino], bit);
                     }
                     for (bit = casaInicio + 7; bit <= casaDestino; bit += 7){
-                        set_bit(vetor_bits[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(vetor_bits[casaInicio][casaDestino], bit);
                     }
                 }
                 else{
                     for (bit = casaDestino + 7; bit < casaInicio; bit += 7){
-                        set_bit(bit_entre[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(bit_entre[casaInicio][casaDestino], bit);
                     }
                     for (bit = casaDestino; bit < casaInicio; bit += 7){
-                        set_bit(vetor_bits[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(vetor_bits[casaInicio][casaDestino], bit);
                     }
                 }
             }
@@ -165,18 +165,18 @@ void init_vetores(){
             if (ne_diag[casaInicio] == ne_diag[casaDestino]){
                 if (casaDestino > casaInicio){
                     for (bit = casaInicio + 9; bit < casaDestino; bit += 9){
-                        set_bit(bit_entre[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(bit_entre[casaInicio][casaDestino], bit);
                     }
                     for (bit = casaInicio + 9; bit <= casaDestino; bit += 9){
-                        set_bit(vetor_bits[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(vetor_bits[casaInicio][casaDestino], bit);
                     }
                 }
                 else{
                     for (bit = casaDestino + 9; bit < casaInicio; bit += 9){
-                        set_bit(bit_entre[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(bit_entre[casaInicio][casaDestino], bit);
                     }
                     for (bit = casaDestino; bit < casaInicio; bit += 9){
-                        set_bit(vetor_bits[casaInicio][casaDestino], bit);
+                        Bitboard::set_bit(vetor_bits[casaInicio][casaDestino], bit);
                     }
                 }
             }
@@ -190,21 +190,21 @@ void init_vetores(){
         mask_vetores[casaInicio][LESTE] = vetor_bits[casaInicio][(linhas[casaInicio] * 8) + 7];
 
         if (colunas[casaInicio] > COLUNA_A && linhas[casaInicio] < COLUNA_H){
-            mask_vetores[casaInicio][NO] = vetor_bits[casaInicio][obter_borda(casaInicio, 7)];
+            mask_vetores[casaInicio][NO] = vetor_bits[casaInicio][Bitboard::obter_borda(casaInicio, 7)];
         }
         if (colunas[casaInicio] < COLUNA_H && linhas[casaInicio] < COLUNA_H){
-            mask_vetores[casaInicio][NE] = vetor_bits[casaInicio][obter_borda(casaInicio, 9)];
+            mask_vetores[casaInicio][NE] = vetor_bits[casaInicio][Bitboard::obter_borda(casaInicio, 9)];
         }
         if (linhas[casaInicio] > COLUNA_A && colunas[casaInicio] > COLUNA_A){
-            mask_vetores[casaInicio][SO] = vetor_bits[casaInicio][obter_borda(casaInicio, -9)];
+            mask_vetores[casaInicio][SO] = vetor_bits[casaInicio][Bitboard::obter_borda(casaInicio, -9)];
         }
         if (linhas[casaInicio] > COLUNA_A && colunas[casaInicio] < COLUNA_H){
-            mask_vetores[casaInicio][SE] = vetor_bits[casaInicio][obter_borda(casaInicio, -7)];
+            mask_vetores[casaInicio][SE] = vetor_bits[casaInicio][Bitboard::obter_borda(casaInicio, -7)];
         }
     }
 }
 
-void init_board(){
+void Bitboard::init_board(){
     memset(bit_pieces, 0, sizeof(bit_pieces));
     memset(bit_lados, 0, sizeof(bit_lados));
     bit_total = 0;
@@ -218,11 +218,11 @@ void init_board(){
     }
 }
 
-void set_bit(u64 &bitboard, int bit){
+void Bitboard::set_bit(u64 &bitboard, int bit){
     bitboard |= (UINT64_C(1) << bit);
 }
 
-int obter_borda(int casa, int soma){
+int Bitboard::obter_borda(int casa, int soma){
     do {
         casa += soma;
     }
@@ -231,7 +231,7 @@ int obter_borda(int casa, int soma){
     return casa;
 }
 
-int bitscan(u64 b){
+int Bitboard::bitscan(u64 b){
     #ifdef GNUC
         return __builtin_ctzll(b);
     #elif defined(MVSC) 
@@ -246,7 +246,7 @@ int bitscan(u64 b){
     #endif
 }
 
-int popcount(u64 b){
+int Bitboard::popcount(u64 b){
     #ifdef GNUC
         return __builtin_popcountll(b);
     #elif defined(MVSC)

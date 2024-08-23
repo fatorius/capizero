@@ -8,10 +8,10 @@
 #include "gen.h"
 #include "game.h"
 
-u64 hash[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
-u64 lock[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
+Bitboard::u64 hash[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
+Bitboard::u64 lock[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 
-u64 chaveAtual, lockAtual;
+Bitboard::u64 chaveAtual, lockAtual;
 
 hashp *hashpos[LADOS];
 
@@ -64,36 +64,36 @@ void adicionar_pontuacao_de_hash(){
     }
 }
 
-u64 obter_lock(){
-    u64 loc = 0;
+Bitboard::u64 obter_lock(){
+    Bitboard::u64 loc = 0;
     int l;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         l = 0;
-        if (tabuleiro[casa] != VAZIO){
-            if (bit_lados[PRETAS] & mask[casa]){
+        if (Bitboard::tabuleiro[casa] != VAZIO){
+            if (Bitboard::bit_lados[PRETAS] & Bitboard::mask[casa]){
                 l = 1;
             }
 
-            loc ^= lock[l][tabuleiro[casa]][casa];
+            loc ^= lock[l][Bitboard::tabuleiro[casa]][casa];
         }
     }
 
     return loc;
 }
 
-u64 obter_chave(){
-    u64 chave = 0;
+Bitboard::u64 obter_chave(){
+    Bitboard::u64 chave = 0;
     int l;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         l = 0;
-        if (tabuleiro[casa] != VAZIO){
-            if (bit_lados[PRETAS] & mask[casa]){
+        if (Bitboard::tabuleiro[casa] != VAZIO){
+            if (Bitboard::bit_lados[PRETAS] & Bitboard::mask[casa]){
                 l = 1;
             }
 
-            chave ^= hash[l][tabuleiro[casa]][casa];
+            chave ^= hash[l][Bitboard::tabuleiro[casa]][casa];
         }
     }
 

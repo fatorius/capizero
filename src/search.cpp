@@ -60,8 +60,8 @@ int pesquisa_quiescence(int inicio, const int destino){
 
     memset(score, 0, sizeof(score));
 
-    score[0] = pieces_valor[tabuleiro[destino]];
-    score[1] = pieces_valor[tabuleiro[inicio]];
+    score[0] = pieces_valor[Bitboard::tabuleiro[destino]];
+    score[1] = pieces_valor[Bitboard::tabuleiro[inicio]];
 
     int score_total = 0;
 
@@ -77,7 +77,7 @@ int pesquisa_quiescence(int inicio, const int destino){
         menor_recaptura = Attacks::menor_atacante(lado, xlado, destino); // ordena por MVA/LVV
 
         if (menor_recaptura > -1){
-            score[recaptura + 1] = pieces_valor[tabuleiro[menor_recaptura]];
+            score[recaptura + 1] = pieces_valor[Bitboard::tabuleiro[menor_recaptura]];
 
             if (score[recaptura] > (score[recaptura - 1] + score[recaptura + 1])){
                 recaptura--;
@@ -143,7 +143,7 @@ int pesquisa_rapida(int alpha, int beta){
     for (int i = qntt_lances_totais[ply]; i < qntt_lances_totais[ply+1]; ++i){
         ordenar_lances(i);
 
-        if (score_capturas + pieces_valor[tabuleiro[lista_de_lances[i].destino]] < alpha){
+        if (score_capturas + pieces_valor[Bitboard::tabuleiro[lista_de_lances[i].destino]] < alpha){
             continue;
         }
 
@@ -206,7 +206,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
 
     int check = 0;
 
-    if (Attacks::casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
+    if (Attacks::casa_esta_sendo_atacada(xlado, Bitboard::bitscan(Bitboard::bit_pieces[lado][R]))){
         check = 1;
     }
 
@@ -275,7 +275,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
         if (score_candidato > alpha){
             if (score_candidato >= beta){ // beta-cutoff
 
-                if (!(mask[lista_de_lances[candidato].destino] & bit_total)){ // adiciona no historico se não for uma captura
+                if (!(Bitboard::mask[lista_de_lances[candidato].destino] & Bitboard::bit_total)){ // adiciona no historico se não for uma captura
                     historico_heuristica[lista_de_lances[candidato].inicio][lista_de_lances[candidato].destino] += 1 << profundidade; 
                     contraLance_heuristica[lista_do_jogo[hply].inicio][lista_do_jogo[hply].destino] = lista_de_lances[candidato];
 
@@ -293,7 +293,7 @@ int pesquisa(int alpha, int beta, int profundidade, bool pv){
     }
 
     if (!lances_legais_na_posicao){
-        if (Attacks::casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
+        if (Attacks::casa_esta_sendo_atacada(xlado, Bitboard::bitscan(Bitboard::bit_pieces[lado][R]))){
             return VALOR_XEQUE_MATE_PADRAO - ply;
         }
         else{
@@ -326,7 +326,7 @@ void pensar(bool verbose){
     }
 
     if (!tempo_fixo){
-        if (Attacks::casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
+        if (Attacks::casa_esta_sendo_atacada(xlado, Bitboard::bitscan(Bitboard::bit_pieces[lado][R]))){
             tempo_maximo = tempo_maximo / 2;
         }
     }

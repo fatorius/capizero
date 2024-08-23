@@ -47,19 +47,19 @@ void atualizar_materiais(){
     piece_mat[PRETAS] = 0;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
-        if (tabuleiro[casa] < VAZIO){
-            if (bit_lados[BRANCAS] & mask[casa]){
+        if (Bitboard::tabuleiro[casa] < VAZIO){
+            if (Bitboard::bit_lados[BRANCAS] & Bitboard::mask[casa]){
                 cor = BRANCAS;
             }
             else{
                 cor = PRETAS;
             }
 
-            if (tabuleiro[casa] == P){
+            if (Bitboard::tabuleiro[casa] == P){
                 peao_mat[cor] += VALOR_PEAO;
             }
             else{
-                piece_mat[cor] += pieces_valor[tabuleiro[casa]];
+                piece_mat[cor] += pieces_valor[Bitboard::tabuleiro[casa]];
             }
         }
     }
@@ -69,11 +69,11 @@ int avaliar_peao(const int l, const int casa){
     int score = 0;
     int xl = l^1;
 
-    if (!(mask_passados[l][casa] & bit_pieces[xl][P]) && !(mask_path[l][casa] & bit_pieces[l][P])){
+    if (!(Bitboard::mask_passados[l][casa] & Bitboard::bit_pieces[xl][P]) && !(Bitboard::mask_path[l][casa] & Bitboard::bit_pieces[l][P])){
         score += passados[l][casa];
     }
 
-    if ((mask_isolados[casa] & bit_pieces[l][P]) == 0){
+    if ((Bitboard::mask_isolados[casa] & Bitboard::bit_pieces[l][P]) == 0){
         score -= ISOLADO_SCORE;
     }
 
@@ -86,10 +86,10 @@ int avaliar_peao(const int l, const int casa){
 int avaliar_torre(const int l, const int casa){
     int score = 0;
 
-    if (!(mask_cols[casa] & bit_pieces[l][P])){
+    if (!(Bitboard::mask_cols[casa] & Bitboard::bit_pieces[l][P])){
         score = COLUNA_SEMI_ABERTA_BONUS;
 
-        if (!(mask_cols[casa] & bit_pieces[l^1][P])){
+        if (!(Bitboard::mask_cols[casa] & Bitboard::bit_pieces[l^1][P])){
             return COLUNA_ABERTA_BONUS;
         }
     }
@@ -105,74 +105,74 @@ int avaliar(){
     peao_ala_da_dama[PRETAS] = 0;
     peao_ala_do_rei[PRETAS] = 0;
 
-    u64 t1;
+    Bitboard::u64 t1;
     int casa;
 
     for (int l = 0; l < LADOS; l++){
         
-        t1 = bit_pieces[l][P];
+        t1 = Bitboard::bit_pieces[l][P];
         while (t1){
-            casa = bitscan(t1);
-            t1 &= not_mask[casa];
+            casa = Bitboard::bitscan(t1);
+            t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][P][casa];
             score[l] += avaliar_peao(l, casa);
         }
 
-        t1 = bit_pieces[l][C];
+        t1 = Bitboard::bit_pieces[l][C];
         while (t1){
-            casa = bitscan(t1);
-            t1 &= not_mask[casa];
+            casa = Bitboard::bitscan(t1);
+            t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][C][casa];
         }
 
-        t1 = bit_pieces[l][B];
+        t1 = Bitboard::bit_pieces[l][B];
         while (t1){
-            casa = bitscan(t1);
-            t1 &= not_mask[casa];
+            casa = Bitboard::bitscan(t1);
+            t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][B][casa];
         }
 
-        t1 = bit_pieces[l][T];
+        t1 = Bitboard::bit_pieces[l][T];
         while (t1){
-            casa = bitscan(t1);
-            t1 &= not_mask[casa];
+            casa = Bitboard::bitscan(t1);
+            t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][T][casa];
             score[l] += avaliar_torre(l, casa);
         }
 
-        t1 = bit_pieces[l][D];
+        t1 = Bitboard::bit_pieces[l][D];
         while (t1){
-            casa = bitscan(t1);
-            t1 &= not_mask[casa];
+            casa = Bitboard::bitscan(t1);
+            t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][D][casa];
         }
     }
 
-    if (bit_pieces[PRETAS][D] == 0){
-        score[BRANCAS] += reis_score_finais[BRANCAS][bitscan(bit_pieces[BRANCAS][R])];
+    if (Bitboard::bit_pieces[PRETAS][D] == 0){
+        score[BRANCAS] += reis_score_finais[BRANCAS][Bitboard::bitscan(Bitboard::bit_pieces[BRANCAS][R])];
     }
     else{
-        if (bit_pieces[BRANCAS][R] & mask_ala_do_rei){
+        if (Bitboard::bit_pieces[BRANCAS][R] & Bitboard::mask_ala_do_rei){
             score[BRANCAS] += peao_ala_do_rei[BRANCAS];
         }
-        else if (bit_pieces[BRANCAS][R] & mask_ala_da_dama){
+        else if (Bitboard::bit_pieces[BRANCAS][R] & Bitboard::mask_ala_da_dama){
             score[BRANCAS] += peao_ala_da_dama[BRANCAS];
         }
     }
 
-    if (bit_pieces[BRANCAS][D] == 0){
-        score[PRETAS] += reis_score_finais[PRETAS][bitscan(bit_pieces[PRETAS][R])];
+    if (Bitboard::bit_pieces[BRANCAS][D] == 0){
+        score[PRETAS] += reis_score_finais[PRETAS][Bitboard::bitscan(Bitboard::bit_pieces[PRETAS][R])];
     }
     else {
-        if (bit_pieces[PRETAS][R] & mask_ala_do_rei){
+        if (Bitboard::bit_pieces[PRETAS][R] & Bitboard::mask_ala_do_rei){
             score[PRETAS] += peao_ala_do_rei[PRETAS];
         }
-        else if (bit_pieces[PRETAS][R] & mask_ala_da_dama){
+        else if (Bitboard::bit_pieces[PRETAS][R] & Bitboard::mask_ala_da_dama){
             score[PRETAS] += peao_ala_da_dama[PRETAS];
         }
     }

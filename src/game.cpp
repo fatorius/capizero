@@ -34,7 +34,7 @@ void novo_jogo(){
 
     no_lances = 0;
     
-    init_board();
+    Bitboard::init_board();
     
     gerar_lances(lado, xlado);
 }
@@ -55,15 +55,15 @@ void nova_posicao(){
     piece_mat[PRETAS] = peao_mat[PRETAS] = 0;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
-        if (tabuleiro[casa] < VAZIO){
-            if (bit_lados[BRANCAS] & mask[casa]){
+        if (Bitboard::tabuleiro[casa] < VAZIO){
+            if (Bitboard::bit_lados[BRANCAS] & Bitboard::mask[casa]){
                 c = BRANCAS;
             }
             else{
                 c = PRETAS;
             }
 
-            adicionar_piece(c, tabuleiro[casa], casa);
+            adicionar_piece(c, Bitboard::tabuleiro[casa], casa);
         }
     }
 

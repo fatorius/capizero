@@ -11,8 +11,8 @@ typedef struct
     int captura;
     int cinquenta;
     int roque;
-    u64 hash;
-    u64 lock;
+    Bitboard::u64 hash;
+    Bitboard::u64 lock;
 } jogo;
 
 extern jogo lista_do_jogo[PILHA_DO_JOGO];

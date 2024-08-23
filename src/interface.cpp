@@ -93,10 +93,10 @@ void display_tabuleiro() {
         
         c = VAZIO;
         
-        if (bit_lados[BRANCAS] & mask[i]){ 
+        if (Bitboard::bit_lados[BRANCAS] & Bitboard::mask[i]){ 
             c = BRANCAS;
         }
-        if (bit_lados[PRETAS] & mask[i]){
+        if (Bitboard::bit_lados[PRETAS] & Bitboard::mask[i]){
             c = PRETAS;
         }
 
@@ -105,10 +105,10 @@ void display_tabuleiro() {
                 printf("  ");
                 break;
             case BRANCAS:
-                printf(" %c", piece_char[tabuleiro[i]]);
+                printf(" %c", piece_char[Bitboard::tabuleiro[i]]);
                 break;
             case PRETAS:
-                printf(" %c", piece_char[tabuleiro[i]] + ('a' - 'A'));
+                printf(" %c", piece_char[Bitboard::tabuleiro[i]] + ('a' - 'A'));
                 break;
             default:
                 printf(" %d.", c);
@@ -209,7 +209,7 @@ void print_resultado(){
 
         printf("Fim do jogo \n");
 
-        if (Attacks::casa_esta_sendo_atacada(xlado, bitscan(bit_pieces[lado][R]))){
+        if (Attacks::casa_esta_sendo_atacada(xlado, Bitboard::bitscan(Bitboard::bit_pieces[lado][R]))){
             if (lado == BRANCAS){
                 printf("0-1 {Pretas dao xeque-mate} \n");
             }
