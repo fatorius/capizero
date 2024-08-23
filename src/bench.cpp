@@ -1,4 +1,4 @@
-#include "stats.h"
+#include "bench.h"
 
 #include <stdio.h>
 
@@ -10,7 +10,7 @@
 #include "search.h"
 #include "hash.h"
 
-void Stats::movegen_performance_test(){
+void Bench::movegen_performance_test(){
     int tempoInicial = obter_tempo();
 
     unsigned long long lances_gerados = perft_node(5);
@@ -24,7 +24,7 @@ void Stats::movegen_performance_test(){
     printf("Gerador de lances: %dK lances por segundo\n", nps_perft);
 }
 
-void Stats::search_performance_test(){
+void Bench::search_performance_test(){
     novo_jogo();
 
     profundidade_maxima = 11;
@@ -48,7 +48,7 @@ void Stats::search_performance_test(){
     printf("Lance do computador: %s \n", lance_para_string(lista_do_jogo[0].inicio, lista_do_jogo[0].destino, 0));
 }
 
-void Stats::eval_performance_test(){
+void Bench::eval_performance_test(){
     int tempoInicial = obter_tempo();
 
     long avals = 0;
