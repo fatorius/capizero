@@ -58,7 +58,7 @@ void desfaz_lance(){
     cinquenta = ultimo_lance->cinquenta;
 
     // desfaz captura em passant
-    if (Bitboard::tabuleiro[destino] == P && ultimo_lance->captura == VAZIO && colunas[inicio] != colunas[destino]){
+    if (Bitboard::tabuleiro[destino] == P && ultimo_lance->captura == VAZIO && Consts::colunas[inicio] != Consts::colunas[destino]){
         adicionar_piece(xlado, P, destino + casa_reversa[lado]);
     }
 
@@ -152,7 +152,7 @@ bool fazer_lance(const int inicio, const int destino){
     j->lock = lockAtual;
     j->promove = P;
     
-    roque &= roque_mask[inicio] & roque_mask[destino];
+    roque &= Consts::roque_mask[inicio] & Consts::roque_mask[destino];
 
     ply++;
     hply++;
@@ -162,12 +162,12 @@ bool fazer_lance(const int inicio, const int destino){
     if (Bitboard::tabuleiro[inicio] == P){
         cinquenta = 0;
         // captura de peao en passant
-        if (Bitboard::tabuleiro[destino] == VAZIO && colunas[inicio] != colunas[destino]){
+        if (Bitboard::tabuleiro[destino] == VAZIO && Consts::colunas[inicio] != Consts::colunas[destino]){
             remover_piece(xlado, P, destino + casa_reversa[lado]);
             mover_piece(lado, Bitboard::tabuleiro[inicio], inicio, destino);
         }
         // lances com promoções
-        else if ((linhas[destino] == FILEIRA_1 || linhas[destino] == FILEIRA_8)){
+        else if ((Consts::linhas[destino] == FILEIRA_1 || Consts::linhas[destino] == FILEIRA_8)){
             remover_piece(lado, P, inicio);
 
             if (Bitboard::tabuleiro[destino] < VAZIO){

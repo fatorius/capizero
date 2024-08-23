@@ -47,45 +47,45 @@ void Bitboard::init_bits(){
         not_mask[casa] = ~mask[casa];
 
         for (int casa2 = 0; casa2 < CASAS_DO_TABULEIRO; casa2++){
-            if (colunas[casa] == colunas[casa2]){
+            if (Consts::colunas[casa] == Consts::colunas[casa2]){
                 Bitboard::set_bit(mask_cols[casa], casa2);
 
-                if (linhas[casa] < linhas[casa2]){
+                if (Consts::linhas[casa] < Consts::linhas[casa2]){
                     Bitboard::set_bit(mask_path[BRANCAS][casa], casa2);
                     Bitboard::set_bit(mask_passados[BRANCAS][casa], casa2);
                 }
-                if (linhas[casa] > linhas[casa2]){
+                if (Consts::linhas[casa] > Consts::linhas[casa2]){
                     Bitboard::set_bit(mask_path[PRETAS][casa], casa2);
                     Bitboard::set_bit(mask_passados[PRETAS][casa], casa2);
                 }
             }
 
-            if (linhas[casa] == linhas[casa2]){
+            if (Consts::linhas[casa] == Consts::linhas[casa2]){
                 Bitboard::set_bit(mask_rows[casa], casa2);
             }
 
-            if (abs(colunas[casa] - colunas[casa2]) == 1){
-                if (linhas[casa] < linhas[casa2]){
+            if (abs(Consts::colunas[casa] - Consts::colunas[casa2]) == 1){
+                if (Consts::linhas[casa] < Consts::linhas[casa2]){
                     Bitboard::set_bit(mask_passados[BRANCAS][casa], casa2);
                 }
-                else if (linhas[casa] > linhas[casa2]){
+                else if (Consts::linhas[casa] > Consts::linhas[casa2]){
                     Bitboard::set_bit(mask_passados[PRETAS][casa], casa2);
                 }
             }
 
-            if (abs(colunas[casa] - colunas[casa2]) == 1){
+            if (abs(Consts::colunas[casa] - Consts::colunas[casa2]) == 1){
                 Bitboard::set_bit(mask_isolados[casa], casa2);
             }
         }
 
-        fileiras[BRANCAS][casa] = linhas[casa];
-        fileiras[PRETAS][casa] = 7 - linhas[casa];
+        fileiras[BRANCAS][casa] = Consts::linhas[casa];
+        fileiras[PRETAS][casa] = 7 - Consts::linhas[casa];
 
-        if (colunas[casa] < COLUNA_D){
+        if (Consts::colunas[casa] < COLUNA_D){
             Bitboard::set_bit(mask_ala_da_dama, casa);
         }
 
-        if (colunas[casa] > COLUNA_E){
+        if (Consts::colunas[casa] > COLUNA_E){
             Bitboard::set_bit(mask_ala_do_rei, casa);
         }
 
@@ -105,7 +105,7 @@ void Bitboard::init_vetores(){
 
     for (casaInicio = 0; casaInicio < CASAS_DO_TABULEIRO; casaInicio++){
         for (casaDestino = 0; casaDestino < CASAS_DO_TABULEIRO; casaDestino++){
-            if (linhas[casaInicio] == linhas[casaDestino]){
+            if (Consts::linhas[casaInicio] == Consts::linhas[casaDestino]){
                 if (casaDestino > casaInicio){
                     for (bit = casaInicio + 1; bit < casaDestino; bit++){
                         Bitboard::set_bit(bit_entre[casaInicio][casaDestino], bit);
@@ -124,7 +124,7 @@ void Bitboard::init_vetores(){
                 }
             }
 
-            if (colunas[casaInicio] == colunas[casaDestino]){
+            if (Consts::colunas[casaInicio] == Consts::colunas[casaDestino]){
                 if (casaDestino > casaInicio){
                     for (bit = casaInicio + 8; bit < casaDestino; bit += 8){
                         Bitboard::set_bit(bit_entre[casaInicio][casaDestino], bit);
@@ -143,7 +143,7 @@ void Bitboard::init_vetores(){
                 }
             }
 
-            if (no_diag[casaInicio] == no_diag[casaDestino]){
+            if (Consts::no_diag[casaInicio] == Consts::no_diag[casaDestino]){
                 if (casaDestino > casaInicio){
                     for (bit = casaInicio + 7; bit < casaDestino; bit += 7){
                         Bitboard::set_bit(bit_entre[casaInicio][casaDestino], bit);
@@ -162,7 +162,7 @@ void Bitboard::init_vetores(){
                 }
             }
             
-            if (ne_diag[casaInicio] == ne_diag[casaDestino]){
+            if (Consts::ne_diag[casaInicio] == Consts::ne_diag[casaDestino]){
                 if (casaDestino > casaInicio){
                     for (bit = casaInicio + 9; bit < casaDestino; bit += 9){
                         Bitboard::set_bit(bit_entre[casaInicio][casaDestino], bit);
@@ -184,21 +184,21 @@ void Bitboard::init_vetores(){
     }
 
     for (casaInicio = 0; casaInicio < CASAS_DO_TABULEIRO; casaInicio++){
-        mask_vetores[casaInicio][NORTE] = vetor_bits[casaInicio][56+colunas[casaInicio]];
-        mask_vetores[casaInicio][SUL] = vetor_bits[casaInicio][colunas[casaInicio]];
-        mask_vetores[casaInicio][OESTE] = vetor_bits[casaInicio][linhas[casaInicio] * 8];
-        mask_vetores[casaInicio][LESTE] = vetor_bits[casaInicio][(linhas[casaInicio] * 8) + 7];
+        mask_vetores[casaInicio][NORTE] = vetor_bits[casaInicio][56+Consts::colunas[casaInicio]];
+        mask_vetores[casaInicio][SUL] = vetor_bits[casaInicio][Consts::colunas[casaInicio]];
+        mask_vetores[casaInicio][OESTE] = vetor_bits[casaInicio][Consts::linhas[casaInicio] * 8];
+        mask_vetores[casaInicio][LESTE] = vetor_bits[casaInicio][(Consts::linhas[casaInicio] * 8) + 7];
 
-        if (colunas[casaInicio] > COLUNA_A && linhas[casaInicio] < COLUNA_H){
+        if (Consts::colunas[casaInicio] > COLUNA_A && Consts::linhas[casaInicio] < COLUNA_H){
             mask_vetores[casaInicio][NO] = vetor_bits[casaInicio][Bitboard::obter_borda(casaInicio, 7)];
         }
-        if (colunas[casaInicio] < COLUNA_H && linhas[casaInicio] < COLUNA_H){
+        if (Consts::colunas[casaInicio] < COLUNA_H && Consts::linhas[casaInicio] < COLUNA_H){
             mask_vetores[casaInicio][NE] = vetor_bits[casaInicio][Bitboard::obter_borda(casaInicio, 9)];
         }
-        if (linhas[casaInicio] > COLUNA_A && colunas[casaInicio] > COLUNA_A){
+        if (Consts::linhas[casaInicio] > COLUNA_A && Consts::colunas[casaInicio] > COLUNA_A){
             mask_vetores[casaInicio][SO] = vetor_bits[casaInicio][Bitboard::obter_borda(casaInicio, -9)];
         }
-        if (linhas[casaInicio] > COLUNA_A && colunas[casaInicio] < COLUNA_H){
+        if (Consts::linhas[casaInicio] > COLUNA_A && Consts::colunas[casaInicio] < COLUNA_H){
             mask_vetores[casaInicio][SE] = vetor_bits[casaInicio][Bitboard::obter_borda(casaInicio, -7)];
         }
     }
@@ -212,8 +212,8 @@ void Bitboard::init_board(){
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; ++casa) {
         tabuleiro[casa] = VAZIO;
 
-        if(tabuleiro_inicial[casa] < 6){
-            adicionar_piece(cor_inicial[casa], tabuleiro_inicial[casa], casa);
+        if(Consts::tabuleiro_inicial[casa] < 6){
+            adicionar_piece(Consts::cor_inicial[casa], Consts::tabuleiro_inicial[casa], casa);
         }
     }
 }
@@ -226,7 +226,7 @@ int Bitboard::obter_borda(int casa, int soma){
     do {
         casa += soma;
     }
-    while (colunas[casa] > COLUNA_A && colunas[casa] < COLUNA_H && linhas[casa] > COLUNA_A && linhas[casa] < COLUNA_H);
+    while (Consts::colunas[casa] > COLUNA_A && Consts::colunas[casa] < COLUNA_H && Consts::linhas[casa] > COLUNA_A && Consts::linhas[casa] < COLUNA_H);
 
     return casa;
 }
@@ -242,7 +242,7 @@ int Bitboard::bitscan(u64 b){
         unsigned int folded;
         b ^= b - 1;
         folded = (int) b ^ (b >> 32);
-        return lsb_64_table[folded * 0x78291ACF >> 26];
+        return Consts::lsb_64_table[folded * 0x78291ACF >> 26];
     #endif
 }
 

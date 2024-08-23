@@ -55,26 +55,26 @@ void init_peao_lookups(){
         peao_direita[BRANCAS][casa] = -1;
         peao_direita[PRETAS][casa] = -1;
     
-        if (colunas[casa] > COLUNA_A){
-            if (linhas[casa] < COLUNA_H){
+        if (Consts::colunas[casa] > COLUNA_A){
+            if (Consts::linhas[casa] < COLUNA_H){
                 peao_esquerda[BRANCAS][casa] = casa + 7;
                 Bitboard::set_bit(bit_peao_capturas[BRANCAS][casa], peao_esquerda[BRANCAS][casa]);
                 Bitboard::set_bit(bit_esquerda[BRANCAS][casa], peao_esquerda[BRANCAS][casa]);
             }
-            if (linhas[casa] > COLUNA_A){
+            if (Consts::linhas[casa] > COLUNA_A){
                 peao_esquerda[PRETAS][casa] = casa - 9;
                 Bitboard::set_bit(bit_peao_capturas[PRETAS][casa], peao_esquerda[PRETAS][casa]);
                 Bitboard::set_bit(bit_esquerda[PRETAS][casa], peao_esquerda[PRETAS][casa]);
             }
         }
 
-        if (colunas[casa] < COLUNA_H){
-            if (linhas[casa] < COLUNA_H){
+        if (Consts::colunas[casa] < COLUNA_H){
+            if (Consts::linhas[casa] < COLUNA_H){
                 peao_direita[BRANCAS][casa] = casa + 9;
                 Bitboard::set_bit(bit_peao_capturas[BRANCAS][casa], peao_direita[BRANCAS][casa]);
                 Bitboard::set_bit(bit_direita[BRANCAS][casa], peao_direita[BRANCAS][casa]);
             }
-            if (linhas[casa] > COLUNA_A){
+            if (Consts::linhas[casa] > COLUNA_A){
                 peao_direita[PRETAS][casa] = casa - 7;
                 Bitboard::set_bit(bit_peao_capturas[PRETAS][casa], peao_direita[PRETAS][casa]);
                 Bitboard::set_bit(bit_direita[PRETAS][casa], peao_direita[PRETAS][casa]);
@@ -84,16 +84,16 @@ void init_peao_lookups(){
         bit_peao_defende[BRANCAS][casa] = bit_peao_capturas[PRETAS][casa];
         bit_peao_defende[PRETAS][casa] = bit_peao_capturas[BRANCAS][casa];
 
-        if (linhas[casa] < COLUNA_H){
+        if (Consts::linhas[casa] < COLUNA_H){
             peao_uma_casa[BRANCAS][casa] = casa + 8;
         }
-        if (linhas[casa] < COLUNA_G){
+        if (Consts::linhas[casa] < COLUNA_G){
             peao_duas_casas[BRANCAS][casa] = casa + 16;
         }
-        if (linhas[casa] > COLUNA_A){ 
+        if (Consts::linhas[casa] > COLUNA_A){ 
             peao_uma_casa[PRETAS][casa] = casa - 8;
         }
-        if (linhas[casa] > COLUNA_B){
+        if (Consts::linhas[casa] > COLUNA_B){
             peao_duas_casas[PRETAS][casa] = casa - 16;
         }
 
@@ -106,28 +106,28 @@ void init_cavalo_lookups(){
     for (casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         qntt_lances = 0;
 
-        if (linhas[casa] < 6 && colunas[casa] < COLUNA_H){
+        if (Consts::linhas[casa] < 6 && Consts::colunas[casa] < COLUNA_H){
             cavalo_moves[casa][qntt_lances++] = casa + 17;
         }
-        if (linhas[casa] < COLUNA_H && colunas[casa] < COLUNA_G){
+        if (Consts::linhas[casa] < COLUNA_H && Consts::colunas[casa] < COLUNA_G){
             cavalo_moves[casa][qntt_lances++] = casa + 10;
         }
-        if (linhas[casa] < 6 && colunas[casa] > COLUNA_A){
+        if (Consts::linhas[casa] < 6 && Consts::colunas[casa] > COLUNA_A){
             cavalo_moves[casa][qntt_lances++] = casa + 15;
         }
-        if (linhas[casa] < COLUNA_H && colunas[casa] > COLUNA_B){
+        if (Consts::linhas[casa] < COLUNA_H && Consts::colunas[casa] > COLUNA_B){
             cavalo_moves[casa][qntt_lances++] = casa + 6;
         }
-        if (linhas[casa] > 1 && colunas[casa] < COLUNA_H){
+        if (Consts::linhas[casa] > 1 && Consts::colunas[casa] < COLUNA_H){
             cavalo_moves[casa][qntt_lances++] = casa - 15;
         }
-        if (linhas[casa] > COLUNA_A && colunas[casa] < COLUNA_G){
+        if (Consts::linhas[casa] > COLUNA_A && Consts::colunas[casa] < COLUNA_G){
             cavalo_moves[casa][qntt_lances++] = casa - 6;
         }
-        if (linhas[casa] > 1 && colunas[casa] > COLUNA_A){
+        if (Consts::linhas[casa] > 1 && Consts::colunas[casa] > COLUNA_A){
             cavalo_moves[casa][qntt_lances++] = casa - 17;
         }
-        if (linhas[casa] > COLUNA_A && colunas[casa] > COLUNA_B){
+        if (Consts::linhas[casa] > COLUNA_A && Consts::colunas[casa] > COLUNA_B){
             cavalo_moves[casa][qntt_lances++] = casa - 10;
         }
 
@@ -150,28 +150,28 @@ void init_rei_lookups(){
         bit = 0;
         qntt_lances = 0;
 
-        if (colunas[casa] > COLUNA_A){
+        if (Consts::colunas[casa] > COLUNA_A){
             rei_moves[casa][qntt_lances++] = casa-1;    
         }
-        if (colunas[casa] < COLUNA_H){
+        if (Consts::colunas[casa] < COLUNA_H){
             rei_moves[casa][qntt_lances++] = casa+1;    
         }
-        if (linhas[casa] > COLUNA_A){
+        if (Consts::linhas[casa] > COLUNA_A){
             rei_moves[casa][qntt_lances++] = casa-8;    
         }
-        if (linhas[casa] < COLUNA_H){
+        if (Consts::linhas[casa] < COLUNA_H){
             rei_moves[casa][qntt_lances++] = casa+8;    
         }
-        if (colunas[casa] < COLUNA_H && linhas[casa] < COLUNA_H){
+        if (Consts::colunas[casa] < COLUNA_H && Consts::linhas[casa] < COLUNA_H){
             rei_moves[casa][qntt_lances++] = casa+9;    
         }
-        if (colunas[casa] > COLUNA_A && linhas[casa] < COLUNA_H){
+        if (Consts::colunas[casa] > COLUNA_A && Consts::linhas[casa] < COLUNA_H){
             rei_moves[casa][qntt_lances++] = casa+7;    
         }
-        if (colunas[casa] > COLUNA_A && linhas[casa] > COLUNA_A){
+        if (Consts::colunas[casa] > COLUNA_A && Consts::linhas[casa] > COLUNA_A){
             rei_moves[casa][qntt_lances++] = casa-9;    
         }
-        if (colunas[casa] < COLUNA_H && linhas[casa] > COLUNA_A){
+        if (Consts::colunas[casa] < COLUNA_H && Consts::linhas[casa] > COLUNA_A){
             rei_moves[casa][qntt_lances++] = casa-7;    
         }
 
@@ -189,16 +189,16 @@ void init_casas_relevantes(){
         bit_casas_relevantes_bispo[casa] = bit_moves_bispo[casa] & Bitboard::bordas_neg;
         bit_casas_relevantes_torres[casa] = bit_moves_torre[casa];
 
-        if (colunas[casa] != COLUNA_A){
+        if (Consts::colunas[casa] != COLUNA_A){
             bit_casas_relevantes_torres[casa] &= ~Bitboard::mask_cols[COLUNA_A];
         }
-        if (colunas[casa] != COLUNA_H){
+        if (Consts::colunas[casa] != COLUNA_H){
             bit_casas_relevantes_torres[casa] &= ~Bitboard::mask_cols[COLUNA_H];
         }
-        if (linhas[casa] != PRIMEIRA_LINHA){
+        if (Consts::linhas[casa] != PRIMEIRA_LINHA){
             bit_casas_relevantes_torres[casa] &= ~Bitboard::mask_rows[LINHA_1];
         }
-        if (linhas[casa] != ULTIMA_LINHA){
+        if (Consts::linhas[casa] != ULTIMA_LINHA){
             bit_casas_relevantes_torres[casa] &= ~Bitboard::mask_rows[LINHA_8];
         }
     }
@@ -214,35 +214,35 @@ void init_dtb_lookups(){
             dtb_moves[casa][direcao] = -1;
         }
 
-        if (colunas[casa] > COLUNA_A){
+        if (Consts::colunas[casa] > COLUNA_A){
             dtb_moves[casa][OESTE] = casa-1;
             rei_moves[casa][qntt_lances++] = casa-1;    
         }
-        if (colunas[casa] < COLUNA_H){
+        if (Consts::colunas[casa] < COLUNA_H){
             dtb_moves[casa][LESTE] = casa+1;
             rei_moves[casa][qntt_lances++] = casa+1;    
         }
-        if (linhas[casa] > COLUNA_A){
+        if (Consts::linhas[casa] > COLUNA_A){
             dtb_moves[casa][SUL] = casa-8;
             rei_moves[casa][qntt_lances++] = casa-8;    
         }
-        if (linhas[casa] < COLUNA_H){
+        if (Consts::linhas[casa] < COLUNA_H){
             dtb_moves[casa][NORTE] = casa+8;
             rei_moves[casa][qntt_lances++] = casa+8;    
         }
-        if (colunas[casa] < COLUNA_H && linhas[casa] < COLUNA_H){
+        if (Consts::colunas[casa] < COLUNA_H && Consts::linhas[casa] < COLUNA_H){
             dtb_moves[casa][NE] = casa+9;
             rei_moves[casa][qntt_lances++] = casa+9;    
         }
-        if (colunas[casa] > COLUNA_A && linhas[casa] < COLUNA_H){
+        if (Consts::colunas[casa] > COLUNA_A && Consts::linhas[casa] < COLUNA_H){
             dtb_moves[casa][NO] = casa+7;
             rei_moves[casa][qntt_lances++] = casa+7;    
         }
-        if (colunas[casa] > COLUNA_A && linhas[casa] > COLUNA_A){
+        if (Consts::colunas[casa] > COLUNA_A && Consts::linhas[casa] > COLUNA_A){
             dtb_moves[casa][SO] = casa-9;
             rei_moves[casa][qntt_lances++] = casa-9;    
         }
-        if (colunas[casa] < COLUNA_H && linhas[casa] > COLUNA_A){
+        if (Consts::colunas[casa] < COLUNA_H && Consts::linhas[casa] > COLUNA_A){
             dtb_moves[casa][SE] = casa-7;
             rei_moves[casa][qntt_lances++] = casa-7;    
         }
@@ -260,12 +260,12 @@ void init_dtb_lookups(){
                 continue;
             }
 
-            if (no_diag[casa] == no_diag[casa2] || ne_diag[casa] == ne_diag[casa2]){
+            if (Consts::no_diag[casa] == Consts::no_diag[casa2] || Consts::ne_diag[casa] == Consts::ne_diag[casa2]){
                 bit_moves_bispo[casa] |= Bitboard::mask[casa2];
                 bit_moves_dama[casa] |= Bitboard::mask[casa2];
             }
 
-            if (colunas[casa] == colunas[casa2] || linhas[casa] == linhas[casa2]){
+            if (Consts::colunas[casa] == Consts::colunas[casa2] || Consts::linhas[casa] == Consts::linhas[casa2]){
                 bit_moves_torre[casa] |= Bitboard::mask[casa2];
                 bit_moves_dama[casa] |= Bitboard::mask[casa2];
             }
@@ -408,10 +408,10 @@ void gerar_en_passant(){
     int ep = lista_do_jogo[hply - 1].destino;
 
     if (Bitboard::tabuleiro[ep] == P && abs(lista_do_jogo[hply - 1].inicio - ep) == AVANCO_DUPLO){
-        if (colunas[ep] > COLUNA_A && Bitboard::mask[ep-1] & Bitboard::bit_pieces[lado][P]){
+        if (Consts::colunas[ep] > COLUNA_A && Bitboard::mask[ep-1] & Bitboard::bit_pieces[lado][P]){
             adicionar_captura(ep-1, peao_uma_casa[lado][ep], EN_PASSANT_SCORE);
         }
-        if (colunas[ep] < COLUNA_H && Bitboard::mask[ep+1] & Bitboard::bit_pieces[lado][P]){
+        if (Consts::colunas[ep] < COLUNA_H && Bitboard::mask[ep+1] & Bitboard::bit_pieces[lado][P]){
             adicionar_captura(ep+1, peao_uma_casa[lado][ep], EN_PASSANT_SCORE);
         }
     }

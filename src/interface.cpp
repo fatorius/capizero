@@ -63,9 +63,9 @@ void converter_casa_para_algebrico(int a){
     }  
 
 	char c[2]="a";
-    c[0] =  96 + 1 + colunas[a];
+    c[0] =  96 + 1 + Consts::colunas[a];
 	
-    printf("%s%d", c, linhas[a]+1);
+    printf("%s%d", c, Consts::linhas[a]+1);
 }
 
 void print_lance_algebrico(int a, int b){
@@ -85,10 +85,10 @@ void display_tabuleiro() {
 
     for (int j = 0; j < 64; ++j) {
         if (tabuleiro_invertido == 0){
-            i = flip[j];
+            i = Consts::flip[j];
         }
         else{
-            i = 63 - flip[j];
+            i = 63 - Consts::flip[j];
         }
         
         c = VAZIO;
@@ -105,10 +105,10 @@ void display_tabuleiro() {
                 printf("  ");
                 break;
             case BRANCAS:
-                printf(" %c", piece_char[Bitboard::tabuleiro[i]]);
+                printf(" %c", Consts::piece_char[Bitboard::tabuleiro[i]]);
                 break;
             case PRETAS:
-                printf(" %c", piece_char[Bitboard::tabuleiro[i]] + ('a' - 'A'));
+                printf(" %c", Consts::piece_char[Bitboard::tabuleiro[i]] + ('a' - 'A'));
                 break;
             default:
                 printf(" %d.", c);
@@ -120,7 +120,7 @@ void display_tabuleiro() {
                 printf("\n");
             }
         } else {
-            if ((j + 1) % 8 == 0 && colunas[i] != COLUNA_H){
+            if ((j + 1) % 8 == 0 && Consts::colunas[i] != COLUNA_H){
                 printf("\n");
             }
         }
@@ -151,18 +151,18 @@ char *lance_para_string(int inicio, int destino, int promove){
         }
     
         sprintf(str, "%c%d%c%d%c",
-            colunas[inicio] + 'a',
-            linhas[inicio] + 1,
-            colunas[destino] + 'a',
-            linhas[destino] + 1,
+            Consts::colunas[inicio] + 'a',
+            Consts::linhas[inicio] + 1,
+            Consts::colunas[destino] + 'a',
+            Consts::linhas[destino] + 1,
             c);
     }
     else{
         sprintf(str, "%c%d%c%d",
-			colunas[inicio] + 'a',
-			linhas[inicio] + 1,
-			colunas[destino] + 'a',
-			linhas[destino] + 1);
+			Consts::colunas[inicio] + 'a',
+			Consts::linhas[inicio] + 1,
+			Consts::colunas[destino] + 'a',
+			Consts::linhas[destino] + 1);
     }
 
     return str;
@@ -357,7 +357,7 @@ void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
     }
 
     // atualiza peça promovida
-    if (lista_de_lances[hply - 1].promove > P && (colunas[lista_de_lances[lance_usuario].destino] == FILEIRA_1 || colunas[lista_de_lances[lance_usuario].destino] == FILEIRA_8)){
+    if (lista_de_lances[hply - 1].promove > P && (Consts::colunas[lista_de_lances[lance_usuario].destino] == FILEIRA_1 || Consts::colunas[lista_de_lances[lance_usuario].destino] == FILEIRA_8)){
         remover_piece(xlado, D, lista_de_lances[lance_usuario].destino);
 
         if (lnc[PROMOCAO] == 'n' || lnc[PROMOCAO] == 'N'){

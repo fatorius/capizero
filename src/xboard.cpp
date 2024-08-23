@@ -48,7 +48,7 @@ void xboard(){
 			lista_de_lances[0].inicio = hash_inicio;
             lista_de_lances[0].destino = hash_destino;
             
-			if ((Bitboard::tabuleiro[hash_inicio] == P) && (linhas[hash_destino] == fileira_de_promocao[lado])){
+			if ((Bitboard::tabuleiro[hash_inicio] == P) && (Consts::linhas[hash_destino] == fileira_de_promocao[lado])){
 				prom = D; // ASSUME QUE O JOGADOR IRÁ PROMOVER SEMPRE PARA DAMA
 			}
 

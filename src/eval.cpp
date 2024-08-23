@@ -22,17 +22,17 @@ void init_eval_tables(){
         score_casas[BRANCAS][D][x] = dama_score[x] + VALOR_DAMA;
         score_casas[BRANCAS][R][x] = rei_score[x];
 
-        score_casas[PRETAS][P][x] = peao_score[flip[x]] + VALOR_PEAO;
-        score_casas[PRETAS][C][x] = cavalo_score[flip[x]] + VALOR_CAVALO;
-        score_casas[PRETAS][B][x] = bispo_score[flip[x]] + VALOR_BISPO;
-        score_casas[PRETAS][T][x] = torre_score[flip[x]] + VALOR_TORRE;
-        score_casas[PRETAS][D][x] = dama_score[flip[x]] + VALOR_DAMA;
-        score_casas[PRETAS][R][x] = rei_score[flip[x]];
+        score_casas[PRETAS][P][x] = peao_score[Consts::flip[x]] + VALOR_PEAO;
+        score_casas[PRETAS][C][x] = cavalo_score[Consts::flip[x]] + VALOR_CAVALO;
+        score_casas[PRETAS][B][x] = bispo_score[Consts::flip[x]] + VALOR_BISPO;
+        score_casas[PRETAS][T][x] = torre_score[Consts::flip[x]] + VALOR_TORRE;
+        score_casas[PRETAS][D][x] = dama_score[Consts::flip[x]] + VALOR_DAMA;
+        score_casas[PRETAS][R][x] = rei_score[Consts::flip[x]];
         
         reis_score_finais[BRANCAS][x] = rei_finais_score[x] - score_casas[BRANCAS][R][x];
         reis_score_finais[PRETAS][x] = rei_finais_score[x] - score_casas[PRETAS][R][x];
 
-        passados[BRANCAS][x] = peao_passado_score[flip[x]];
+        passados[BRANCAS][x] = peao_passado_score[Consts::flip[x]];
         passados[PRETAS][x] = peao_passado_score[x];
     }
 }
