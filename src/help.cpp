@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-void exibir_ajuda(){
+void Help::exibir_ajuda(){
     printf(COMANDO_DISPLAY_TABULEIRO);
     printf(" - Exibe o tabuleiro.\n");	
     printf(COMANDO_INVERTER_TABULEIRO);

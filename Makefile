@@ -52,7 +52,7 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/xboard.h ./src/help.h \
 		./src/consts.h ./src/params.h \
 		./src/tests.h ./src/values.h \
-		./src/stats.h ./src/debug.h ./src/magics.h
+		./src/bench.h ./src/debug.h ./src/magics.h
 
 
 # -----------------------------------------------------
@@ -63,25 +63,25 @@ build: clean ./src/main.o $(SRCS) $(HEADER_FILES)
 	@ echo "$(EXE) compilado com sucesso"
 
 debug: clean add_debug_variables ./src/main.o $(SRCS) $(HEADER_FILES)
-	@ $(COMP) $(CXXFLAGS) -o $(EXE)_debug ./src/main.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o capi_debug ./src/main.o $(SRCS)
 	@ echo "================="
-	@ echo "ATENÇÃO: O BINARIO COMPILADO NÃO CONTEM AS OPTIMIZAÇÕES RECOMENDADAS E DEVE SER USADO SOMENTE PARA TESTES E DEBUG"
-	@ echo "Para o uso em jogos normais, use 'make build'"
-	@ echo "$(EXE)_debug compilado com sucesso"
+	@ echo "capi_debug compilado com sucesso"
 
 tests: clean ./src/unit_tests.o ./src/tests.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -o $(EXE)_tests ./src/unit_tests.o ./src/tests.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o capi_tests ./src/unit_tests.o ./src/tests.o $(SRCS)
 	@ echo "================="
-	@ echo "$(EXE)_tests compilado com sucesso"
+	@ echo "capi_tests compilado com sucesso"
 
-stats: clean ./src/stats_tests.o ./src/stats.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -o $(EXE)_stats ./src/stats_tests.o ./src/stats.o $(SRCS)
+bench: clean ./src/bench_tests.o ./src/bench.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o capi_bench ./src/bench_tests.o ./src/bench.o $(SRCS)
 	@ echo "================="
-	@ echo "$(EXE)_stats compilado com sucesso"
+	@ echo "capi_bench compilado com sucesso"
 
-magicsgenerator: ./src/generate_magics.cpp
+magics: ./src/generate_magics.cpp
 	@ $(COMP) -c $(CXXFLAGS) ./src/generate_magics.cpp -o ./src/generate_magics.o
-	@ $(COMP) -o magicsgenerator ./src/generate_magics.o 
+	@ $(COMP) -o generate_magics ./src/generate_magics.o 
+	@ echo "================="
+	@ echo "generate_magics compilado com sucesso"
 
 
 # -----------------------------------------------------
@@ -98,7 +98,7 @@ help:
 	@ echo "build: compila o capizero com todas as optimizações recomendadas para o uso em jogos"
 	@ echo "tests: compila um binário para testes unitários"
 	@ echo "debug: compila o capizero sem optimizações e com flags para debug"
-	@ echo "stats: compila um binário para testar a performance da engine no seu computador"
+	@ echo "bench: compila um binário para testar a performance da engine no seu computador"
 	@ echo "======================"
 	@ echo "As opções: "
 	@ echo "NAME = string: define o nome do binário"

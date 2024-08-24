@@ -15,7 +15,7 @@ int main(){
     printf("compilado em %s \n\n", __TIMESTAMP__);
     printf("executando testes unitários \n\n\n");
 
-    init();
+    Init::init();
 
     Tests::test1();
     Tests::test2();
@@ -24,7 +24,7 @@ int main(){
     Tests::test5();
     Tests::test6();
 
-    liberar_memoria();
+    Hash::liberar_memoria();
 
     return 0;
 }

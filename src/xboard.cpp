@@ -11,7 +11,7 @@
 #include "hash.h"
 #include "update.h"
 
-void xboard(){
+void Xboard::xboard(){
 	int lado_do_computador;
 	char linha[256], comando[256];
 	int m;
@@ -20,45 +20,45 @@ void xboard(){
 
 	signal(SIGINT, SIG_IGN);
 	printf("\n");
-	novo_jogo();
+	Game::novo_jogo();
 
-	tempo_fixo = 0;
+	Interface::tempo_fixo = 0;
 	lado_do_computador = VAZIO;
     
 	while(true){
 
 		fflush(stdout);
 
-		if (lado == lado_do_computador){
+		if (Game::lado == lado_do_computador){
 			prom = 0;
-			pensar(true);
-			atualizar_materiais();
-			gerar_lances(lado, xlado);
-			chaveAtual = obter_chave();
-			lockAtual = obter_lock();
+			Search::pensar(true);
+			Eval::atualizar_materiais();
+			Gen::gerar_lances(Game::lado, Game::xlado);
+			Hash::chaveAtual = Hash::obter_chave();
+			Hash::lockAtual = Hash::obter_lock();
 
-			if(lance_inicio != 0 || lance_destino != 0){
-				hash_inicio = lance_inicio;
-				hash_destino = lance_destino;
+			if(Interface::lance_inicio != 0 || Interface::lance_destino != 0){
+				Hash::hash_inicio = Interface::lance_inicio;
+				Hash::hash_destino = Interface::lance_destino;
 			}
 			else{
 				printf(" lookup=0 ");
             }
 
-			lista_de_lances[0].inicio = hash_inicio;
-            lista_de_lances[0].destino = hash_destino;
+			Gen::lista_de_lances[0].inicio = Hash::hash_inicio;
+            Gen::lista_de_lances[0].destino = Hash::hash_destino;
             
-			if ((tabuleiro[hash_inicio] == P) && (linhas[hash_destino] == fileira_de_promocao[lado])){
+			if ((Bitboard::tabuleiro[Hash::hash_inicio] == P) && (Consts::linhas[Hash::hash_destino] == Update::fileira_de_promocao[Game::lado])){
 				prom = D; // ASSUME QUE O JOGADOR IRÁ PROMOVER SEMPRE PARA DAMA
 			}
 
-			printf("move %s\n", lance_para_string(hash_inicio,hash_destino,prom));
+			printf("move %s\n", Interface::lance_para_string(Hash::hash_inicio,Hash::hash_destino,prom));
 	
-			fazer_lance(hash_inicio,hash_destino);
+			Update::fazer_lance(Hash::hash_inicio,Hash::hash_destino);
   
-			ply = 0;
-			gerar_lances(lado, xlado);
-			print_resultado();
+			Game::ply = 0;
+			Gen::gerar_lances(Game::lado, Game::xlado);
+			Interface::print_resultado();
 			continue;
 		}
 
@@ -77,7 +77,7 @@ void xboard(){
         }
 		
         if (!strcmp(comando, "new")){
-			novo_jogo();
+			Game::novo_jogo();
 			lado_do_computador = PRETAS;
 			continue;
 		}
@@ -91,51 +91,49 @@ void xboard(){
 			continue;
 		}
 
-		if (!strcmp(comando, "white")) {
-			lado = BRANCAS;
-			xlado = PRETAS;
-			gerar_lances(lado, xlado);
+		if (!strcmp(comando, "white")){
+			Game::lado = BRANCAS;
+			Game::xlado = PRETAS;
+			Gen::gerar_lances(Game::lado, Game::xlado);
 			lado_do_computador = PRETAS;
 			continue;
 		}
 
-		if (!strcmp(comando, "black")) 
-		{
-			lado = PRETAS;
-			xlado = BRANCAS;
-			gerar_lances(lado, xlado);
+		if (!strcmp(comando, "black")){
+			Game::lado = PRETAS;
+			Game::xlado = BRANCAS;
+			Gen::gerar_lances(Game::lado, Game::xlado);
 			lado_do_computador = BRANCAS;
 			continue;
 		}
 
-		if (!strcmp(comando, "d")) 
-		{
-			display_tabuleiro();
+		if (!strcmp(comando, "d")){
+			Interface::display_tabuleiro();
 			continue;
 		}
 		
         if (!strcmp(comando, "st")){
-			sscanf(linha, "st %d", &tempo_maximo);
-			tempo_maximo *= 1000;
-			profundidade_maxima = MAX_PLY;
-			tempo_fixo = true;
+			sscanf(linha, "st %d", &Interface::tempo_maximo);
+			Interface::tempo_maximo *= 1000;
+			Interface::profundidade_maxima = MAX_PLY;
+			Interface::tempo_fixo = true;
 			continue;
 		}
 
 		if (!strcmp(comando, "sd")) {
-			sscanf(linha, "sd %d", &profundidade_maxima);
-			tempo_maximo = 1 << 25;
+			sscanf(linha, "sd %d", &Interface::profundidade_maxima);
+			Interface::tempo_maximo = 1 << 25;
 			continue;
 		}
 
 		if (!strcmp(comando, "time")) {
-			sscanf(linha, "time %d", &tempo_maximo);
-			if(tempo_maximo < 200){
-			    profundidade_maxima = 1;
+			sscanf(linha, "time %d", &Interface::tempo_maximo);
+			if(Interface::tempo_maximo < 200){
+			    Interface::profundidade_maxima = 1;
             }
 			else{
-				tempo_maximo /= 2;
-				profundidade_maxima = MAX_PLY;
+				Interface::tempo_maximo /= 2;
+				Interface::profundidade_maxima = MAX_PLY;
 			}
 			continue;
 		}
@@ -145,7 +143,7 @@ void xboard(){
 		}
 
 		if (!strcmp(comando, "go")) {
-			lado_do_computador = lado;
+			lado_do_computador = Game::lado;
 			continue;
 		}
 
@@ -166,43 +164,43 @@ void xboard(){
         }
 
 		if (!strcmp(comando, "hint")) {
-			pensar(true);
-			chaveAtual = obter_chave();
-			lockAtual = obter_lock();
+			Search::pensar(true);
+			Hash::chaveAtual = Hash::obter_chave();
+			Hash::lockAtual = Hash::obter_lock();
             
-			if(hash_inicio==0 && hash_destino==0){
+			if(Hash::hash_inicio==0 && Hash::hash_destino==0){
 				continue;
             }
 			
-            printf("Hint: %s\n", lance_para_string(hash_inicio,hash_destino,0));
+            printf("Hint: %s\n", Interface::lance_para_string(Hash::hash_inicio, Hash::hash_destino, 0));
 			
             continue;
 		}
 		
         if (!strcmp(comando, "undo")){
-			if (!hply){
+			if (!Game::hply){
 				continue;
             }
 
-			desfaz_lance();
-			ply = 0;
+			Update::desfaz_lance();
+			Game::ply = 0;
 
-			gerar_lances(lado, xlado);
+			Gen::gerar_lances(Game::lado, Game::xlado);
 			
             continue;
 		}
 
 		if (!strcmp(comando, "remove")) {
-			if (hply < 2){
+			if (Game::hply < 2){
 				continue;
             }
 			
-            desfaz_lance();
-			desfaz_lance();
+            Update::desfaz_lance();
+			Update::desfaz_lance();
 
-			ply = 0;
+			Game::ply = 0;
 
-			gerar_lances(lado, xlado);
+			Gen::gerar_lances(Game::lado, Game::xlado);
 			continue;
 		}
 		if (!strcmp(comando, "post")){
@@ -222,7 +220,7 @@ void xboard(){
 		if (!strcmp(comando, "setboard")){
 			char posicao[80], lado_a_jogar[1], roques[4], casa_en_passant[2], hm[4], fm[4];
 			sscanf(linha, "setboard %s %s %s %s %s %s", posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
-			setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
+			Update::setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
 			continue;
 		}
 
@@ -232,17 +230,17 @@ void xboard(){
 			continue;
 		}
 
-		qntt_lances_totais[0] = 0;
-		gerar_lances(lado, xlado);
+		Game::qntt_lances_totais[0] = 0;
+		Gen::gerar_lances(Game::lado, Game::xlado);
 
-		m = converter_lance(linha);
-		if (m == -1 || !fazer_lance(lista_de_lances[m].inicio, lista_de_lances[m].destino)){
+		m = Interface::converter_lance(linha);
+		if (m == -1 || !Update::fazer_lance(Gen::lista_de_lances[m].inicio, Gen::lista_de_lances[m].destino)){
 			printf("Error (unknown comand): %s\n", comando);
         }
 		else {
-			ply = 0;
- 			gerar_lances(lado, xlado);
-			print_resultado();
+			Game::ply = 0;
+ 			Gen::gerar_lances(Game::lado, Game::xlado);
+			Interface::print_resultado();
 		}
 	}
 }

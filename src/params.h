@@ -8,13 +8,15 @@ do programa
 #ifndef PARAMS
 #define PARAMS
 
-#define MAX_PLY 64
-#define MAXHASH 20000000
-#define HASHSIZE   10000
+namespace Params{
+    #define MAX_PLY 64
+    #define MAXHASH 20000000
+    #define HASHSIZE   10000
 
-#define PILHA_DE_LANCES 4000
-#define PILHA_DO_JOGO 2000
+    #define PILHA_DE_LANCES 4000
+    #define PILHA_DO_JOGO 2000
 
-#define MAGIC_HASHTABLE_SIZE 4096
+    #define MAGIC_HASHTABLE_SIZE 4096
+};
 
 #endif

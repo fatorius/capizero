@@ -7,7 +7,7 @@
 #include "hash.h"
 #include "interface.h"
 #include "init.h"
-#include "stats.h"
+#include "bench.h"
 
 int main(){
     printf("capizero %s por Hugo Souza 2023\n", CAPIZERO_VERSION);
@@ -15,13 +15,13 @@ int main(){
     printf("compilado em %s \n\n", __TIMESTAMP__);
     printf("executando testes de performance \n\n\n");
 
-    init();
+    Init::init();
 
-    Stats::movegen_performance_test();
-    Stats::eval_performance_test();
-    Stats::search_performance_test();
+    Bench::movegen_performance_test();
+    Bench::eval_performance_test();
+    Bench::search_performance_test();
 
-    liberar_memoria();
+    Hash::liberar_memoria();
 
     return 0;
 }

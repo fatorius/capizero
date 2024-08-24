@@ -21,17 +21,17 @@ int main(){
 
     printf("\n");
 
-    init();
+    Init::init();
 
     printf("\n\nalgoritmo iniciado\n\n");
     
-    while (ler_comando()){
-        if (lado_do_computador == lado){
-            lance_computador(true);
+    while (Interface::ler_comando()){
+        if (Game::lado_do_computador == Game::lado){
+            Interface::lance_computador(true);
         }
     }
 
-    liberar_memoria();
+    Hash::liberar_memoria();
 
     return 0;
 }

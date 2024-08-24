@@ -4,10 +4,8 @@
 #include "bitboard.h"
 
 namespace Debug{
-    
-    void printBitboard(u64 bitboard);
+    void printBitboard(Bitboard::u64 bitboard);
     void print(const char* msg);
-    
 } // namespace Debug
 
 

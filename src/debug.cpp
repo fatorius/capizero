@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <iostream>
 
-void Debug::printBitboard(u64 bitboard){
+void Debug::printBitboard(Bitboard::u64 bitboard){
     printf("======================\n");
     
     int bit;
@@ -11,7 +11,7 @@ void Debug::printBitboard(u64 bitboard){
     for (int y = 7; y >= 0; y--){
         for (int x = 0; x < 8; x++){
             bit = (y * 8) + x;
-            if (mask[bit] & bitboard){
+            if (Bitboard::mask[bit] & bitboard){
                 printf(" X ");
             }
             else{

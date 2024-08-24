@@ -3,49 +3,49 @@
 #include "gen.h"
 #include "bitboard.h"
 
-int menor_atacante(const int l, const int xl, const int casa){
+int Attacks::menor_atacante(const int l, const int xl, const int casa){
     // Peões atacantes automaticamente serão os menores atacantes
-    if (bit_esquerda[xl][casa] & bit_pieces[l][P]){
-        return peao_esquerda[xl][casa];
+    if (Gen::bit_esquerda[xl][casa] & Bitboard::bit_pieces[l][P]){
+        return Gen::peao_esquerda[xl][casa];
     }
-    if (bit_direita[xl][casa] & bit_pieces[l][P]){
-        return peao_direita[xl][casa];
+    if (Gen::bit_direita[xl][casa] & Bitboard::bit_pieces[l][P]){
+        return Gen::peao_direita[xl][casa];
     }
 
     
-    u64 t1;
+    Bitboard::u64 t1;
 
-    t1 = bit_moves_cavalo[casa] & bit_pieces[l][C];
+    t1 = Gen::bit_moves_cavalo[casa] & Bitboard::bit_pieces[l][C];
     if (t1){
-        return bitscan(t1);
+        return Bitboard::bitscan(t1);
     }
 
-    t1 = bit_moves_bispo[casa] & bit_pieces[l][B];
+    t1 = Gen::bit_moves_bispo[casa] & Bitboard::bit_pieces[l][B];
     while (t1){
-        int casa2 = bitscan(t1);
-        t1 &= not_mask[casa2];
+        int casa2 = Bitboard::bitscan(t1);
+        t1 &= Bitboard::not_mask[casa2];
 
-        if (!(bit_entre[casa2][casa] & bit_total)){
+        if (!(Bitboard::bit_entre[casa2][casa] & Bitboard::bit_total)){
             return casa2;
         }
     }
 
-    t1 = bit_moves_torre[casa] & bit_pieces[l][T];
+    t1 = Gen::bit_moves_torre[casa] & Bitboard::bit_pieces[l][T];
     while (t1){
-        int casa2 = bitscan(t1);
-        t1 &= not_mask[casa2];
+        int casa2 = Bitboard::bitscan(t1);
+        t1 &= Bitboard::not_mask[casa2];
 
-        if (!(bit_entre[casa2][casa] & bit_total)){
+        if (!(Bitboard::bit_entre[casa2][casa] & Bitboard::bit_total)){
             return casa2;
         }
     }
 
-    t1 = bit_moves_dama[casa] & bit_pieces[l][D];
+    t1 = Gen::bit_moves_dama[casa] & Bitboard::bit_pieces[l][D];
     while(t1){
-        int casa2 = bitscan(t1);
-        t1 &= not_mask[casa2];
+        int casa2 = Bitboard::bitscan(t1);
+        t1 &= Bitboard::not_mask[casa2];
 
-        if (!(bit_entre[casa2][casa] & bit_total)){
+        if (!(Bitboard::bit_entre[casa2][casa] & Bitboard::bit_total)){
             return casa2;
         }
     }
@@ -53,30 +53,30 @@ int menor_atacante(const int l, const int xl, const int casa){
     return -1;
 }
 
-bool casa_esta_sendo_atacada(const int l, const int casa){
-    if (bit_peao_defende[l][casa] & bit_pieces[l][P]){
+bool Attacks::casa_esta_sendo_atacada(const int l, const int casa){
+    if (Gen::bit_peao_defende[l][casa] & Bitboard::bit_pieces[l][P]){
         return true;
     }
-    if (bit_moves_cavalo[casa] & bit_pieces[l][C]){
+    if (Gen::bit_moves_cavalo[casa] & Bitboard::bit_pieces[l][C]){
         return true;
     }
 
     int casa2;
-    u64 atacantes_deslizantes;
+    Bitboard::u64 atacantes_deslizantes;
      
-    atacantes_deslizantes = bit_moves_torre[casa] & (bit_pieces[l][T] | bit_pieces[l][D]);
-    atacantes_deslizantes |= (bit_moves_bispo[casa] & (bit_pieces[l][B] | bit_pieces[l][D]));
+    atacantes_deslizantes = Gen::bit_moves_torre[casa] & (Bitboard::bit_pieces[l][T] | Bitboard::bit_pieces[l][D]);
+    atacantes_deslizantes |= (Gen::bit_moves_bispo[casa] & (Bitboard::bit_pieces[l][B] | Bitboard::bit_pieces[l][D]));
 
     while (atacantes_deslizantes){
-        casa2 = bitscan(atacantes_deslizantes);
-        atacantes_deslizantes &= not_mask[casa2];
+        casa2 = Bitboard::bitscan(atacantes_deslizantes);
+        atacantes_deslizantes &= Bitboard::not_mask[casa2];
 
-        if (!(bit_entre[casa2][casa] & bit_total)){
+        if (!(Bitboard::bit_entre[casa2][casa] & Bitboard::bit_total)){
             return true;
         }
     } 
 
-    if (bit_moves_rei[casa] & bit_pieces[l][R]){
+    if (Gen::bit_moves_rei[casa] & Bitboard::bit_pieces[l][R]){
         return true;
     }
 
