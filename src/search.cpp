@@ -163,7 +163,8 @@ int pesquisa_rapida(int alpha, int beta){
     if (score_capturas > alpha){
         if (score_capturas >= beta){
             if (melhorscore > 0){
-                Hash::adicionar_hash(Game::lado, Gen::lista_de_lances[melhorlance]);
+                Hash::adicionar_hash(Game::lado, Gen::lista_de_lances[melhorlance],
+                                     score_capturas, 0, TT_BOUND_LOWER);
             }
 
             return score_capturas;
@@ -183,6 +184,8 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
     if (Game::ply && Game::checar_repeticoes()){
         return VALOR_EMPATE;
     }
+
+    const int alpha_original = alpha;
 
     if (profundidade < 1){
         return pesquisa_rapida(alpha, beta);
@@ -205,6 +208,19 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
 
     int melhorscore = MELHOR_SCORE_INICIAL;
 
+    // TT probe: single lookup serves both cutoff attempt and move-ordering.
+    const bool tt_hit   = Hash::hash_lookup(Game::lado);
+    const int  tt_score = tt_hit ? Hash::hash_score : 0;
+    const int  tt_depth = tt_hit ? Hash::hash_depth : -1;
+    const int  tt_bound = tt_hit ? Hash::hash_bound : TT_BOUND_NONE;
+
+    // TT cutoff: non-root, non-PV nodes only, stored depth must be >= current.
+    if (tt_hit && !pv && Game::ply > 0 && tt_depth >= profundidade){
+        if (tt_bound == TT_BOUND_EXACT)                      return tt_score;
+        if (tt_bound == TT_BOUND_LOWER && tt_score >= beta)  return beta;
+        if (tt_bound == TT_BOUND_UPPER && tt_score <= alpha) return alpha;
+    }
+
     int check = 0;
 
     if (Attacks::casa_esta_sendo_atacada(Game::xlado, Bitboard::bitscan(Bitboard::bit_pieces[Game::lado][R]))){
@@ -213,8 +229,8 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
 
     Gen::gerar_lances(Game::lado, Game::xlado);
 
-    if (Hash::hash_lookup(Game::lado)){
-        Hash::adicionar_pontuacao_de_hash(); // ordena por lances hash, pv é pesquisado primeiro
+    if (tt_hit){
+        Hash::adicionar_pontuacao_de_hash(); // reuse probe result for move ordering
     } else if (profundidade > PROFUNDIDADE_CONDICAO_IID && pv){
         adicionar_pontuacao_iid(alpha, beta, profundidade);
     }
@@ -284,7 +300,8 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
                     killers_primarios[Game::ply] = Gen::lista_de_lances[candidato];
                 }
 
-                Hash::adicionar_hash(Game::lado, Gen::lista_de_lances[candidato]);
+                Hash::adicionar_hash(Game::lado, Gen::lista_de_lances[candidato],
+                                     score_candidato, profundidade, TT_BOUND_LOWER);
 
                 return beta;
             }
@@ -306,7 +323,8 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
         return VALOR_EMPATE;
     }
 
-    Hash::adicionar_hash(Game::lado, melhorlance);
+    const int tt_store_bound = (melhorscore > alpha_original) ? TT_BOUND_EXACT : TT_BOUND_UPPER;
+    Hash::adicionar_hash(Game::lado, melhorlance, melhorscore, profundidade, tt_store_bound);
 
     return alpha;
 }

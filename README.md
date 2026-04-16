@@ -35,6 +35,8 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 * [SEE](https://www.chessprogramming.org/Static_Exchange_Evaluation)
 
+* [Cortes por tabela de transposição](https://www.chessprogramming.org/Transposition_Table)
+
 **2.2 Extensões de pesquisa**
 
 * [Extensões de xeque](https://www.chessprogramming.org/Check_Extensions)

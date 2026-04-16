@@ -5,6 +5,8 @@
 #include <cstring>
 
 #include "consts.h"
+#include "values.h"
+#include "params.h"
 
 #include "gen.h"
 #include "game.h"
@@ -14,6 +16,25 @@ Bitboard::u64 lock[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 
 Bitboard::u64 Hash::chaveAtual, Hash::lockAtual;
 int Hash::hash_inicio, Hash::hash_destino;
+int Hash::hash_score, Hash::hash_depth, Hash::hash_bound;
+
+// Mate scores stored in the TT must be relative to the entry's own position,
+// not to the search root. On store we add ply for positive mates (subtract for
+// negative mates); on load we reverse. MATE_THRESHOLD is the boundary above
+// which a score is treated as mate-distance.
+#define MATE_THRESHOLD (VALOR_XEQUE_MATE_BRANCAS - MAX_PLY)
+
+static int score_to_tt(int s, int ply){
+    if (s >=  MATE_THRESHOLD) return s + ply;
+    if (s <= -MATE_THRESHOLD) return s - ply;
+    return s;
+}
+
+static int score_from_tt(int s, int ply){
+    if (s >=  MATE_THRESHOLD) return s - ply;
+    if (s <= -MATE_THRESHOLD) return s + ply;
+    return s;
+}
 
 Hash::hashp *hashpos[LADOS];
 
@@ -68,12 +89,23 @@ void Hash::adicionar_chave(const int l, const int piece, const int casa){
     lockAtual ^= lock[l][piece][casa];
 }
 
-void Hash::adicionar_hash(const int ld, const Gen::lance lc){
+void Hash::adicionar_hash(const int ld, const Gen::lance lc,
+                          const int score, const int depth, const int bound){
     hashp* ptr = &hashpos[ld][chaveAtual % MAXHASH];
 
+    // Depth-preferred replacement: if the bucket already holds an entry for
+    // this exact position, keep it unless the incoming entry is at least as
+    // deep. Different positions always overwrite.
+    if (ptr->hashlock == lockAtual && depth < ptr->depth){
+        return;
+    }
+
     ptr->hashlock = lockAtual;
-    ptr->inicio = lc.inicio;
-    ptr->dest = lc.destino;
+    ptr->inicio   = (uint16_t) lc.inicio;
+    ptr->dest     = (uint16_t) lc.destino;
+    ptr->score    = (int32_t)  score_to_tt(score, Game::ply);
+    ptr->depth    = (int8_t)   depth;
+    ptr->bound    = (uint8_t)  bound;
 }
 
 void Hash::adicionar_pontuacao_de_hash(){
@@ -123,13 +155,17 @@ Bitboard::u64 Hash::obter_chave(){
 
 bool Hash::hash_lookup(const int l){
     const Bitboard::u64 idx = chaveAtual % MAXHASH;
+    const hashp &e = hashpos[l][idx];
 
-    if (hashpos[l][idx].hashlock != lockAtual){
+    if (e.hashlock != lockAtual){
         return false;
     }
 
-    hash_inicio = hashpos[l][idx].inicio;
-    hash_destino = hashpos[l][idx].dest;
+    hash_inicio  = e.inicio;
+    hash_destino = e.dest;
+    hash_score   = score_from_tt(e.score, Game::ply);
+    hash_depth   = e.depth;
+    hash_bound   = e.bound;
 
     return true;
 }
