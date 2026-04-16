@@ -134,4 +134,4 @@ echo
     -openings file="$BOOK" format=epd order=random \
     -sprt elo0="$ELO0" elo1="$ELO1" alpha="$ALPHA" beta="$BETA" \
     -concurrency "$CONCURRENCY" \
-    -pgnout "$PGN_OUT"
+    -pgnout file="$PGN_OUT"
