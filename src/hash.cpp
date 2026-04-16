@@ -38,15 +38,24 @@ int aleatorio(const int x){
     return rand() % x;
 }
 
+static Bitboard::u64 aleatorio64(){
+    // Build a full 64-bit value from four 16-bit chunks of rand().
+    // RAND_MAX is guaranteed to be >= 32767, so 16-bit chunks are portable.
+    return ((Bitboard::u64)(rand() & 0xFFFF))
+         | ((Bitboard::u64)(rand() & 0xFFFF) << 16)
+         | ((Bitboard::u64)(rand() & 0xFFFF) << 32)
+         | ((Bitboard::u64)(rand() & 0xFFFF) << 48);
+}
+
 void Hash::iniciar_hash(){
     int piece, casa;
 
     for (piece = 0; piece < TIPOS_DE_PIECES; piece++){
         for (casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
-            hash[BRANCAS][piece][casa] = aleatorio(HASHSIZE);
-            hash[PRETAS][piece][casa] = aleatorio(HASHSIZE);
-            lock[BRANCAS][piece][casa] = aleatorio(HASHSIZE);
-            lock[PRETAS][piece][casa] = aleatorio(HASHSIZE);
+            hash[BRANCAS][piece][casa] = aleatorio64();
+            hash[PRETAS][piece][casa] = aleatorio64();
+            lock[BRANCAS][piece][casa] = aleatorio64();
+            lock[PRETAS][piece][casa] = aleatorio64();
         }
     }
 
@@ -60,7 +69,7 @@ void Hash::adicionar_chave(const int l, const int piece, const int casa){
 }
 
 void Hash::adicionar_hash(const int ld, const Gen::lance lc){
-    hashp* ptr = &hashpos[ld][chaveAtual];
+    hashp* ptr = &hashpos[ld][chaveAtual % MAXHASH];
 
     ptr->hashlock = lockAtual;
     ptr->inicio = lc.inicio;
@@ -113,12 +122,14 @@ Bitboard::u64 Hash::obter_chave(){
 }
 
 bool Hash::hash_lookup(const int l){
-    if (hashpos[l][chaveAtual].hashlock != lockAtual){
+    const Bitboard::u64 idx = chaveAtual % MAXHASH;
+
+    if (hashpos[l][idx].hashlock != lockAtual){
         return false;
     }
 
-    hash_inicio = hashpos[l][chaveAtual].inicio;
-    hash_destino = hashpos[l][chaveAtual].dest;
+    hash_inicio = hashpos[l][idx].inicio;
+    hash_destino = hashpos[l][idx].dest;
 
     return true;
 }
