@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <cstdlib>
+#include <cstring>
 
 #include "consts.h"
 
@@ -21,7 +22,19 @@ void Hash::liberar_memoria(){
     delete hashpos[PRETAS];
 }
 
+void Hash::limpar_tt(){
+    if (hashpos[BRANCAS] != NULL){
+        std::memset(hashpos[BRANCAS], 0, sizeof(Hash::hashp) * MAXHASH);
+    }
+    if (hashpos[PRETAS] != NULL){
+        std::memset(hashpos[PRETAS], 0, sizeof(Hash::hashp) * MAXHASH);
+    }
+}
+
 int aleatorio(const int x){
+    // rand() intentionally unseeded: deterministic Zobrist keys across runs
+    // give reproducible bench node counts and TT behavior for SPRT testing.
+    // Do not call srand() here.
     return rand() % x;
 }
 

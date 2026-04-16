@@ -21,7 +21,12 @@ namespace Interface{
     #define COMANDO_TROCAR_DE_LADO "troca"
     #define COMANDO_DESFAZER_LANCE "desfaz"
     #define COMANDO_INICIA_XBOARD "xboard"
+    #define COMANDO_INICIA_UCI "uci"
     #define COMANDO_REALIZAR_PERFT "perft"
+
+    enum Protocolo { PROTO_NENHUM, PROTO_XBOARD, PROTO_UCI };
+
+    extern Protocolo protocolo_ativo;
 
     extern bool tempo_fixo;
     extern bool profundidade_fixa;
@@ -46,6 +51,8 @@ namespace Interface{
     int converter_lance(char *lnc);
     void exibir_melhor_linha(int profundidade);
     void display_tabuleiro();
+    int computar_tempo_para_lance(int remaining_ms, int inc_ms);
+    void obter_pv_uci(char *buf, int max_len, int profundidade);
 };
 
 #endif

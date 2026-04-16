@@ -17,6 +17,7 @@ namespace Hash{
 
     void iniciar_hash();
     void liberar_memoria();
+    void limpar_tt();
     void adicionar_hash(const int ld, const Gen::lance lc);
     void adicionar_chave(const int l, const int piece, const int casa);
 

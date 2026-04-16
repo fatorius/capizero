@@ -18,6 +18,8 @@ void Xboard::xboard(){
 	int n;
 	int prom;
 
+	Interface::protocolo_ativo = Interface::PROTO_XBOARD;
+
 	signal(SIGINT, SIG_IGN);
 	printf("\n");
 	Game::novo_jogo();
@@ -127,14 +129,11 @@ void Xboard::xboard(){
 		}
 
 		if (!strcmp(comando, "time")) {
-			sscanf(linha, "time %d", &Interface::tempo_maximo);
-			if(Interface::tempo_maximo < 200){
-			    Interface::profundidade_maxima = 1;
-            }
-			else{
-				Interface::tempo_maximo /= 2;
-				Interface::profundidade_maxima = MAX_PLY;
-			}
+			int remaining_cs = 0;
+			sscanf(linha, "time %d", &remaining_cs);
+			Interface::tempo_maximo = Interface::computar_tempo_para_lance(remaining_cs * 10, 0);
+			Interface::profundidade_maxima = MAX_PLY;
+			Interface::tempo_fixo = true;
 			continue;
 		}
 

@@ -10,6 +10,7 @@
 #include "gen.h"
 #include "update.h"
 #include "xboard.h"
+#include "uci.h"
 #include "help.h"
 #include "search.h"
 #include "hash.h"
@@ -31,6 +32,62 @@ int Interface::tempo_gasto;
 
 int Interface::tempo_maximo, Interface::profundidade_maxima;
 bool Interface::tempo_fixo, Interface::profundidade_fixa;
+
+Interface::Protocolo Interface::protocolo_ativo = Interface::PROTO_NENHUM;
+
+int Interface::computar_tempo_para_lance(int remaining_ms, int inc_ms){
+    if (remaining_ms <= 0){
+        return 50;
+    }
+
+    int budget = remaining_ms / 30 + inc_ms / 2;
+    int max_budget = remaining_ms - 50;
+
+    if (max_budget < 50){
+        max_budget = 50;
+    }
+
+    if (budget < 50){
+        budget = 50;
+    }
+    if (budget > max_budget){
+        budget = max_budget;
+    }
+
+    return budget;
+}
+
+void Interface::obter_pv_uci(char *buf, int max_len, int profundidade){
+    Interface::lance_inicio = Hash::hash_inicio;
+    Interface::lance_destino = Hash::hash_destino;
+
+    int pos = 0;
+    buf[0] = '\0';
+
+    for (int x = 0; x < profundidade; x++){
+        if (Hash::hash_lookup(Game::lado) == false){
+            break;
+        }
+
+        char *mv = Interface::lance_para_string(Hash::hash_inicio, Hash::hash_destino, 0);
+        int len = strlen(mv);
+        if (pos + len + 2 >= max_len){
+            break;
+        }
+        if (pos > 0){
+            buf[pos++] = ' ';
+        }
+        memcpy(buf + pos, mv, len);
+        pos += len;
+        buf[pos] = '\0';
+
+        Update::fazer_lance(Hash::hash_inicio, Hash::hash_destino);
+    }
+
+    while (Game::ply){
+        Update::desfaz_lance();
+    }
+}
 
 int profundidade_perft;
 
@@ -478,6 +535,11 @@ bool Interface::ler_comando(){
     }
     else if (!strcmp(cmd, COMANDO_INICIA_XBOARD)){
         Xboard::xboard();
+
+        return false;
+    }
+    else if (!strcmp(cmd, COMANDO_INICIA_UCI)){
+        Uci::loop();
 
         return false;
     }
