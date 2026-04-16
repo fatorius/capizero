@@ -127,8 +127,8 @@ echo "   pgn output  : $PGN_OUT"
 echo
 
 "$FASTCHESS" \
-    -engine cmd="$CANDIDATE" name=candidate proto=uci \
-    -engine cmd="$BASELINE"  name=baseline  proto=uci \
+    -engine cmd="$CANDIDATE" args="uci" name=candidate proto=uci \
+    -engine cmd="$BASELINE"  args="uci" name=baseline  proto=uci \
     -each tc="$TC" option.Hash="$HASH" \
     -rounds "$ROUNDS" -games 2 -repeat \
     -openings file="$BOOK" format=epd order=random \

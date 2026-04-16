@@ -119,7 +119,7 @@ echo "   pgn output  : $PGN_OUT"
 echo
 
 "$FASTCHESS" \
-    -engine cmd="$CANDIDATE" name=capizero proto=uci \
+    -engine cmd="$CANDIDATE" args="uci" name=capizero proto=uci \
     "${OPPONENTS[@]}" \
     -each tc="$TC" option.Hash="$HASH" \
     -rounds "$ROUNDS" -games 2 -repeat \
@@ -127,4 +127,4 @@ echo
     -tournament gauntlet \
     -ratinginterval 10 \
     -concurrency "$CONCURRENCY" \
-    -pgnout "$PGN_OUT"
+    -pgnout file="$PGN_OUT"
