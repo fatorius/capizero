@@ -71,7 +71,9 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 ### 6. Interface
 
+* Modo interativo via terminal (comandos em português)
 * Compatibilidade com [Xboard](https://www.chessprogramming.org/Chess_Engine_Communication_Protocol)
+* Compatibilidade com [UCI](https://www.chessprogramming.org/UCI) — permite usar cutechess-cli, Fastchess, Arena, etc.
 
 ## Para compilar
 
@@ -84,6 +86,30 @@ no terminal, digite:
 ```
 make build
 ```
+
+## Para executar
+
+depois de compilar o binário `capizero_<versao>` fica na raiz do repositório. modos disponíveis:
+
+```
+./capizero_<versao>                # modo interativo (português)
+./capizero_<versao> uci            # protocolo UCI
+./capizero_<versao> xboard         # protocolo XBoard
+./capizero_<versao> bench [prof]   # executa o bench padrão (default prof=13)
+                                   # imprime Nodes: N / NPS: M no final
+```
+
+## Testes de força
+
+duas ferramentas estão disponíveis em [tests/](tests/) para medir a força da engine:
+
+* **SPRT** (teste relativo patch-vs-baseline) — veja [tests/sprt/README.md](tests/sprt/README.md).
+  útil para validar se uma mudança ganhou ou perdeu Elo.
+
+* **Gauntlet** (teste absoluto vs. Stockfish com força reduzida) — veja [tests/gauntlet/README.md](tests/gauntlet/README.md).
+  útil para estimar o rating absoluto da engine.
+
+ambas as ferramentas usam o [Fastchess](https://github.com/Disservin/fastchess) como driver.
 
 ## Para contribuir
 
