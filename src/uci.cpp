@@ -206,12 +206,59 @@ static void handle_go(char *args){
 }
 
 static void handle_setoption(char *args){
-    // "name X [X...] value Y [Y...]" - accept but only a couple of known names.
-    // For now we just acknowledge; proper Hash resize / Threads handling TBD.
+    // "name <NAME> value <VALUE>" - option names may contain spaces, so we
+    // scan for the "value" token rather than using strtok on the whole line.
     if (args == NULL){
         return;
     }
-    // Silently accept. Unknown options would generate too much noise otherwise.
+
+    char *name_tok = strtok(args, " \t\r\n");
+    if (name_tok == NULL || strcmp(name_tok, "name") != 0){
+        return;
+    }
+
+    // Accumulate the option name up to (but not including) "value".
+    char option_name[128];
+    option_name[0] = '\0';
+    size_t on_len = 0;
+
+    char *tok = strtok(NULL, " \t\r\n");
+    while (tok != NULL && strcmp(tok, "value") != 0){
+        size_t tlen = strlen(tok);
+        if (on_len + tlen + 2 >= sizeof(option_name)){
+            break;
+        }
+        if (on_len > 0){
+            option_name[on_len++] = ' ';
+        }
+        memcpy(option_name + on_len, tok, tlen);
+        on_len += tlen;
+        option_name[on_len] = '\0';
+        tok = strtok(NULL, " \t\r\n");
+    }
+
+    // tok is now either "value" or NULL.
+    char *value_tok = (tok != NULL) ? strtok(NULL, " \t\r\n") : NULL;
+
+    if (!strcmp(option_name, "Hash")){
+        if (value_tok == NULL){
+            return;
+        }
+        int mb = atoi(value_tok);
+        if (mb < MIN_TT_MB) mb = MIN_TT_MB;
+        if (mb > MAX_TT_MB) mb = MAX_TT_MB;
+        Hash::realocar_tt(mb);
+        printf("info string Hash set to %d MB\n", mb);
+        fflush(stdout);
+    }
+    else if (!strcmp(option_name, "Threads")){
+        // Engine is single-threaded; silently accept 1, reject anything else.
+        if (value_tok != NULL && atoi(value_tok) != 1){
+            printf("info string Threads > 1 not supported; ignoring\n");
+            fflush(stdout);
+        }
+    }
+    // Unknown options: silently accept (UCI requires tolerance of unknown names).
 }
 
 void Uci::loop(){

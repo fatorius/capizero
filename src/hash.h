@@ -1,6 +1,7 @@
 #ifndef HASH
 #define HASH
 
+#include <cstddef>
 #include <cstdint>
 
 #include "bitboard.h"
@@ -26,9 +27,13 @@ namespace Hash{
     extern int hash_inicio, hash_destino;
     extern int hash_score, hash_depth, hash_bound;
 
+    // Number of TT entries per side. Set by iniciar_hash()/realocar_tt().
+    extern size_t tt_entries_per_side;
+
     void iniciar_hash();
     void liberar_memoria();
     void limpar_tt();
+    void realocar_tt(int size_mb);
     void adicionar_hash(const int ld, const Gen::lance lc,
                         const int score, const int depth, const int bound);
     void adicionar_chave(const int l, const int piece, const int casa);

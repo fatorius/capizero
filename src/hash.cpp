@@ -18,6 +18,8 @@ Bitboard::u64 Hash::chaveAtual, Hash::lockAtual;
 int Hash::hash_inicio, Hash::hash_destino;
 int Hash::hash_score, Hash::hash_depth, Hash::hash_bound;
 
+size_t Hash::tt_entries_per_side = 0;
+
 // Mate scores stored in the TT must be relative to the entry's own position,
 // not to the search root. On store we add ply for positive mates (subtract for
 // negative mates); on load we reverse. MATE_THRESHOLD is the boundary above
@@ -36,20 +38,40 @@ static int score_from_tt(int s, int ply){
     return s;
 }
 
-Hash::hashp *hashpos[LADOS];
+Hash::hashp *hashpos[LADOS] = {NULL, NULL};
 
 void Hash::liberar_memoria(){
-    delete hashpos[BRANCAS];
-    delete hashpos[PRETAS];
+    delete[] hashpos[BRANCAS];
+    delete[] hashpos[PRETAS];
+    hashpos[BRANCAS] = NULL;
+    hashpos[PRETAS]  = NULL;
+    tt_entries_per_side = 0;
 }
 
 void Hash::limpar_tt(){
     if (hashpos[BRANCAS] != NULL){
-        std::memset(hashpos[BRANCAS], 0, sizeof(Hash::hashp) * MAXHASH);
+        std::memset(hashpos[BRANCAS], 0, sizeof(Hash::hashp) * tt_entries_per_side);
     }
     if (hashpos[PRETAS] != NULL){
-        std::memset(hashpos[PRETAS], 0, sizeof(Hash::hashp) * MAXHASH);
+        std::memset(hashpos[PRETAS], 0, sizeof(Hash::hashp) * tt_entries_per_side);
     }
+}
+
+void Hash::realocar_tt(int size_mb){
+    if (size_mb < MIN_TT_MB) size_mb = MIN_TT_MB;
+    if (size_mb > MAX_TT_MB) size_mb = MAX_TT_MB;
+
+    // Split total budget across the two per-side tables.
+    const size_t total_bytes = (size_t)size_mb * 1024u * 1024u;
+    const size_t entries     = total_bytes / (2u * sizeof(Hash::hashp));
+
+    delete[] hashpos[BRANCAS];
+    delete[] hashpos[PRETAS];
+
+    hashpos[BRANCAS] = new Hash::hashp[entries]();
+    hashpos[PRETAS]  = new Hash::hashp[entries]();
+
+    tt_entries_per_side = entries;
 }
 
 int aleatorio(const int x){
@@ -80,8 +102,16 @@ void Hash::iniciar_hash(){
         }
     }
 
-    hashpos[BRANCAS] = new Hash::hashp[MAXHASH];
-    hashpos[PRETAS] = new Hash::hashp[MAXHASH];
+    // Deliberately defer TT allocation: GUIs typically send
+    // `setoption name Hash value N` before any search, so allocating a default
+    // up front just wastes memory. The first lookup/store triggers allocation
+    // at DEFAULT_TT_MB if setoption never arrives.
+}
+
+static void ensure_tt_allocated(){
+    if (Hash::tt_entries_per_side == 0){
+        Hash::realocar_tt(DEFAULT_TT_MB);
+    }
 }
 
 void Hash::adicionar_chave(const int l, const int piece, const int casa){
@@ -91,7 +121,8 @@ void Hash::adicionar_chave(const int l, const int piece, const int casa){
 
 void Hash::adicionar_hash(const int ld, const Gen::lance lc,
                           const int score, const int depth, const int bound){
-    hashp* ptr = &hashpos[ld][chaveAtual % MAXHASH];
+    ensure_tt_allocated();
+    hashp* ptr = &hashpos[ld][chaveAtual % tt_entries_per_side];
 
     // Depth-preferred replacement: if the bucket already holds an entry for
     // this exact position, keep it unless the incoming entry is at least as
@@ -154,7 +185,8 @@ Bitboard::u64 Hash::obter_chave(){
 }
 
 bool Hash::hash_lookup(const int l){
-    const Bitboard::u64 idx = chaveAtual % MAXHASH;
+    ensure_tt_allocated();
+    const Bitboard::u64 idx = chaveAtual % tt_entries_per_side;
     const hashp &e = hashpos[l][idx];
 
     if (e.hashlock != lockAtual){
