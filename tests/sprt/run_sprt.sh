@@ -13,12 +13,12 @@
 #   tc           10+0.1            (10 sec + 0.1 sec increment)
 #   elo0         0                 (null hypothesis lower bound)
 #   elo1         5                 (null hypothesis upper bound: gain 5 Elo)
-#   concurrency  (nproc) / 2       (leave some cores for the OS)
+#   concurrency  4                 (leaves CPU headroom for clean TC timing)
 #
 # Environment overrides:
 #   FASTCHESS    path to fastchess binary (default: fastchess on PATH)
 #   BOOK         path to opening book (default: UHO if present, else starter)
-#   HASH         TT hash MB per engine (default: 64)
+#   HASH         TT hash MB per engine (default: 256)
 #   ALPHA BETA   SPRT type-I / type-II error rates (default: 0.05 / 0.05)
 #   ROUNDS       max rounds cap (default: 40000)
 #
@@ -51,7 +51,7 @@ if [ -z "$BASELINE" ] || [ -z "$CANDIDATE" ]; then
     cat >&2 <<USAGE
 Usage: $0 <baseline_binary> <candidate_binary> [tc] [elo0] [elo1] [concurrency]
 
-Defaults: tc=10+0.1 elo0=0 elo1=5 concurrency=(nproc)/2
+Defaults: tc=10+0.1 elo0=0 elo1=5 concurrency=4
 Environment: FASTCHESS BOOK HASH ALPHA BETA ROUNDS
 USAGE
     exit 64
@@ -100,17 +100,10 @@ if [ ! -f "$BOOK" ]; then
 fi
 
 if [ -z "$CONCURRENCY" ]; then
-    if command -v nproc >/dev/null 2>&1; then
-        CONCURRENCY=$(( $(nproc) / 2 ))
-    elif command -v sysctl >/dev/null 2>&1; then
-        CONCURRENCY=$(( $(sysctl -n hw.ncpu) / 2 ))
-    else
-        CONCURRENCY=2
-    fi
-    [ "$CONCURRENCY" -lt 1 ] && CONCURRENCY=1
+    CONCURRENCY=4
 fi
 
-HASH="${HASH:-64}"
+HASH="${HASH:-256}"
 ALPHA="${ALPHA:-0.05}"
 BETA="${BETA:-0.05}"
 ROUNDS="${ROUNDS:-40000}"
