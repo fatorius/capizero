@@ -18,7 +18,11 @@ namespace Params{
     #define MIN_TT_MB     1
     #define MAX_TT_MB     4096
 
-    #define PILHA_DE_LANCES 4000
+    // Shared move buffer sized for worst-case ply-stacking during deep search +
+    // quiescence. Four-variant promotion generation can spike a single ply's
+    // count well above 80, and ~80 effective plies × ~100 moves → ~8k; 10k
+    // leaves a comfortable safety margin.
+    #define PILHA_DE_LANCES 10000
     #define PILHA_DO_JOGO 2000
 
     #define MAGIC_HASHTABLE_SIZE 4096

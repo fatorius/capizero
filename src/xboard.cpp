@@ -49,14 +49,15 @@ void Xboard::xboard(){
 
 			Gen::lista_de_lances[0].inicio = Hash::hash_inicio;
             Gen::lista_de_lances[0].destino = Hash::hash_destino;
-            
-			if ((Bitboard::tabuleiro[Hash::hash_inicio] == P) && (Consts::linhas[Hash::hash_destino] == Update::fileira_de_promocao[Game::lado])){
-				prom = D; // ASSUME QUE O JOGADOR IRÁ PROMOVER SEMPRE PARA DAMA
+
+			prom = Interface::lance_promove;
+			if (prom == 0 && (Bitboard::tabuleiro[Hash::hash_inicio] == P) && (Consts::linhas[Hash::hash_destino] == Update::fileira_de_promocao[Game::lado])){
+				prom = D;   // safety fallback
 			}
 
 			printf("move %s\n", Interface::lance_para_string(Hash::hash_inicio,Hash::hash_destino,prom));
-	
-			Update::fazer_lance(Hash::hash_inicio,Hash::hash_destino);
+
+			Update::fazer_lance(Hash::hash_inicio,Hash::hash_destino,Hash::hash_promove);
   
 			Game::ply = 0;
 			Gen::gerar_lances(Game::lado, Game::xlado);
@@ -233,7 +234,7 @@ void Xboard::xboard(){
 		Gen::gerar_lances(Game::lado, Game::xlado);
 
 		m = Interface::converter_lance(linha);
-		if (m == -1 || !Update::fazer_lance(Gen::lista_de_lances[m].inicio, Gen::lista_de_lances[m].destino)){
+		if (m == -1 || !Update::fazer_lance(Gen::lista_de_lances[m].inicio, Gen::lista_de_lances[m].destino, Gen::lista_de_lances[m].promove)){
 			printf("Error (unknown comand): %s\n", comando);
         }
 		else {

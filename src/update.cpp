@@ -62,8 +62,8 @@ void Update::desfaz_lance(){
         adicionar_piece(Game::xlado, P, destino + casa_reversa[Game::lado]);
     }
 
-    // desfaz promoção
-    if (ultimo_lance->promove == D){
+    // desfaz promoção (any of C, B, T, D)
+    if (ultimo_lance->promove >= C && ultimo_lance->promove <= D){
         adicionar_piece(Game::lado, P, inicio);
         remover_piece(Game::lado, Bitboard::tabuleiro[destino], destino);
     }
@@ -98,7 +98,7 @@ void Update::desfaz_lance(){
     }
 }
 
-bool Update::fazer_lance(const int inicio, const int destino){
+bool Update::fazer_lance(const int inicio, const int destino, const int promove){
     // 1. lida com o roque do rei, movendo também a torre
     if (abs(inicio - destino) == ROQUE && Bitboard::tabuleiro[inicio] == R){
 
@@ -173,8 +173,9 @@ bool Update::fazer_lance(const int inicio, const int destino){
                 remover_piece(Game::xlado, Bitboard::tabuleiro[destino], destino);
             }
 
-            adicionar_piece(Game::lado, D, destino);
-            j->promove = D;
+            const int promo_piece = (promove >= C && promove <= D) ? promove : D;
+            adicionar_piece(Game::lado, promo_piece, destino);
+            j->promove = promo_piece;
         }
         // capturas
         else if (Bitboard::tabuleiro[destino] < VAZIO){

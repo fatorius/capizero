@@ -370,13 +370,22 @@ void Gen::init_lookup_tables(){
 int calcularBonusHeuristicas(const int origem, const int destino){
     Gen::lance contraLance = Search::contraLance_heuristica[Game::lista_do_jogo[Game::hply].inicio][Game::lista_do_jogo[Game::hply].destino];
 
-    if (Search::killers_primarios[Game::ply].inicio == origem && Search::killers_primarios[Game::ply].destino == destino){
+    // Killer and counter-move tables store full lance values including the
+    // promote piece. For non-promotion moves both sides carry 0, so the
+    // equality stays consistent; for promotions it disambiguates variants.
+    if (Search::killers_primarios[Game::ply].inicio == origem
+        && Search::killers_primarios[Game::ply].destino == destino
+        && Search::killers_primarios[Game::ply].promove == Gen::lista_de_lances[mc].promove){
         return SCORE_KILLER_1;
     }
-    if (Search::killers_secundarios[Game::ply].inicio == origem && Search::killers_secundarios[Game::ply].destino == destino){
+    if (Search::killers_secundarios[Game::ply].inicio == origem
+        && Search::killers_secundarios[Game::ply].destino == destino
+        && Search::killers_secundarios[Game::ply].promove == Gen::lista_de_lances[mc].promove){
         return SCORE_KILLER_2;
     }
-    if (contraLance.inicio == origem && contraLance.destino == destino){
+    if (contraLance.inicio == origem
+        && contraLance.destino == destino
+        && contraLance.promove == Gen::lista_de_lances[mc].promove){
         return SCORE_CONTRALANCE;
     }
 
@@ -386,6 +395,7 @@ int calcularBonusHeuristicas(const int origem, const int destino){
 void adicionar_captura(const int origem, const int destino, const int score){
     Gen::lista_de_lances[mc].inicio = origem;
     Gen::lista_de_lances[mc].destino = destino;
+    Gen::lista_de_lances[mc].promove = 0;
     Gen::lista_de_lances[mc].score = score; // ordena por capturas
     mc++;
 }
@@ -393,6 +403,7 @@ void adicionar_captura(const int origem, const int destino, const int score){
 void adicionar_roque(const int origem, const int destino){
     Gen::lista_de_lances[mc].inicio = origem;
     Gen::lista_de_lances[mc].destino = destino;
+    Gen::lista_de_lances[mc].promove = 0;
     Gen::lista_de_lances[mc].score = SCORE_ROQUE; // ordena por roque TODO TESTAR SE ESSA ORDENAÇÃO REALMENTE RESULTA EM MELHORAS ????????
     mc++;
 }
@@ -400,7 +411,47 @@ void adicionar_roque(const int origem, const int destino){
 void adicionar_lance(const int origem, const int destino){
     Gen::lista_de_lances[mc].inicio = origem;
     Gen::lista_de_lances[mc].destino = destino;
+    Gen::lista_de_lances[mc].promove = 0;
     Gen::lista_de_lances[mc].score = calcularBonusHeuristicas(origem, destino);
+    mc++;
+}
+
+// Emit the four promotion variants (Q, N, R, B) for a pawn reaching the back
+// rank. Captured-piece value is rolled into queen/knight scores so MVV/LVA is
+// preserved when the promotion is also a capture. Queen first → earlier
+// alpha-beta cutoffs in search. Under-promotion (R, B) gets a near-zero score
+// because it is almost never the best move; keeping it above history scores
+// for quiet moves risks poisoning the top of the list.
+void adicionar_promocao_variantes(const int origem, const int destino, const int piece_capturado){
+    const int cap_bonus = (piece_capturado < VAZIO) ? Values::pieces_valor[piece_capturado] : 0;
+    const bool is_capture = (piece_capturado < VAZIO);
+
+    // Queen
+    Gen::lista_de_lances[mc].inicio = origem;
+    Gen::lista_de_lances[mc].destino = destino;
+    Gen::lista_de_lances[mc].promove = D;
+    Gen::lista_de_lances[mc].score = (is_capture ? SCORE_PROMO_Q_CAP : SCORE_PROMO_Q) + cap_bonus;
+    mc++;
+
+    // Knight
+    Gen::lista_de_lances[mc].inicio = origem;
+    Gen::lista_de_lances[mc].destino = destino;
+    Gen::lista_de_lances[mc].promove = C;
+    Gen::lista_de_lances[mc].score = (is_capture ? SCORE_PROMO_N_CAP : SCORE_PROMO_N) + cap_bonus;
+    mc++;
+
+    // Rook
+    Gen::lista_de_lances[mc].inicio = origem;
+    Gen::lista_de_lances[mc].destino = destino;
+    Gen::lista_de_lances[mc].promove = T;
+    Gen::lista_de_lances[mc].score = SCORE_PROMO_UNDER;
+    mc++;
+
+    // Bishop
+    Gen::lista_de_lances[mc].inicio = origem;
+    Gen::lista_de_lances[mc].destino = destino;
+    Gen::lista_de_lances[mc].promove = B;
+    Gen::lista_de_lances[mc].score = SCORE_PROMO_UNDER;
     mc++;
 }
 
@@ -466,7 +517,12 @@ void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_esquerda[lado_a_mover][casa];
-        adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
+        if (Consts::linhas[casa_destino] == FILEIRA_1 || Consts::linhas[casa_destino] == FILEIRA_8){
+            adicionar_promocao_variantes(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
+        }
+        else{
+            adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
+        }
     }
 
     // 1.3 adiciona capturas de peao para a direita
@@ -474,18 +530,29 @@ void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
         casa = Bitboard::bitscan(t2);
         t2 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_direita[lado_a_mover][casa];
-        adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
+        if (Consts::linhas[casa_destino] == FILEIRA_1 || Consts::linhas[casa_destino] == FILEIRA_8){
+            adicionar_promocao_variantes(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
+        }
+        else{
+            adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
+        }
     }
-    
+
     // 1.4 adiciona avanços de peao
     while (t3){
         casa = Bitboard::bitscan(t3);
         t3 &= Bitboard::not_mask[casa];
-        adicionar_lance(casa, peao_uma_casa[lado_a_mover][casa]);
+        casa_destino = peao_uma_casa[lado_a_mover][casa];
+        if (Consts::linhas[casa_destino] == FILEIRA_1 || Consts::linhas[casa_destino] == FILEIRA_8){
+            adicionar_promocao_variantes(casa, casa_destino, VAZIO);
+        }
+        else{
+            adicionar_lance(casa, casa_destino);
 
-        // 1.4.1 avanço duplo
-        if (Bitboard::fileiras[lado_a_mover][casa] == 1 && Bitboard::tabuleiro[peao_duas_casas[lado_a_mover][casa]] == VAZIO){
-            adicionar_lance(casa, peao_duas_casas[lado_a_mover][casa]);
+            // 1.4.1 avanço duplo (a double push can never reach the back rank)
+            if (Bitboard::fileiras[lado_a_mover][casa] == 1 && Bitboard::tabuleiro[peao_duas_casas[lado_a_mover][casa]] == VAZIO){
+                adicionar_lance(casa, peao_duas_casas[lado_a_mover][casa]);
+            }
         }
     }
 
@@ -629,7 +696,10 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
     mc = Game::qntt_lances_totais[Game::ply];
 
 
-    // 1. gera capturas de peao
+    // 1. gera capturas de peao. Quiet pawn pushes to the back rank (quiet
+    // promotions) are deliberately NOT generated here: quiescence uses
+    // Update::fazer_captura which has no path for non-capture destinations,
+    // and expanding the qsearch move surface is a separate follow-up.
     // 1.1 verifica quais casas estao disponiveis
     if (lado_a_mover == BRANCAS){
         t1 = Bitboard::bit_pieces[BRANCAS][P] & ((Bitboard::bit_lados[PRETAS] & Bitboard::not_coluna_h) >> 7);
@@ -645,7 +715,12 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_esquerda[lado_a_mover][casa];
-        adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
+        if (Consts::linhas[casa_destino] == FILEIRA_1 || Consts::linhas[casa_destino] == FILEIRA_8){
+            adicionar_promocao_variantes(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
+        }
+        else{
+            adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
+        }
     }
 
     // 1.3 adiciona capturas de peao para a direita
@@ -653,7 +728,12 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
         casa = Bitboard::bitscan(t2);
         t2 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_direita[lado_a_mover][casa];
-        adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
+        if (Consts::linhas[casa_destino] == FILEIRA_1 || Consts::linhas[casa_destino] == FILEIRA_8){
+            adicionar_promocao_variantes(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
+        }
+        else{
+            adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
+        }
     }
     
     // 2. gera capturas de cavalo
@@ -747,7 +827,7 @@ unsigned long long Gen::perft_node(int profunidade){
     gerar_lances(Game::lado, Game::xlado);
 
     for (int i = Game::qntt_lances_totais[Game::ply]; i < Game::qntt_lances_totais[Game::ply+1]; i++){
-        if (!Update::fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino)){
+        if (!Update::fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino, Gen::lista_de_lances[i].promove)){
             continue;
         }
         total += perft_node(profunidade - 1);
@@ -767,7 +847,7 @@ unsigned long long Gen::perft(int profunidade){
     gerar_lances(Game::lado, Game::xlado);
 
     for (int i = Game::qntt_lances_totais[Game::ply]; i < Game::qntt_lances_totais[Game::ply+1]; i++){
-        if (!Update::fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino)){
+        if (!Update::fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino, Gen::lista_de_lances[i].promove)){
             continue;
         }
 

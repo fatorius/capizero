@@ -38,7 +38,7 @@ namespace Interface{
 
     extern int tempo_gasto;
 
-    extern int lance_inicio, lance_destino;
+    extern int lance_inicio, lance_destino, lance_promove;
 
     extern int no_lances;
 
