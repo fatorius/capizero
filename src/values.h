@@ -47,11 +47,12 @@ namespace Values{
 	#define SCORE_CAPTURAS_V  50000000
 	#define PONTUACAO_HASH   100000000
 
-	// Promotion move scoring. Queen above MVV/LVA so it is always tried first,
-	// knight moderate (tactical value), rook/bishop near zero because they are
-	// almost never best and we don't want them polluting the top of the list.
-	#define SCORE_PROMO_Q_CAP  (SCORE_CAPTURAS_V + 1000000)
-	#define SCORE_PROMO_Q      60000000
+	// Promotion move scoring. Capture-promotions rank above quiet promotions
+	// (more material gain). Both queen variants sit above MVV/LVA so they are
+	// always tried before regular captures. Knight moderate (tactical value),
+	// rook/bishop near zero because they are almost never best.
+	#define SCORE_PROMO_Q_CAP  60000000
+	#define SCORE_PROMO_Q      (SCORE_CAPTURAS_V + 1000000)
 	#define SCORE_PROMO_N_CAP  18000000
 	#define SCORE_PROMO_N      17000000
 	#define SCORE_PROMO_UNDER  100
