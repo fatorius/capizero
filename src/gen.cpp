@@ -455,6 +455,18 @@ void adicionar_promocao_variantes(const int origem, const int destino, const int
     mc++;
 }
 
+// Queen-only capture-promotion for qsearch. Quiescence scores captures via
+// pesquisa_quiescence(inicio, destino) and makes them with Update::fazer_captura,
+// neither of which knows about the promote piece — so emitting N/R/B here just
+// forces SEE to run 4× with identical inputs and identical results. Emit Q only.
+void adicionar_promocao_captura_dama(const int origem, const int destino, const int piece_capturado){
+    Gen::lista_de_lances[mc].inicio = origem;
+    Gen::lista_de_lances[mc].destino = destino;
+    Gen::lista_de_lances[mc].promove = D;
+    Gen::lista_de_lances[mc].score = Values::px[piece_capturado];
+    mc++;
+}
+
 void gerar_en_passant(){
     int ep = Game::lista_do_jogo[Game::hply - 1].destino;
 
@@ -716,7 +728,7 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
         t1 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_esquerda[lado_a_mover][casa];
         if (Consts::linhas[casa_destino] == FILEIRA_1 || Consts::linhas[casa_destino] == FILEIRA_8){
-            adicionar_promocao_variantes(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
+            adicionar_promocao_captura_dama(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
         }
         else{
             adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
@@ -729,13 +741,13 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
         t2 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_direita[lado_a_mover][casa];
         if (Consts::linhas[casa_destino] == FILEIRA_1 || Consts::linhas[casa_destino] == FILEIRA_8){
-            adicionar_promocao_variantes(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
+            adicionar_promocao_captura_dama(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
         }
         else{
             adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
         }
     }
-    
+
     // 2. gera capturas de cavalo
     t1 = Bitboard::bit_pieces[lado_a_mover][C];
     while (t1){
