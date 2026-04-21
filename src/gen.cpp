@@ -416,12 +416,11 @@ void adicionar_lance(const int origem, const int destino){
     mc++;
 }
 
-// Emit the four promotion variants (Q, N, R, B) for a pawn reaching the back
-// rank. Captured-piece value is rolled into queen/knight scores so MVV/LVA is
-// preserved when the promotion is also a capture. Queen first → earlier
-// alpha-beta cutoffs in search. Under-promotion (R, B) gets a near-zero score
-// because it is almost never the best move; keeping it above history scores
-// for quiet moves risks poisoning the top of the list.
+// Emit Q + N promotion variants for a pawn reaching the back rank. Rook and
+// bishop are skipped: R-promotion only matters in rare stalemate-avoidance
+// positions, and B is dominated by Q in essentially every legal setup — the
+// branching-factor cost of generating them outweighs the Elo they save.
+// Captured-piece value is rolled into both scores so MVV/LVA is preserved.
 void adicionar_promocao_variantes(const int origem, const int destino, const int piece_capturado){
     const int cap_bonus = (piece_capturado < VAZIO) ? Values::pieces_valor[piece_capturado] : 0;
     const bool is_capture = (piece_capturado < VAZIO);
@@ -438,20 +437,6 @@ void adicionar_promocao_variantes(const int origem, const int destino, const int
     Gen::lista_de_lances[mc].destino = destino;
     Gen::lista_de_lances[mc].promove = C;
     Gen::lista_de_lances[mc].score = (is_capture ? SCORE_PROMO_N_CAP : SCORE_PROMO_N) + cap_bonus;
-    mc++;
-
-    // Rook
-    Gen::lista_de_lances[mc].inicio = origem;
-    Gen::lista_de_lances[mc].destino = destino;
-    Gen::lista_de_lances[mc].promove = T;
-    Gen::lista_de_lances[mc].score = SCORE_PROMO_UNDER;
-    mc++;
-
-    // Bishop
-    Gen::lista_de_lances[mc].inicio = origem;
-    Gen::lista_de_lances[mc].destino = destino;
-    Gen::lista_de_lances[mc].promove = B;
-    Gen::lista_de_lances[mc].score = SCORE_PROMO_UNDER;
     mc++;
 }
 
