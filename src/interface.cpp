@@ -83,6 +83,13 @@ void Interface::obter_pv_uci(char *buf, int max_len, int profundidade){
         buf[pos] = '\0';
 
         Update::fazer_lance(Hash::hash_inicio, Hash::hash_destino, Hash::hash_promove);
+
+        // Search returns VALOR_EMPATE on repetition without storing TT, but the
+        // TT may hold a move from an earlier path to the same position. Stop
+        // the PV here so output matches what the search actually evaluated.
+        if (Game::checar_repeticoes()){
+            break;
+        }
     }
 
     while (Game::ply){
@@ -105,6 +112,10 @@ void Interface::exibir_melhor_linha(int profundidade){
         printf(" ");
         print_lance_algebrico(Hash::hash_inicio, Hash::hash_destino);
         Update::fazer_lance(Hash::hash_inicio, Hash::hash_destino, Hash::hash_promove);
+
+        if (Game::checar_repeticoes()){
+            break;
+        }
      }
 
      while (Game::ply){
