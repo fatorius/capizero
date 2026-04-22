@@ -27,10 +27,10 @@ static void send_bestmove(){
         destino = Interface::lance_destino;
     }
 
-    int promove = 0;
-    if (Bitboard::tabuleiro[inicio] == P &&
+    int promove = Interface::lance_promove;
+    if (promove == 0 && Bitboard::tabuleiro[inicio] == P &&
         (Consts::linhas[destino] == 0 || Consts::linhas[destino] == 7)){
-        promove = D;
+        promove = D;   // safety fallback for moves that bypass the PV save path
     }
 
     printf("bestmove %s\n", Interface::lance_para_string(inicio, destino, promove));
@@ -52,7 +52,8 @@ static void apply_moves_from_tokens(char *tok){
         }
 
         if (!Update::fazer_lance(Gen::lista_de_lances[idx].inicio,
-                                 Gen::lista_de_lances[idx].destino)){
+                                 Gen::lista_de_lances[idx].destino,
+                                 Gen::lista_de_lances[idx].promove)){
             printf("info string illegal move in position command: %s\n", tok);
             fflush(stdout);
             return;

@@ -20,12 +20,13 @@ namespace Hash{
         int32_t       score;
         int8_t        depth;
         uint8_t       bound;
-        uint8_t       _pad[2];
+        uint8_t       promove;
+        uint8_t       _pad;
     };
 
     extern Bitboard::u64 chaveAtual, lockAtual;
     extern int hash_inicio, hash_destino;
-    extern int hash_score, hash_depth, hash_bound;
+    extern int hash_score, hash_depth, hash_bound, hash_promove;
 
     // Number of TT entries per side. Set by iniciar_hash()/realocar_tt().
     extern size_t tt_entries_per_side;
@@ -35,7 +36,8 @@ namespace Hash{
     void limpar_tt();
     void realocar_tt(int size_mb);
     void adicionar_hash(const int ld, const Gen::lance lc,
-                        const int score, const int depth, const int bound);
+                        const int score, const int depth, const int bound,
+                        const int promove);
     void adicionar_chave(const int l, const int piece, const int casa);
 
     void adicionar_pontuacao_de_hash();

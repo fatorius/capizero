@@ -24,7 +24,7 @@ Gen::lance Search::killers_secundarios[MAX_PLY];
 jmp_buf env;
 bool parar_pesquisa;
 
-int Interface::lance_inicio, Interface::lance_destino;
+int Interface::lance_inicio, Interface::lance_destino, Interface::lance_promove;
 
 void verificar_tempo(){
     if ((Interface::obter_tempo() >= Search::tempo_do_fim || (Interface::tempo_maximo < 50 && Game::ply > 1)) && Interface::profundidade_fixa == 0 && Game::ply > 1){
@@ -164,7 +164,8 @@ int pesquisa_rapida(int alpha, int beta){
         if (score_capturas >= beta){
             if (melhorscore > 0){
                 Hash::adicionar_hash(Game::lado, Gen::lista_de_lances[melhorlance],
-                                     score_capturas, 0, TT_BOUND_LOWER);
+                                     score_capturas, 0, TT_BOUND_LOWER,
+                                     Gen::lista_de_lances[melhorlance].promove);
             }
 
             return score_capturas;
@@ -245,7 +246,7 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
         ordenar_lances(candidato);
 
         // verifica se o lance é legal
-        if (!Update::fazer_lance(Gen::lista_de_lances[candidato].inicio, Gen::lista_de_lances[candidato].destino)){
+        if (!Update::fazer_lance(Gen::lista_de_lances[candidato].inicio, Gen::lista_de_lances[candidato].destino, Gen::lista_de_lances[candidato].promove)){
             continue;
         }
 
@@ -301,7 +302,8 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
                 }
 
                 Hash::adicionar_hash(Game::lado, Gen::lista_de_lances[candidato],
-                                     score_candidato, profundidade, TT_BOUND_LOWER);
+                                     score_candidato, profundidade, TT_BOUND_LOWER,
+                                     Gen::lista_de_lances[candidato].promove);
 
                 return beta;
             }
@@ -324,7 +326,7 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
     }
 
     const int tt_store_bound = (melhorscore > alpha_original) ? TT_BOUND_EXACT : TT_BOUND_UPPER;
-    Hash::adicionar_hash(Game::lado, melhorlance, melhorscore, profundidade, tt_store_bound);
+    Hash::adicionar_hash(Game::lado, melhorlance, melhorscore, profundidade, tt_store_bound, melhorlance.promove);
 
     return alpha;
 }
@@ -442,8 +444,9 @@ void Search::pensar(bool verbose){
             }
         }
         else{
-            Interface::lance_inicio = 0;
+            Interface::lance_inicio  = 0;
             Interface::lance_destino = 0;
+            Interface::lance_promove = 0;
         }
 
 

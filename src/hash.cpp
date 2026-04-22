@@ -16,7 +16,7 @@ Bitboard::u64 lock[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 
 Bitboard::u64 Hash::chaveAtual, Hash::lockAtual;
 int Hash::hash_inicio, Hash::hash_destino;
-int Hash::hash_score, Hash::hash_depth, Hash::hash_bound;
+int Hash::hash_score, Hash::hash_depth, Hash::hash_bound, Hash::hash_promove;
 
 size_t Hash::tt_entries_per_side = 0;
 
@@ -120,7 +120,8 @@ void Hash::adicionar_chave(const int l, const int piece, const int casa){
 }
 
 void Hash::adicionar_hash(const int ld, const Gen::lance lc,
-                          const int score, const int depth, const int bound){
+                          const int score, const int depth, const int bound,
+                          const int promove){
     ensure_tt_allocated();
     hashp* ptr = &hashpos[ld][chaveAtual % tt_entries_per_side];
 
@@ -137,14 +138,22 @@ void Hash::adicionar_hash(const int ld, const Gen::lance lc,
     ptr->score    = (int32_t)  score_to_tt(score, Game::ply);
     ptr->depth    = (int8_t)   depth;
     ptr->bound    = (uint8_t)  bound;
+    ptr->promove  = (uint8_t)  promove;
 }
 
 void Hash::adicionar_pontuacao_de_hash(){
     for (int lance = Game::qntt_lances_totais[Game::ply]; lance < Game::qntt_lances_totais[Game::ply + 1]; lance++){
-        if (Gen::lista_de_lances[lance].inicio == hash_inicio && Gen::lista_de_lances[lance].destino == hash_destino){
-            Gen::lista_de_lances[lance].score = PONTUACAO_HASH;
-            return;
+        const Gen::lance &m = Gen::lista_de_lances[lance];
+        if (m.inicio != hash_inicio || m.destino != hash_destino){
+            continue;
         }
+        // With four promotion variants per (src,dst) pair, the promote piece
+        // disambiguates. For non-promotion entries both sides carry 0.
+        if (m.promove != hash_promove){
+            continue;
+        }
+        Gen::lista_de_lances[lance].score = PONTUACAO_HASH;
+        return;
     }
 }
 
@@ -198,6 +207,7 @@ bool Hash::hash_lookup(const int l){
     hash_score   = score_from_tt(e.score, Game::ply);
     hash_depth   = e.depth;
     hash_bound   = e.bound;
+    hash_promove = e.promove;
 
     return true;
 }

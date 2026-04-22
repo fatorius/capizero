@@ -47,6 +47,13 @@ namespace Values{
 	#define SCORE_CAPTURAS_V  50000000
 	#define PONTUACAO_HASH   100000000
 
+	// Promotion move scoring. Queen above MVV/LVA so it is always tried first,
+	// knight moderate (tactical value). R/B are not generated.
+	#define SCORE_PROMO_Q_CAP  (SCORE_CAPTURAS_V + 1000000)
+	#define SCORE_PROMO_Q      60000000
+	#define SCORE_PROMO_N_CAP  18000000
+	#define SCORE_PROMO_N      17000000
+
 	#define REDUCAO_LMR 3
 
 	// ordenação de capturas

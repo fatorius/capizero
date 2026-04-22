@@ -26,7 +26,7 @@ int tabuleiro_invertido = 0;
 int Interface::no_lances = 0;
 int Interface::lookup;
 
-extern int Interface::lance_inicio, Interface::lance_destino;
+extern int Interface::lance_inicio, Interface::lance_destino, Interface::lance_promove;
 
 int Interface::tempo_gasto;
 
@@ -58,8 +58,9 @@ int Interface::computar_tempo_para_lance(int remaining_ms, int inc_ms){
 }
 
 void Interface::obter_pv_uci(char *buf, int max_len, int profundidade){
-    Interface::lance_inicio = Hash::hash_inicio;
+    Interface::lance_inicio  = Hash::hash_inicio;
     Interface::lance_destino = Hash::hash_destino;
+    Interface::lance_promove = Hash::hash_promove;
 
     int pos = 0;
     buf[0] = '\0';
@@ -69,7 +70,7 @@ void Interface::obter_pv_uci(char *buf, int max_len, int profundidade){
             break;
         }
 
-        char *mv = Interface::lance_para_string(Hash::hash_inicio, Hash::hash_destino, 0);
+        char *mv = Interface::lance_para_string(Hash::hash_inicio, Hash::hash_destino, Hash::hash_promove);
         int len = strlen(mv);
         if (pos + len + 2 >= max_len){
             break;
@@ -81,7 +82,7 @@ void Interface::obter_pv_uci(char *buf, int max_len, int profundidade){
         pos += len;
         buf[pos] = '\0';
 
-        Update::fazer_lance(Hash::hash_inicio, Hash::hash_destino);
+        Update::fazer_lance(Hash::hash_inicio, Hash::hash_destino, Hash::hash_promove);
     }
 
     while (Game::ply){
@@ -92,8 +93,9 @@ void Interface::obter_pv_uci(char *buf, int max_len, int profundidade){
 int profundidade_perft;
 
 void Interface::exibir_melhor_linha(int profundidade){
-     Interface::lance_inicio = Hash::hash_inicio;
+     Interface::lance_inicio  = Hash::hash_inicio;
      Interface::lance_destino = Hash::hash_destino;
+     Interface::lance_promove = Hash::hash_promove;
 
      for (int x = 0; x < profundidade; x++){
         if (Hash::hash_lookup(Game::lado) == false){
@@ -102,7 +104,7 @@ void Interface::exibir_melhor_linha(int profundidade){
 
         printf(" ");
         print_lance_algebrico(Hash::hash_inicio, Hash::hash_destino);
-        Update::fazer_lance(Hash::hash_inicio, Hash::hash_destino);
+        Update::fazer_lance(Hash::hash_inicio, Hash::hash_destino, Hash::hash_promove);
      }
 
      while (Game::ply){
@@ -241,7 +243,7 @@ void Interface::print_resultado(){
     Gen::gerar_lances(Game::lado, Game::xlado);
 
     for (i = 0; i < Game::qntt_lances_totais[1]; ++i){
-        if (Update::fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino)){
+        if (Update::fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino, Gen::lista_de_lances[i].promove)){
             Update::desfaz_lance();
             existem_lances_legais = true;
             break;
@@ -322,7 +324,7 @@ void Interface::lance_computador(bool verbose){
         }
     }
     
-    Update::fazer_lance(Hash::hash_inicio, Hash::hash_destino);
+    Update::fazer_lance(Hash::hash_inicio, Hash::hash_destino, Hash::hash_promove);
 
     Eval::atualizar_materiais();
 
@@ -367,25 +369,32 @@ int Interface::converter_lance(char *lnc){
         ){
         return -1;
     }
-    
+
     inicio = lnc[0] - 'a';
     inicio += ((lnc[1] - '0') - 1) * 8;
     destino = lnc[2] - 'a';
     destino += ((lnc[3] - '0') - 1) * 8;
 
-    for (i = 0; i < Game::qntt_lances_totais[1]; i++){
-        if (Gen::lista_de_lances[i].inicio == inicio && Gen::lista_de_lances[i].destino == destino){
-            if (lnc[4] == 'n' || lnc[4]=='N'){
-                Gen::lista_de_lances[i].promove = C;
-            }
-            if (lnc[4] == 'b' || lnc[4]=='B'){
-                Gen::lista_de_lances[i].promove = B;
-            }
-            if (lnc[4] == 'r' || lnc[4]=='R'){
-                Gen::lista_de_lances[i].promove = T;
-            }
+    // Parse the optional promotion char. 0 = unspecified (UCI tolerance → queen).
+    int pp = 0;
+    if      (lnc[4] == 'q' || lnc[4] == 'Q') pp = D;
+    else if (lnc[4] == 'n' || lnc[4] == 'N') pp = C;
+    else if (lnc[4] == 'b' || lnc[4] == 'B') pp = B;
+    else if (lnc[4] == 'r' || lnc[4] == 'R') pp = T;
 
-            return i;
+    for (i = 0; i < Game::qntt_lances_totais[1]; i++){
+        const Gen::lance &m = Gen::lista_de_lances[i];
+        if (m.inicio != inicio || m.destino != destino){
+            continue;
+        }
+        if (m.promove == 0){
+            return i;                                 // non-promotion move
+        }
+        if (pp == 0 && m.promove == D){
+            return i;                                 // UCI tolerance: default queen
+        }
+        if (pp != 0 && m.promove == pp){
+            return i;                                 // explicit match
         }
     }
 
@@ -399,30 +408,15 @@ void processar_lance_do_usuario(char lnc[TAMANHO_MAXIMO_COMANDO]){
 
     lance_usuario = Interface::converter_lance(lnc);
 
-    if (lance_usuario == -1 || !Update::fazer_lance(Gen::lista_de_lances[lance_usuario].inicio, Gen::lista_de_lances[lance_usuario].destino)){
+    if (lance_usuario == -1
+        || !Update::fazer_lance(Gen::lista_de_lances[lance_usuario].inicio,
+                                Gen::lista_de_lances[lance_usuario].destino,
+                                Gen::lista_de_lances[lance_usuario].promove)){
         printf("Comando / Lance inválido\n");
         printf("Digite 'ajuda' para exibir uma lista de comandos válidos ou\n");
         printf("Digite 'lances' para exibir uma lista de lances legais\n");
         printf("\n");
         return;
-    }
-
-    // atualiza peça promovida
-    if (Gen::lista_de_lances[Game::hply - 1].promove > P && (Consts::colunas[Gen::lista_de_lances[lance_usuario].destino] == FILEIRA_1 || Consts::colunas[Gen::lista_de_lances[lance_usuario].destino] == FILEIRA_8)){
-        Update::remover_piece(Game::xlado, D, Gen::lista_de_lances[lance_usuario].destino);
-
-        if (lnc[PROMOCAO] == 'n' || lnc[PROMOCAO] == 'N'){
-            Update::adicionar_piece(Game::xlado, C, Gen::lista_de_lances[lance_usuario].destino);
-        }
-        else if (lnc[PROMOCAO] == 'b' || lnc[PROMOCAO] == 'B'){
-            Update::adicionar_piece(Game::xlado, B, Gen::lista_de_lances[lance_usuario].destino);
-        }
-        else if (lnc[PROMOCAO] == 'r' || lnc[PROMOCAO] == 'R'){
-            Update::adicionar_piece(Game::xlado, T, Gen::lista_de_lances[lance_usuario].destino);
-        }
-        else{
-            Update::adicionar_piece(Game::xlado, D, Gen::lista_de_lances[lance_usuario].destino);
-        }
     }
 
     return;
