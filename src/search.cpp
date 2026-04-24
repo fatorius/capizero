@@ -228,13 +228,23 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
         check = 1;
     }
 
-    Gen::gerar_lances(Game::lado, Game::xlado);
+    // Staged move generation: captures first, quiets only if no cutoff.
+    // IID needs the whole list up-front to score quiet moves (its job is to
+    // improve quiet-move ordering at deep PV nodes with no TT hit), so the
+    // IID path falls back to full generation and pays the upfront cost.
+    const bool iid_path = !tt_hit && (profundidade > PROFUNDIDADE_CONDICAO_IID) && pv;
 
-    if (tt_hit){
-        Hash::adicionar_pontuacao_de_hash(); // reuse probe result for move ordering
-    } else if (profundidade > PROFUNDIDADE_CONDICAO_IID && pv){
+    if (iid_path){
+        Gen::gerar_lances(Game::lado, Game::xlado);
         adicionar_pontuacao_iid(alpha, beta, profundidade);
+    } else {
+        Gen::gerar_capturas_busca(Game::lado, Game::xlado);
+        if (tt_hit){
+            Hash::adicionar_pontuacao_de_hash(); // may find the TT move here
+        }
     }
+
+    bool quiets_generated = iid_path; // iid_path already emitted quiets too
 
     int lances_legais_na_posicao = 0;
     int score_candidato;
@@ -242,7 +252,20 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
 
     bool pesquisandoPV = true;
 
-    for (int candidato = Game::qntt_lances_totais[Game::ply]; candidato < Game::qntt_lances_totais[Game::ply + 1]; ++candidato){
+    for (int candidato = Game::qntt_lances_totais[Game::ply]; ; ++candidato){
+        // Exhausted captures? Lazily generate quiets and re-boost the TT move
+        // if it happens to be quiet (adicionar_pontuacao_de_hash is a no-op
+        // when called a second time after already scoring a capture).
+        if (candidato >= Game::qntt_lances_totais[Game::ply + 1]){
+            if (quiets_generated) break;
+            Gen::gerar_silenciosos(Game::lado, Game::xlado);
+            if (tt_hit){
+                Hash::adicionar_pontuacao_de_hash();
+            }
+            quiets_generated = true;
+            if (candidato >= Game::qntt_lances_totais[Game::ply + 1]) break;
+        }
+
         ordenar_lances(candidato);
 
         // verifica se o lance é legal
