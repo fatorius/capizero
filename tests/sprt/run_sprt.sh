@@ -131,4 +131,6 @@ echo
     -openings file="$BOOK" format=epd order=random \
     -sprt elo0="$ELO0" elo1="$ELO1" alpha="$ALPHA" beta="$BETA" \
     -concurrency "$CONCURRENCY" \
+    -recover \
+    -autosaveinterval 100 \
     -pgnout file="$PGN_OUT"
