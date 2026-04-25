@@ -73,8 +73,12 @@ int pesquisa_quiescence(int inicio, const int destino){
         recapturas_feitas++;
         recaptura++;
 
-        Search::lances_avaliados++;
-
+        // No node-counter increment here. `pesquisa_rapida` (the qsearch
+        // entry) counts each qsearch invocation; the recapture loop is part
+        // of a SEE-style evaluation, not independent search nodes. Counting
+        // every recapture step inflated `lances_avaliados` and made the time
+        // poll (`lances_avaliados & VERIFICACAO_DE_LANCES`) fire more often
+        // than the search-node-count interpretation suggests.
         menor_recaptura = Attacks::menor_atacante(Game::lado, Game::xlado, destino); // ordena por MVA/LVV
 
         if (menor_recaptura > -1){
