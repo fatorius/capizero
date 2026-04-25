@@ -13,6 +13,16 @@ namespace Update{
     void setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4], char casa_en_passant[2], char hm[4], char fm[4]);
     void desfaz_captura();
     void desfaz_lance();
+    // Null-move support for forward pruning. Pushes a sentinel history entry
+    // (inicio == destino == 0, captura == VAZIO, promove == P) so EP detection
+    // — which reads the previous lista_do_jogo entry to test for a double
+    // pawn push — never mistakes a null-move parent for one. The sentinel is
+    // also what `desfaz_lance_ou_null` keys off to dispatch the right undo.
+    void fazer_null_move();
+    void desfaz_null_move();
+    // Polymorphic undo that picks `desfaz_null_move` for null-move history
+    // entries and `desfaz_lance` otherwise. Used by the time-abort unwinder.
+    void desfaz_lance_ou_null();
 };
 
 #endif

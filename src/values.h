@@ -56,6 +56,11 @@ namespace Values{
 
 	#define REDUCAO_LMR 3
 
+	// Null-move pruning depth reduction. R=2 is conservative (Stockfish-style
+	// dynamic R is the next-level tweak); R=3 is more aggressive but risks
+	// missing tactical refutations at the boundary depth.
+	#define R_NULL_MOVE 2
+
 	// ordenação de capturas
 	#define SCORE_CAPTURAS_DESVANTAJOSAS SCORE_CAPTURAS_D
 	#define SCORE_DE_CAPTURA_VANTAJOSAS SCORE_CAPTURAS_V
