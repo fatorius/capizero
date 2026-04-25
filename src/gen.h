@@ -44,7 +44,21 @@ namespace Gen{
     extern Bitboard::u64 bit_peao_defende[LADOS][CASAS_DO_TABULEIRO];
 
     void init_lookup_tables();
+    // Full pseudo-legal move list (captures + quiets). Used by perft and by
+    // anything outside `Search::pesquisa` that wants the whole list at once.
     void gerar_lances(const int lado_a_mover, const int contraLado);
+    // Captures only (including EP and pawn capture-promotions with Q+N
+    // variants). Emits Q+N for capture-promos; contrast with `gerar_capturas`
+    // below which emits Q-only for qsearch. Used as the first stage of
+    // `pesquisa`'s lazy move generation.
+    void gerar_capturas_busca(const int lado_a_mover, const int contraLado);
+    // Quiet moves only (castling, pawn pushes including quiet promos, and all
+    // non-capture piece moves). Appends onto an existing capture list by
+    // starting from `qntt_lances_totais[ply+1]`; must run after a capture
+    // generator that set that boundary.
+    void gerar_silenciosos(const int lado_a_mover, const int contraLado);
+    // Qsearch captures (Q-only promo, no EP). Do not confuse with
+    // `gerar_capturas_busca`.
     void gerar_capturas(const int lado_a_mover, const int contraLado);
     unsigned long long perft_node(int profunidade);
     unsigned long long perft(int profunidade);

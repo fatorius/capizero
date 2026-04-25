@@ -179,7 +179,22 @@ void adicionar_pontuacao_iid(int alpha, int beta, int profundidade){
     for (int candidato = Game::qntt_lances_totais[Game::ply]; candidato < Game::qntt_lances_totais[Game::ply + 1]; ++candidato){
         Gen::lista_de_lances[candidato].score = -Search::pesquisa(-beta, -alpha, profundidade REDUCAO_IID, false);
     }
-}   
+}
+
+// Parameterized variant of Hash::adicionar_pontuacao_de_hash. The namespace
+// version reads Hash::hash_{inicio,destino,promove} globals which any nested
+// hash_lookup (inside recursive pesquisa) will stomp — so once we've recursed
+// through captures, boosting by globals aims at a descendant's TT move, not
+// ours. This version takes the move by value so stomping is impossible.
+static void score_tt_move(const int tt_inicio, const int tt_destino, const int tt_promove){
+    for (int lance = Game::qntt_lances_totais[Game::ply]; lance < Game::qntt_lances_totais[Game::ply + 1]; lance++){
+        const Gen::lance &m = Gen::lista_de_lances[lance];
+        if (m.inicio == tt_inicio && m.destino == tt_destino && m.promove == tt_promove){
+            Gen::lista_de_lances[lance].score = PONTUACAO_HASH;
+            return;
+        }
+    }
+}
 
 int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
     if (Game::ply && Game::checar_repeticoes()){
@@ -215,6 +230,16 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
     const int  tt_depth = tt_hit ? Hash::hash_depth : -1;
     const int  tt_bound = tt_hit ? Hash::hash_bound : TT_BOUND_NONE;
 
+    // Snapshot the TT move before any recursion can call hash_lookup and
+    // stomp the Hash::hash_* globals. The second adicionar_pontuacao_de_hash
+    // call (after lazy quiet generation) runs after we've recursed into
+    // child searches for captures, each of which overwrites those globals
+    // with their own TT entries — without this snapshot the second call
+    // boosts an arbitrary move from a descendant position.
+    const int tt_mv_inicio  = tt_hit ? Hash::hash_inicio  : 0;
+    const int tt_mv_destino = tt_hit ? Hash::hash_destino : 0;
+    const int tt_mv_promove = tt_hit ? Hash::hash_promove : 0;
+
     // TT cutoff: non-root, non-PV nodes only, stored depth must be >= current.
     if (tt_hit && !pv && Game::ply > 0 && tt_depth >= profundidade){
         if (tt_bound == TT_BOUND_EXACT)                      return tt_score;
@@ -228,12 +253,38 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
         check = 1;
     }
 
-    Gen::gerar_lances(Game::lado, Game::xlado);
+    // Staged move generation.
+    // - IID: needs the whole list up-front to score quiet moves, so full gen.
+    // - TT hit whose destination holds an enemy piece: almost certainly a
+    //   capture, so lazy quiet gen is safe (TT capture lives in captures
+    //   list, gets boosted, tried first; if it cuts off we skip quiet gen).
+    // - TT hit whose destination is empty: either a quiet move or EP. Full
+    //   gen so the TT quiet is in the list and gets boosted to the top.
+    //   (Phase A regressed here by searching all captures before discovering
+    //   the TT quiet — this branch is what Phase B adds to prevent that.)
+    // - No TT hit: pure lazy (captures now, quiets on exhaustion).
+    const bool iid_path = !tt_hit && (profundidade > PROFUNDIDADE_CONDICAO_IID) && pv;
 
-    if (tt_hit){
-        Hash::adicionar_pontuacao_de_hash(); // reuse probe result for move ordering
-    } else if (profundidade > PROFUNDIDADE_CONDICAO_IID && pv){
+    bool quiets_generated;
+
+    if (iid_path){
+        Gen::gerar_lances(Game::lado, Game::xlado);
         adicionar_pontuacao_iid(alpha, beta, profundidade);
+        quiets_generated = true;
+    } else if (tt_hit){
+        const bool tt_dest_has_enemy = Bitboard::mask[tt_mv_destino] & Bitboard::bit_lados[Game::xlado];
+        if (tt_dest_has_enemy){
+            Gen::gerar_capturas_busca(Game::lado, Game::xlado);
+            score_tt_move(tt_mv_inicio, tt_mv_destino, tt_mv_promove);
+            quiets_generated = false;
+        } else {
+            Gen::gerar_lances(Game::lado, Game::xlado);
+            score_tt_move(tt_mv_inicio, tt_mv_destino, tt_mv_promove);
+            quiets_generated = true;
+        }
+    } else {
+        Gen::gerar_capturas_busca(Game::lado, Game::xlado);
+        quiets_generated = false;
     }
 
     int lances_legais_na_posicao = 0;
@@ -242,7 +293,21 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
 
     bool pesquisandoPV = true;
 
-    for (int candidato = Game::qntt_lances_totais[Game::ply]; candidato < Game::qntt_lances_totais[Game::ply + 1]; ++candidato){
+    for (int candidato = Game::qntt_lances_totais[Game::ply]; ; ++candidato){
+        // Exhausted captures? Lazily generate quiets and re-boost the TT move
+        // if it happens to be quiet (adicionar_pontuacao_de_hash is a no-op
+        // when called a second time after already scoring a capture).
+        if (candidato >= Game::qntt_lances_totais[Game::ply + 1]){
+            if (quiets_generated) break;
+            // Reach here only when there was no TT hit, or when TT hit had
+            // an enemy-occupied destination (capture path). In both cases
+            // the TT move — if any — was already discovered and boosted
+            // during the capture stage, so no re-boost is needed here.
+            Gen::gerar_silenciosos(Game::lado, Game::xlado);
+            quiets_generated = true;
+            if (candidato >= Game::qntt_lances_totais[Game::ply + 1]) break;
+        }
+
         ordenar_lances(candidato);
 
         // verifica se o lance é legal
