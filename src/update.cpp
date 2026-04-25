@@ -246,6 +246,14 @@ void Update::fazer_null_move(){
     j->hash      = Hash::chaveAtual;
     j->lock      = Hash::lockAtual;
 
+    // Seed the child ply's move-list start. Real moves go through
+    // gerar_lances at the parent before any child enters, so qntt[ply+1] is
+    // always written by the parent. Null-move skips parent's gen entirely,
+    // so without this seed the child reads a stale value left by a previous
+    // iteration and writes its moves to a region that may overlap another
+    // active ply's list — corrupting moves that are about to be applied.
+    Game::qntt_lances_totais[Game::ply + 1] = Game::qntt_lances_totais[Game::ply];
+
     Game::ply++;
     Game::hply++;
     Game::cinquenta++;
