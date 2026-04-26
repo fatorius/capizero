@@ -273,8 +273,9 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         && profundidade >= 3
         && (Bitboard::bit_pieces[Game::lado][C] | Bitboard::bit_pieces[Game::lado][B]
           | Bitboard::bit_pieces[Game::lado][T] | Bitboard::bit_pieces[Game::lado][D])){
+        const int reducao_null = (profundidade >= R_NULL_DEPTH_THRESH) ? R_NULL_HIGH : R_NULL_LOW;
         Update::fazer_null_move();
-        const int score_null = -pesquisa(-beta, -beta + 1, profundidade - 1 - R_NULL_MOVE, false, false);
+        const int score_null = -pesquisa(-beta, -beta + 1, profundidade - 1 - reducao_null, false, false);
         Update::desfaz_null_move();
 
         if (score_null >= beta){

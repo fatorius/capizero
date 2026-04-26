@@ -56,10 +56,15 @@ namespace Values{
 
 	#define REDUCAO_LMR 3
 
-	// Null-move pruning depth reduction. R=2 is conservative (Stockfish-style
-	// dynamic R is the next-level tweak); R=3 is more aggressive but risks
-	// missing tactical refutations at the boundary depth.
-	#define R_NULL_MOVE 2
+	// Null-move pruning depth reduction. Dynamic R: heavier pruning at deep
+	// depths where the search tree is huge and the marginal cost of missing
+	// tactics is offset by the breadth gain; lighter pruning near the leaves
+	// where the reduced-depth subsearch needs to retain enough resolution
+	// to be informative. With R_NULL_HIGH = 3 and the threshold at 6, a
+	// depth-6 null-move recurses at depth 2 (still beats qsearch by 2 plies).
+	#define R_NULL_LOW          2
+	#define R_NULL_HIGH         3
+	#define R_NULL_DEPTH_THRESH 6
 
 	// ordenação de capturas
 	#define SCORE_CAPTURAS_DESVANTAJOSAS SCORE_CAPTURAS_D
