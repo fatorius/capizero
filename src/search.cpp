@@ -73,8 +73,12 @@ int pesquisa_quiescence(int inicio, const int destino){
         recapturas_feitas++;
         recaptura++;
 
-        Search::lances_avaliados++;
-
+        // No node-counter increment here. `pesquisa_rapida` (the qsearch
+        // entry) counts each qsearch invocation; the recapture loop is part
+        // of a SEE-style evaluation, not independent search nodes. Counting
+        // every recapture step inflated `lances_avaliados` and made the time
+        // poll (`lances_avaliados & VERIFICACAO_DE_LANCES`) fire more often
+        // than the search-node-count interpretation suggests.
         menor_recaptura = Attacks::menor_atacante(Game::lado, Game::xlado, destino); // ordena por MVA/LVV
 
         if (menor_recaptura > -1){
@@ -196,7 +200,7 @@ static void score_tt_move(const int tt_inicio, const int tt_destino, const int t
     }
 }
 
-int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
+int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_permitido){
     if (Game::ply && Game::checar_repeticoes()){
         return VALOR_EMPATE;
     }
@@ -251,6 +255,32 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv){
 
     if (Attacks::casa_esta_sendo_atacada(Game::xlado, Bitboard::bitscan(Bitboard::bit_pieces[Game::lado][R]))){
         check = 1;
+    }
+
+    // Null-move pruning. If we hand the opponent a free move and they still
+    // can't beat beta with a reduced-depth search, our actual move can only
+    // produce an even better score — return beta. Guarded against:
+    //   - in-check: passing would leave the king in check (illegal).
+    //   - PV nodes: PVS expects exact scores; null-move's null-window result
+    //     isn't usable.
+    //   - already-null nodes: prevent two null-moves in a row, which would
+    //     just be a deeper skip equivalent to a single bigger R.
+    //   - low depth: at depth-1-R below 1 we'd hit qsearch, no info gained.
+    //   - zugzwang risk: if we have only pawns + king, "passing" is often
+    //     strictly worse than any move (opposition, etc.), so the null-move
+    //     bet is unsafe.
+    if (!check && !pv && null_permitido
+        && profundidade >= 3
+        && (Bitboard::bit_pieces[Game::lado][C] | Bitboard::bit_pieces[Game::lado][B]
+          | Bitboard::bit_pieces[Game::lado][T] | Bitboard::bit_pieces[Game::lado][D])){
+        const int reducao_null = (profundidade >= R_NULL_DEPTH_THRESH) ? R_NULL_HIGH : R_NULL_LOW;
+        Update::fazer_null_move();
+        const int score_null = -pesquisa(-beta, -beta + 1, profundidade - 1 - reducao_null, false, false);
+        Update::desfaz_null_move();
+
+        if (score_null >= beta){
+            return beta;
+        }
     }
 
     // Staged move generation.
@@ -405,7 +435,11 @@ void Search::pensar(bool verbose){
     setjmp(env);
     if (parar_pesquisa){
         while (Game::ply){
-            Update::desfaz_lance();
+            // The unwinder must dispatch to desfaz_null_move for any
+            // null-move frame on the stack. Naively calling desfaz_lance
+            // on the (0, 0, captura=VAZIO) sentinel would corrupt the
+            // bitboards and Zobrist key (mover_piece(0, 0) clears tabuleiro[0]).
+            Update::desfaz_lance_ou_null();
         }
 
         return;

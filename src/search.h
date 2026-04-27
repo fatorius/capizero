@@ -14,7 +14,11 @@ namespace Search{
     extern Gen::lance killers_secundarios[MAX_PLY];
 
     void pensar(bool verbose);
-    int pesquisa(int alpha, int beta, int profundidade, bool pv);
+    // null_permitido = false on the immediate child of a null-move so we don't
+    // recurse two null-moves in a row (which would just compound the depth
+    // skip with no information). Defaults to true so existing call sites
+    // (real-move recursion, IID, qsearch) keep their current behavior.
+    int pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_permitido = true);
 };
 
 #endif

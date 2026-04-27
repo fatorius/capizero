@@ -231,6 +231,63 @@ void Update::desfaz_captura(){
     adicionar_piece(Game::xlado, Game::lista_do_jogo[Game::hply].captura, Game::lista_do_jogo[Game::hply].destino);
 }
 
+void Update::fazer_null_move(){
+    // Push a sentinel history entry. EP availability in `gerar_en_passant`
+    // is detected by reading the previous entry and checking for a double
+    // pawn push — inicio == destino == 0 satisfies neither condition, so EP
+    // gets correctly cleared for the side that gains the tempo.
+    Game::jogo *j = &Game::lista_do_jogo[Game::hply];
+    j->inicio    = 0;
+    j->destino   = 0;
+    j->promove   = P;
+    j->captura   = VAZIO;
+    j->cinquenta = Game::cinquenta;
+    j->roque     = Game::roque;
+    j->hash      = Hash::chaveAtual;
+    j->lock      = Hash::lockAtual;
+
+    // Seed the child ply's move-list start. Real moves go through
+    // gerar_lances at the parent before any child enters, so qntt[ply+1] is
+    // always written by the parent. Null-move skips parent's gen entirely,
+    // so without this seed the child reads a stale value left by a previous
+    // iteration and writes its moves to a region that may overlap another
+    // active ply's list — corrupting moves that are about to be applied.
+    Game::qntt_lances_totais[Game::ply + 1] = Game::qntt_lances_totais[Game::ply];
+
+    Game::ply++;
+    Game::hply++;
+    Game::cinquenta++;
+
+    Game::lado  ^= 1;
+    Game::xlado ^= 1;
+    // Zobrist key intentionally not updated: capizero stores side-to-move
+    // implicitly via per-side TT tables (`hashpos[BRANCAS]` vs `hashpos[PRETAS]`),
+    // and the key has no castling/EP component to clear.
+}
+
+void Update::desfaz_null_move(){
+    Game::lado  ^= 1;
+    Game::xlado ^= 1;
+    Game::ply--;
+    Game::hply--;
+
+    Game::jogo *j = &Game::lista_do_jogo[Game::hply];
+    Game::cinquenta = j->cinquenta;
+    Game::roque     = j->roque;
+}
+
+void Update::desfaz_lance_ou_null(){
+    const Game::jogo *last = &Game::lista_do_jogo[Game::hply - 1];
+    // Real moves never have inicio == destino (no chess move is to its own
+    // square), so (0, 0, captura == VAZIO) uniquely identifies our null-move
+    // sentinel.
+    if (last->inicio == 0 && last->destino == 0 && last->captura == VAZIO){
+        desfaz_null_move();
+    } else {
+        desfaz_lance();
+    }
+}
+
 int Update::fazer_captura(const int inicio, const int destino){
     Game::lista_do_jogo[Game::hply].inicio = inicio;
     Game::lista_do_jogo[Game::hply].destino = destino;
