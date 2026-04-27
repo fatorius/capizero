@@ -257,6 +257,24 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         check = 1;
     }
 
+    // Futility / reverse-futility pruning. Both depend on a static eval and
+    // both are only safe at non-PV, non-check, low-depth nodes (where the
+    // static eval is a reasonable proxy for the deep-search outcome).
+    int static_eval = 0;
+    const bool can_futility = !pv && !check && profundidade <= FUTILITY_DEPTH_THRESH;
+
+    if (can_futility){
+        static_eval = Eval::avaliar();
+
+        // Reverse futility (a.k.a. static null-move): if our static eval is
+        // already so far above beta that even an opponent's best play within
+        // our margin can't pull us back, return early. The margin scales
+        // with depth — deeper search has more room to swing.
+        if (static_eval - FUTILITY_MARGIN_PER_PLY * profundidade >= beta){
+            return static_eval;
+        }
+    }
+
     // Null-move pruning. If we hand the opponent a free move and they still
     // can't beat beta with a reduced-depth search, our actual move can only
     // produce an even better score — return beta. Guarded against:
@@ -329,6 +347,15 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         // when called a second time after already scoring a capture).
         if (candidato >= Game::qntt_lances_totais[Game::ply + 1]){
             if (quiets_generated) break;
+            // Optimization: if forward futility would prune every quiet move
+            // we'd generate (and we already have at least one legal move
+            // searched, so we won't trigger a spurious mate/stalemate),
+            // skip quiet generation entirely.
+            if (can_futility
+                && lances_legais_na_posicao > 0
+                && static_eval + FUTILITY_MARGIN_PER_PLY * profundidade + FUTILITY_MARGIN_FP_EXTRA <= alpha){
+                break;
+            }
             // Reach here only when there was no TT hit, or when TT hit had
             // an enemy-occupied destination (capture path). In both cases
             // the TT move — if any — was already discovered and boosted
@@ -339,6 +366,19 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         }
 
         ordenar_lances(candidato);
+
+        // Forward futility pruning: at low depth with at least one legal
+        // move already explored, skip quiet (non-capture, non-promotion)
+        // moves whose optimistic value still can't beat alpha. Captures and
+        // promotions are exempt because their material swing easily exceeds
+        // the futility margin.
+        if (can_futility
+            && lances_legais_na_posicao > 0
+            && Gen::lista_de_lances[candidato].promove == 0
+            && !(Bitboard::mask[Gen::lista_de_lances[candidato].destino] & Bitboard::bit_total)
+            && static_eval + FUTILITY_MARGIN_PER_PLY * profundidade + FUTILITY_MARGIN_FP_EXTRA <= alpha){
+            continue;
+        }
 
         // verifica se o lance é legal
         if (!Update::fazer_lance(Gen::lista_de_lances[candidato].inicio, Gen::lista_de_lances[candidato].destino, Gen::lista_de_lances[candidato].promove)){

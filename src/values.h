@@ -66,6 +66,18 @@ namespace Values{
 	#define R_NULL_HIGH         3
 	#define R_NULL_DEPTH_THRESH 6
 
+	// Futility / reverse-futility pruning. Both fire only at low depths
+	// (≤ FUTILITY_DEPTH_THRESH) and only at non-PV, non-check nodes.
+	//   RFP: at node entry, if static_eval - margin >= beta → return early.
+	//   FP : in move loop, skip quiet/non-promo moves when
+	//        static_eval + margin + extra <= alpha (after at least one legal
+	//        move has been searched, so we never return false stalemate).
+	// Margins scale with depth — deeper depths get bigger margins because
+	// the search has more room to swing the score.
+	#define FUTILITY_DEPTH_THRESH      6
+	#define FUTILITY_MARGIN_PER_PLY    100   // 1 pawn per ply
+	#define FUTILITY_MARGIN_FP_EXTRA   50    // FP gets a little extra slack vs RFP
+
 	// ordenação de capturas
 	#define SCORE_CAPTURAS_DESVANTAJOSAS SCORE_CAPTURAS_D
 	#define SCORE_DE_CAPTURA_VANTAJOSAS SCORE_CAPTURAS_V
