@@ -29,6 +29,12 @@ namespace Values{
 	#define COLUNA_SEMI_ABERTA_BONUS 11
 	#define COLUNA_ABERTA_BONUS 40
 
+	// Two bishops cooperate over both square colors, so the pair is worth
+	// more than the sum of two lone bishops. 30 cp is the conservative
+	// classic value (Stockfish-historic); if SPRT lands cleanly positive,
+	// it's worth re-tuning in the 25-50 range.
+	#define BISHOP_PAIR_BONUS 30
+
 
 	// REDUÇÕES E CONDIÇÕES
 	#define REDUCAO_IID /4
