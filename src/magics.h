@@ -1,3 +1,6 @@
+#ifndef MAGICS
+#define MAGICS
+
 #include "bitboard.h"
 
 namespace Magics{
@@ -55,3 +58,5 @@ namespace Magics{
         52, 53, 53, 53, 53, 53, 53, 52
     };
 };
+
+#endif

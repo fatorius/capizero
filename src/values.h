@@ -35,6 +35,17 @@ namespace Values{
 	// it's worth re-tuning in the 25-50 range.
 	#define BISHOP_PAIR_BONUS 30
 
+	// Per-square mobility weights (cp added per attacked-and-not-own square).
+	// Knight/bishop reward more than rook because rooks already get column
+	// open/semi-open bonuses from `avaliar_torre`. Queen weight kept low
+	// since the queen is already very mobile by design and over-rewarding
+	// it leads to early-queen-out play. Conservative starting values —
+	// re-tune once a Texel/SPSA harness is in place.
+	#define MOBILIDADE_CAVALO 4
+	#define MOBILIDADE_BISPO  4
+	#define MOBILIDADE_TORRE  2
+	#define MOBILIDADE_DAMA   1
+
 
 	// REDUÇÕES E CONDIÇÕES
 	#define REDUCAO_IID /4

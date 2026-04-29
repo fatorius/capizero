@@ -3,6 +3,7 @@
 #include "bitboard.h"
 #include "consts.h"
 #include "game.h"
+#include "gen.h"
 
 
 int Eval::score_casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
@@ -120,12 +121,19 @@ int Eval::avaliar(){
             score[l] += avaliar_peao(l, casa);
         }
 
+        // Mobility = popcount of attack squares that aren't own pieces.
+        // Each piece type contributes per-square cp; weights live in values.h.
+        // Own-side mask excludes squares blocked by friendly pieces; enemy
+        // squares (capturable) and empty squares both count toward mobility.
+        const Bitboard::u64 nao_proprios = ~Bitboard::bit_lados[l];
+
         t1 = Bitboard::bit_pieces[l][C];
         while (t1){
             casa = Bitboard::bitscan(t1);
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][C][casa];
+            score[l] += MOBILIDADE_CAVALO * Bitboard::popcount(Gen::bit_moves_cavalo[casa] & nao_proprios);
         }
 
         t1 = Bitboard::bit_pieces[l][B];
@@ -134,6 +142,7 @@ int Eval::avaliar(){
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][B][casa];
+            score[l] += MOBILIDADE_BISPO * Bitboard::popcount(Gen::atacantes_bispo(casa) & nao_proprios);
         }
 
         if (Bitboard::popcount(Bitboard::bit_pieces[l][B]) >= 2){
@@ -147,6 +156,7 @@ int Eval::avaliar(){
 
             score[l] += score_casas[l][T][casa];
             score[l] += avaliar_torre(l, casa);
+            score[l] += MOBILIDADE_TORRE * Bitboard::popcount(Gen::atacantes_torre(casa) & nao_proprios);
         }
 
         t1 = Bitboard::bit_pieces[l][D];
@@ -155,6 +165,7 @@ int Eval::avaliar(){
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][D][casa];
+            score[l] += MOBILIDADE_DAMA * Bitboard::popcount((Gen::atacantes_bispo(casa) | Gen::atacantes_torre(casa)) & nao_proprios);
         }
     }
 
