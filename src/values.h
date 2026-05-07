@@ -29,6 +29,14 @@ namespace Values{
 	#define COLUNA_SEMI_ABERTA_BONUS 11
 	#define COLUNA_ABERTA_BONUS 40
 
+	#define PHASE_PEAO    0
+	#define PHASE_CAVALO  1
+	#define PHASE_BISPO   1
+	#define PHASE_TORRE   2
+	#define PHASE_DAMA    4
+	#define PHASE_REI     0
+	#define PHASE_MAX    24
+
 
 	// REDUÇÕES E CONDIÇÕES
 	#define REDUCAO_IID /4

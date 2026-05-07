@@ -4,7 +4,8 @@
 #include "consts.h"
 
 namespace Eval{
-    extern int score_casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
+    extern int score_casas_mg[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
+    extern int score_casas_eg[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
     extern int reis_score_finais[LADOS][CASAS_DO_TABULEIRO];
     extern int passados[LADOS][CASAS_DO_TABULEIRO];
 
@@ -13,6 +14,8 @@ namespace Eval{
 
     void init_eval_tables();
     void atualizar_materiais();
+
+    int fase();
 
     int avaliar();
 };
