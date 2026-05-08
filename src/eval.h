@@ -35,7 +35,6 @@ namespace Eval{
     // cache behavior is comparable, but every per-piece accumulation in
     // `avaliar` becomes one load + one add instead of two of each.
     extern Score score_casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
-    extern int reis_score_finais[LADOS][CASAS_DO_TABULEIRO];
     extern int passados[LADOS][CASAS_DO_TABULEIRO];
 
     extern int peao_mat[2];

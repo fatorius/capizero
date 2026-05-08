@@ -6,7 +6,6 @@
 
 
 Eval::Score Eval::score_casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
-int Eval::reis_score_finais[LADOS][CASAS_DO_TABULEIRO];
 int Eval::passados[LADOS][CASAS_DO_TABULEIRO];
 
 int Eval::peao_mat[LADOS];
@@ -37,12 +36,20 @@ void Eval::init_eval_tables(){
         const int dama_w   = Values::dama_score[x] + VALOR_DAMA;
         const int rei_w    = Values::rei_score[x];
 
+        // King PST is the first natively-tapered term: mg = rei_score
+        // (cares about safety / the back rank), eg = rei_finais_score
+        // (cares about activity / centralization). The legacy code applied
+        // a hard conditional swap based on enemy-queen presence; tapered
+        // eval replaces that with smooth phase interpolation.
+        const int rei_w_eg = Values::rei_finais_score[x];
+        const int rei_b_eg = Values::rei_finais_score[Consts::flip[x]];
+
         score_casas[BRANCAS][P][x] = make_score(peao_w,   peao_w);
         score_casas[BRANCAS][C][x] = make_score(cavalo_w, cavalo_w);
         score_casas[BRANCAS][B][x] = make_score(bispo_w,  bispo_w);
         score_casas[BRANCAS][T][x] = make_score(torre_w,  torre_w);
         score_casas[BRANCAS][D][x] = make_score(dama_w,   dama_w);
-        score_casas[BRANCAS][R][x] = make_score(rei_w,    rei_w);
+        score_casas[BRANCAS][R][x] = make_score(rei_w,    rei_w_eg);
 
         const int peao_b   = Values::peao_score[Consts::flip[x]] + VALOR_PEAO;
         const int cavalo_b = Values::cavalo_score[Consts::flip[x]] + VALOR_CAVALO;
@@ -56,15 +63,7 @@ void Eval::init_eval_tables(){
         score_casas[PRETAS][B][x] = make_score(bispo_b,  bispo_b);
         score_casas[PRETAS][T][x] = make_score(torre_b,  torre_b);
         score_casas[PRETAS][D][x] = make_score(dama_b,   dama_b);
-        score_casas[PRETAS][R][x] = make_score(rei_b,    rei_b);
-
-        // reis_score_finais is the eg-king-PST delta from rei_score to
-        // rei_finais_score. While we still apply it as a conditional swap
-        // (queen-presence based), keep storing the legacy delta. Future
-        // pass: drop this entirely and bake rei_finais_score into the eg
-        // half of score_casas[R] directly.
-        reis_score_finais[BRANCAS][x] = Values::rei_finais_score[x] - rei_w;
-        reis_score_finais[PRETAS][x]  = Values::rei_finais_score[x] - rei_b;
+        score_casas[PRETAS][R][x] = make_score(rei_b,    rei_b_eg);
 
         passados[BRANCAS][x] = Values::peao_passado_score[Consts::flip[x]];
         passados[PRETAS][x] = Values::peao_passado_score[x];
@@ -199,35 +198,29 @@ int Eval::avaliar(){
         }
     }
 
-    if (Bitboard::bit_pieces[PRETAS][D] == 0){
-        const int rei_eg = reis_score_finais[BRANCAS][Bitboard::bitscan(Bitboard::bit_pieces[BRANCAS][R])];
-        score[BRANCAS] += make_score(rei_eg, rei_eg);
+    // Pawn shield is a midgame-only concept (king wants to stay tucked
+    // behind pawns while the opponent has heavy pieces; in the endgame
+    // the king should be active). The legacy code gated this on
+    // `enemy_queen_present` as a binary proxy for "still mg"; with the
+    // king PST now natively tapered, we just apply the shield to the mg
+    // half and let the phase interpolation fade it out as material thins.
+    int shield_w = 0;
+    if (Bitboard::bit_pieces[BRANCAS][R] & Bitboard::mask_ala_do_rei){
+        shield_w = peao_ala_do_rei[BRANCAS];
     }
-    else{
-        int shield = 0;
-        if (Bitboard::bit_pieces[BRANCAS][R] & Bitboard::mask_ala_do_rei){
-            shield = peao_ala_do_rei[BRANCAS];
-        }
-        else if (Bitboard::bit_pieces[BRANCAS][R] & Bitboard::mask_ala_da_dama){
-            shield = peao_ala_da_dama[BRANCAS];
-        }
-        score[BRANCAS] += make_score(shield, shield);
+    else if (Bitboard::bit_pieces[BRANCAS][R] & Bitboard::mask_ala_da_dama){
+        shield_w = peao_ala_da_dama[BRANCAS];
     }
+    score[BRANCAS] += make_score(shield_w, 0);
 
-    if (Bitboard::bit_pieces[BRANCAS][D] == 0){
-        const int rei_eg = reis_score_finais[PRETAS][Bitboard::bitscan(Bitboard::bit_pieces[PRETAS][R])];
-        score[PRETAS] += make_score(rei_eg, rei_eg);
+    int shield_b = 0;
+    if (Bitboard::bit_pieces[PRETAS][R] & Bitboard::mask_ala_do_rei){
+        shield_b = peao_ala_do_rei[PRETAS];
     }
-    else {
-        int shield = 0;
-        if (Bitboard::bit_pieces[PRETAS][R] & Bitboard::mask_ala_do_rei){
-            shield = peao_ala_do_rei[PRETAS];
-        }
-        else if (Bitboard::bit_pieces[PRETAS][R] & Bitboard::mask_ala_da_dama){
-            shield = peao_ala_da_dama[PRETAS];
-        }
-        score[PRETAS] += make_score(shield, shield);
+    else if (Bitboard::bit_pieces[PRETAS][R] & Bitboard::mask_ala_da_dama){
+        shield_b = peao_ala_da_dama[PRETAS];
     }
+    score[PRETAS] += make_score(shield_b, 0);
 
     // Side-to-move difference, then unpack and interpolate.
     const Score diff = score[Game::lado] - score[Game::xlado];
