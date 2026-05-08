@@ -13,6 +13,7 @@
 #include "hash.h"
 #include "game.h"
 #include "attacks.h"
+#include "eval.h"
 
 int casa_reversa[LADOS] = {-8,8};
 
@@ -42,6 +43,8 @@ void Update::remover_piece(const int l, const int p, const int casa){
     Bitboard::bit_lados[l] &= Bitboard::not_mask[casa];
     Bitboard::bit_pieces[l][p] &= Bitboard::not_mask[casa];
     Bitboard::bit_total = Bitboard::bit_lados[BRANCAS] | Bitboard::bit_lados[PRETAS];
+
+    Eval::fase_valor -= Eval::phase_weights[p];
 }
 
 void Update::desfaz_lance(){
@@ -218,6 +221,8 @@ void Update::adicionar_piece(const int l, const int piece, const int casa){
     Bitboard::bit_lados[l] |= Bitboard::mask[casa];
     Bitboard::bit_pieces[l][piece] |= Bitboard::mask[casa];
     Bitboard::bit_total = Bitboard::bit_lados[BRANCAS] | Bitboard::bit_lados[PRETAS];
+
+    Eval::fase_valor += Eval::phase_weights[piece];
 }
 
 void Update::desfaz_captura(){
@@ -511,6 +516,7 @@ void Update::setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4
     memset(Bitboard::bit_pieces, 0, sizeof(Bitboard::bit_pieces));
     memset(Bitboard::bit_lados, 0, sizeof(Bitboard::bit_lados));
     Bitboard::bit_total = 0;
+    Eval::fase_valor = 0;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         Bitboard::tabuleiro[casa] = VAZIO;
