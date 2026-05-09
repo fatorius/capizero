@@ -52,6 +52,18 @@ namespace Eval{
     extern int fase_valor;
     extern const int phase_weights[6];
 
+    // Non-linear tapered mobility tables. Indexed by the popcount of attack
+    // squares the piece reaches that aren't blocked by own pieces. Built at
+    // startup in init_eval_tables by packing the parallel mg/eg arrays from
+    // values.h (`Values::mobilidade_*_mg / _eg`) into Score pairs. Negative
+    // values at low indices encode the trapped-piece penalty; saturating
+    // tail avoids over-rewarding pieces that are already maximally mobile.
+    //   Knight max mob = 8, bishop max = 13, rook max = 14, queen max = 27.
+    extern Score mobilidade_cavalo[9];
+    extern Score mobilidade_bispo[14];
+    extern Score mobilidade_torre[15];
+    extern Score mobilidade_dama[28];
+
     void init_eval_tables();
     void atualizar_materiais();
 

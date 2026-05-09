@@ -3,6 +3,7 @@
 #include "bitboard.h"
 #include "consts.h"
 #include "game.h"
+#include "gen.h"
 
 
 Eval::Score Eval::score_casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
@@ -20,6 +21,15 @@ int Eval::fase_valor = 0;
 const int Eval::phase_weights[6] = {
     PHASE_PEAO, PHASE_CAVALO, PHASE_BISPO, PHASE_TORRE, PHASE_DAMA, PHASE_REI
 };
+
+// Mobility tables. Definitions are storage-only; the values live in
+// `Values::mobilidade_*_mg / _eg` in values.h and get packed into Score
+// pairs at startup by init_eval_tables. Same pattern capizero uses for
+// PSTs (raw values in Values::, packed/initialized in init_eval_tables).
+Eval::Score Eval::mobilidade_cavalo[9];
+Eval::Score Eval::mobilidade_bispo[14];
+Eval::Score Eval::mobilidade_torre[15];
+Eval::Score Eval::mobilidade_dama[28];
 
 int peao_ala_da_dama[LADOS],peao_ala_do_rei[LADOS];
 
@@ -67,6 +77,21 @@ void Eval::init_eval_tables(){
 
         passados[BRANCAS][x] = Values::peao_passado_score[Consts::flip[x]];
         passados[PRETAS][x] = Values::peao_passado_score[x];
+    }
+
+    // Pack mobility tables. Values live in values.h as parallel mg/eg
+    // arrays; build the packed Score lookup once at startup.
+    for (int i = 0; i < 9; i++){
+        mobilidade_cavalo[i] = make_score(Values::mobilidade_cavalo_mg[i], Values::mobilidade_cavalo_eg[i]);
+    }
+    for (int i = 0; i < 14; i++){
+        mobilidade_bispo[i] = make_score(Values::mobilidade_bispo_mg[i], Values::mobilidade_bispo_eg[i]);
+    }
+    for (int i = 0; i < 15; i++){
+        mobilidade_torre[i] = make_score(Values::mobilidade_torre_mg[i], Values::mobilidade_torre_eg[i]);
+    }
+    for (int i = 0; i < 28; i++){
+        mobilidade_dama[i] = make_score(Values::mobilidade_dama_mg[i], Values::mobilidade_dama_eg[i]);
     }
 }
 
@@ -153,6 +178,13 @@ int Eval::avaliar(){
 
     for (int l = 0; l < LADOS; l++){
 
+        // Mobility uses popcount of attack squares that aren't own pieces.
+        // Each attacked square counts; enemy-occupied squares (capturable
+        // targets) and empty squares both contribute. Phase-aware weights
+        // recognize that bishop/rook mobility matters more in the endgame
+        // where boards are open, while knight mobility is roughly uniform.
+        const Bitboard::u64 nao_proprios = ~Bitboard::bit_lados[l];
+
         t1 = Bitboard::bit_pieces[l][P];
         while (t1){
             casa = Bitboard::bitscan(t1);
@@ -169,6 +201,7 @@ int Eval::avaliar(){
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][C][casa];
+            score[l] += mobilidade_cavalo[Bitboard::popcount(Gen::bit_moves_cavalo[casa] & nao_proprios)];
         }
 
         t1 = Bitboard::bit_pieces[l][B];
@@ -177,6 +210,7 @@ int Eval::avaliar(){
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][B][casa];
+            score[l] += mobilidade_bispo[Bitboard::popcount(Gen::atacantes_bispo(casa) & nao_proprios)];
         }
 
         t1 = Bitboard::bit_pieces[l][T];
@@ -187,6 +221,7 @@ int Eval::avaliar(){
             score[l] += score_casas[l][T][casa];
             const int torre_b = avaliar_torre(l, casa);
             score[l] += make_score(torre_b, torre_b);
+            score[l] += mobilidade_torre[Bitboard::popcount(Gen::atacantes_torre(casa) & nao_proprios)];
         }
 
         t1 = Bitboard::bit_pieces[l][D];
@@ -195,6 +230,7 @@ int Eval::avaliar(){
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][D][casa];
+            score[l] += mobilidade_dama[Bitboard::popcount((Gen::atacantes_bispo(casa) | Gen::atacantes_torre(casa)) & nao_proprios)];
         }
     }
 

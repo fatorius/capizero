@@ -37,6 +37,40 @@ namespace Values{
 	#define PHASE_REI     0
 	#define PHASE_MAX    24
 
+	// Tapered mobility tables, indexed by attack-count (popcount of the
+	// piece's attack bitboard with own pieces masked out). Stored here as
+	// parallel mg/eg int arrays — `Eval::init_eval_tables` packs them into
+	// `Eval::mobilidade_*` Score tables at startup. Curve shape: brutal
+	// negative at trapped (low index), near-linear in the middle, saturating
+	// at the top. First-pass literature values; will be Texel-tuned later.
+	//   Knight max attack-count = 8, bishop = 13, rook = 14, queen = 27.
+	const int mobilidade_cavalo_mg[9] = {
+		-40, -15,  -3,   0,   3,   6,   9,  11,  13
+	};
+	const int mobilidade_cavalo_eg[9] = {
+		-35, -12,  -3,   0,   3,   6,   9,  11,  13
+	};
+	const int mobilidade_bispo_mg[14] = {
+		-25, -10,  -2,   0,   3,   5,   7,   9,  10,  11,  12,  12,  12,  12
+	};
+	const int mobilidade_bispo_eg[14] = {
+		-30, -15,  -3,   3,   8,  11,  14,  17,  19,  21,  23,  24,  25,  26
+	};
+	const int mobilidade_torre_mg[15] = {
+		-25, -10,  -3,   0,   2,   4,   6,   7,   8,   9,  10,  10,  10,  10,  10
+	};
+	const int mobilidade_torre_eg[15] = {
+		-35, -15,  -5,   0,   5,  10,  15,  18,  21,  23,  25,  27,  28,  29,  30
+	};
+	const int mobilidade_dama_mg[28] = {
+		-15,  -8,  -2,   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,
+		 11,  12,  13,  14,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15
+	};
+	const int mobilidade_dama_eg[28] = {
+		-20, -12,  -4,   0,   2,   4,   6,   8,  10,  12,  14,  16,  18,  20,
+		 22,  24,  26,  28,  29,  30,  31,  32,  33,  34,  34,  34,  34,  34
+	};
+
 
 	// REDUÇÕES E CONDIÇÕES
 	#define REDUCAO_IID /4
