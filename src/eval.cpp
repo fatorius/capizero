@@ -179,6 +179,10 @@ int Eval::avaliar(){
             score[l] += score_casas[l][B][casa];
         }
 
+        if (Bitboard::popcount(Bitboard::bit_pieces[l][B]) >= 2){
+            score[l] += make_score(BISHOP_PAIR_MG, BISHOP_PAIR_EG);
+        }
+
         t1 = Bitboard::bit_pieces[l][T];
         while (t1){
             casa = Bitboard::bitscan(t1);

@@ -29,6 +29,9 @@ namespace Values{
 	#define COLUNA_SEMI_ABERTA_BONUS 11
 	#define COLUNA_ABERTA_BONUS 40
 
+	#define BISHOP_PAIR_MG 15
+	#define BISHOP_PAIR_EG 45
+
 	#define PHASE_PEAO    0
 	#define PHASE_CAVALO  1
 	#define PHASE_BISPO   1
