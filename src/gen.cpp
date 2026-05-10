@@ -19,8 +19,8 @@
 Bitboard::u64 peao_uma_casa[LADOS][CASAS_DO_TABULEIRO];
 Bitboard::u64 peao_duas_casas[LADOS][CASAS_DO_TABULEIRO];
 
-Bitboard::u64 bit_casas_relevantes_bispo[CASAS_DO_TABULEIRO];
-Bitboard::u64 bit_casas_relevantes_torres[CASAS_DO_TABULEIRO];
+Bitboard::u64 Gen::bit_casas_relevantes_bispo[CASAS_DO_TABULEIRO];
+Bitboard::u64 Gen::bit_casas_relevantes_torres[CASAS_DO_TABULEIRO];
 
 Bitboard::u64 Gen::bit_esquerda[LADOS][CASAS_DO_TABULEIRO];
 Bitboard::u64 Gen::bit_direita[LADOS][CASAS_DO_TABULEIRO];
@@ -186,20 +186,20 @@ void init_rei_lookups(){
 
 void init_casas_relevantes(){
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
-        bit_casas_relevantes_bispo[casa] = Gen::bit_moves_bispo[casa] & Bitboard::bordas_neg;
-        bit_casas_relevantes_torres[casa] = Gen::bit_moves_torre[casa];
+        Gen::bit_casas_relevantes_bispo[casa] = Gen::bit_moves_bispo[casa] & Bitboard::bordas_neg;
+        Gen::bit_casas_relevantes_torres[casa] = Gen::bit_moves_torre[casa];
 
         if (Consts::colunas[casa] != COLUNA_A){
-            bit_casas_relevantes_torres[casa] &= ~Bitboard::mask_cols[COLUNA_A];
+            Gen::bit_casas_relevantes_torres[casa] &= ~Bitboard::mask_cols[COLUNA_A];
         }
         if (Consts::colunas[casa] != COLUNA_H){
-            bit_casas_relevantes_torres[casa] &= ~Bitboard::mask_cols[COLUNA_H];
+            Gen::bit_casas_relevantes_torres[casa] &= ~Bitboard::mask_cols[COLUNA_H];
         }
         if (Consts::linhas[casa] != PRIMEIRA_LINHA){
-            bit_casas_relevantes_torres[casa] &= ~Bitboard::mask_rows[LINHA_1];
+            Gen::bit_casas_relevantes_torres[casa] &= ~Bitboard::mask_rows[LINHA_1];
         }
         if (Consts::linhas[casa] != ULTIMA_LINHA){
-            bit_casas_relevantes_torres[casa] &= ~Bitboard::mask_rows[LINHA_8];
+            Gen::bit_casas_relevantes_torres[casa] &= ~Bitboard::mask_rows[LINHA_8];
         }
     }
 }
@@ -333,22 +333,22 @@ void init_magic_lookups(){
     int index;
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << (64-Magics::bits_indices_bispos[casa])); pecaBloqueadora++){
-            Bitboard::u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_casas_relevantes_bispo[casa]); 
-          
+            Bitboard::u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, Gen::bit_casas_relevantes_bispo[casa]);
+
             #ifdef USE_PEXT
-                index = _pext_u64(bloqueadores, bit_casas_relevantes_bispo[casa]);
+                index = _pext_u64(bloqueadores, Gen::bit_casas_relevantes_bispo[casa]);
             #else
                 index = (bloqueadores * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa]);
             #endif
 
-            Gen::bit_magicas_bispo[casa][index] = gerarLancesBispoSemMagica(casa, bloqueadores);   
+            Gen::bit_magicas_bispo[casa][index] = gerarLancesBispoSemMagica(casa, bloqueadores);
         }
 
         for (int pecaBloqueadora = 0; pecaBloqueadora < (1 << (64-Magics::bits_indices_torres[casa])); pecaBloqueadora++){
-            Bitboard::u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, bit_casas_relevantes_torres[casa]);
-          
+            Bitboard::u64 bloqueadores = obterBloqueadoresPorCasa(pecaBloqueadora, Gen::bit_casas_relevantes_torres[casa]);
+
             #ifdef USE_PEXT
-                index = _pext_u64(bloqueadores, bit_casas_relevantes_torres[casa]);
+                index = _pext_u64(bloqueadores, Gen::bit_casas_relevantes_torres[casa]);
             #else
                 index = (bloqueadores * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa]);
             #endif

@@ -5,6 +5,11 @@
 
 #include "bitboard.h"
 #include "params.h"
+#include "magics.h"
+
+#ifdef USE_PEXT
+#include <x86intrin.h>
+#endif
 
 namespace Gen{
     // Packed move: squares fit in 6 bits (0-63), promotion piece in 4 bits
@@ -40,8 +45,31 @@ namespace Gen{
     extern Bitboard::u64 bit_magicas_bispo[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
     extern Bitboard::u64 bit_magicas_torre[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
 
+    extern Bitboard::u64 bit_casas_relevantes_bispo[CASAS_DO_TABULEIRO];
+    extern Bitboard::u64 bit_casas_relevantes_torres[CASAS_DO_TABULEIRO];
+
     extern Bitboard::u64 bit_peao_capturas[LADOS][CASAS_DO_TABULEIRO];
     extern Bitboard::u64 bit_peao_defende[LADOS][CASAS_DO_TABULEIRO];
+
+    // Sliding-piece attack bitboards given current `Bitboard::bit_total`
+    // occupancy. Inline so eval/mobility code gets the magic-table lookup
+    // without a function-call boundary. gen.cpp's hot paths still inline
+    // the same incantation manually — adopting these in those spots is a
+    // followup cleanup, not a behavior change.
+    inline Bitboard::u64 atacantes_bispo(int casa){
+        #ifdef USE_PEXT
+            return bit_magicas_bispo[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_bispo[casa])];
+        #else
+            return bit_magicas_bispo[casa][((Bitboard::bit_total & bit_casas_relevantes_bispo[casa]) * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa])];
+        #endif
+    }
+    inline Bitboard::u64 atacantes_torre(int casa){
+        #ifdef USE_PEXT
+            return bit_magicas_torre[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_torres[casa])];
+        #else
+            return bit_magicas_torre[casa][((Bitboard::bit_total & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])];
+        #endif
+    }
 
     void init_lookup_tables();
     // Full pseudo-legal move list (captures + quiets). Used by perft and by
