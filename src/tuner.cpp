@@ -1,27 +1,34 @@
 /*
  * Texel-style eval tuner for capizero.
  *
- * Commit 1 (this file): scaffolding + FEN parser + dataset loader + loss
- * function + K (sigmoid-scaling) optimization. Reports the initial loss for
- * the engine's current eval parameters. Does NOT yet mutate parameters.
+ * Mutates `Eval::score_casas` (per-piece PSTs with material baked in) and
+ * `Eval::mobilidade_*` (per-piece-type mobility lookup tables) via coordinate
+ * descent. For each parameter, tries ±1 cp steps and accepts whichever
+ * reduces total dataset loss; iterates passes until a full pass yields no
+ * accepted change.
  *
- * Commit 2 (follow-up): coordinate-descent tuning loop that walks every
- * Eval::score_casas slot and Eval::mobilidade_* entry, accepting any
- * ±1 step that reduces total dataset loss. Output formatting for new
- * values.h content.
+ * Build with `make tuner`. Run as: `./capi_tuner <dataset.txt> [--max N] [--passes P]`.
  *
- * Build with `make tuner`. Run as: `./capi_tuner <dataset.txt>`.
+ * Dataset format: one position per line, FEN fields + result token. Tokenizer
+ * treats whitespace, '|', '[', and ']' as separators so the common formats
+ * (Stockfish "FEN [result]", Ethereal "FEN result", plain "FEN | result") all
+ * parse. Result token: 1.0 / 0.5 / 0.0 (or 1-0 / 1/2-1/2 / 0-1).
  *
- * Dataset format (one position per line; tokenizer splits on whitespace,
- * '|', and brackets so common variants all work):
+ * CLI flags:
+ *   --max N      Cap dataset to N positions (random shuffle, then truncate).
+ *                Default: 200000. Use 0 for unlimited.
+ *   --passes P   Stop after P full passes regardless of convergence.
+ *                Default: 30. Use 0 for unlimited.
  *
- *   <FEN piece placement> <stm> <castling> <ep> <hm> <fm> <result>
+ * Output: prints a copy-pasteable values.h-style block to stdout once
+ * convergence is reached. The block has material baked into PSTs (so the user
+ * should set `VALOR_*_MG` / `VALOR_*_EG` to 0 in values.h when adopting, or
+ * the tuner can split material out — currently bakes for simplicity).
  *
- * where <result> is one of: 1.0 / 0.5 / 0.0 (or 1-0 / 1/2-1/2 / 0-1).
- *
- * Examples:
- *   rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 [0.5]
- *   r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4 1.0
+ * Performance note: on a 10M-position dataset, naive coord descent is ~100h
+ * to converge. Default `--max 200000` keeps a single pass at ~6 minutes on
+ * M3, ~20 passes ~= 2 hours. If convergence quality is insufficient, raise
+ * `--max` and rerun starting from the previous output as the new baseline.
  */
 
 #include <cstdio>
@@ -30,8 +37,10 @@
 #include <cerrno>
 #include <cmath>
 #include <cstdint>
+#include <ctime>
 #include <vector>
 #include <algorithm>
+#include <random>
 
 #include "consts.h"
 #include "init.h"
@@ -200,15 +209,205 @@ static double optimize_K() {
 }
 
 // ---------------------------------------------------------------------------
-// Entry point. Initialize engine, load dataset, find best K, report loss.
-// Coordinate descent ships in a follow-up commit.
+// Parameter registry.
+//
+// Each "parameter" is one int16-sized half (mg or eg) of a packed
+// Eval::Score slot. We tune two classes of slots:
+//
+//   1. `Eval::score_casas[BRANCAS][p][x]` — white-side PST + material per
+//      piece-type and square. After each accepted tweak, the corresponding
+//      black-side slot `score_casas[PRETAS][p][Consts::flip[x]]` is updated
+//      to mirror, keeping the eval symmetric. Black is never tuned directly.
+//
+//   2. `Eval::mobilidade_*[i]` — phase-aware mobility lookup tables. These
+//      are side-independent (same value applies to both colors via popcount),
+//      so no mirroring needed.
+//
+// Total params: 6 piece types × 64 squares × 2 halves (mg/eg) + sum of
+// (9 + 14 + 15 + 28) × 2 halves = 768 + 132 = 900.
+
+struct Param {
+    Eval::Score* slot;          // pointer to a packed Score we tune
+    Eval::Score* mirror;        // black-side mirror (NULL for non-PST slots)
+    bool is_mg;                  // tune the mg half or the eg half
+};
+
+static std::vector<Param> params;
+
+static void register_params() {
+    // PSTs: white side, with black mirror.
+    for (int p = P; p <= R; p++) {
+        for (int x = 0; x < CASAS_DO_TABULEIRO; x++) {
+            Eval::Score* white = &Eval::score_casas[BRANCAS][p][x];
+            Eval::Score* black = &Eval::score_casas[PRETAS][p][Consts::flip[x]];
+            params.push_back({white, black, true});   // mg
+            params.push_back({white, black, false});  // eg
+        }
+    }
+    // Mobility tables: side-independent, no mirror.
+    for (int i = 0; i < 9;  i++){ params.push_back({&Eval::mobilidade_cavalo[i], NULL, true});  params.push_back({&Eval::mobilidade_cavalo[i], NULL, false}); }
+    for (int i = 0; i < 14; i++){ params.push_back({&Eval::mobilidade_bispo[i],  NULL, true});  params.push_back({&Eval::mobilidade_bispo[i],  NULL, false}); }
+    for (int i = 0; i < 15; i++){ params.push_back({&Eval::mobilidade_torre[i],  NULL, true});  params.push_back({&Eval::mobilidade_torre[i],  NULL, false}); }
+    for (int i = 0; i < 28; i++){ params.push_back({&Eval::mobilidade_dama[i],   NULL, true});  params.push_back({&Eval::mobilidade_dama[i],   NULL, false}); }
+
+    fprintf(stderr, "tuner: registered %zu parameters (PSTs + mobility, mg+eg halves)\n", params.size());
+}
+
+// Apply delta (typically ±1) to one half of the parameter, mirroring to
+// black if this is a PST slot.
+static inline void tweak(const Param& p, int delta) {
+    int mg = Eval::mg_score(*p.slot);
+    int eg = Eval::eg_score(*p.slot);
+    if (p.is_mg) mg += delta;
+    else         eg += delta;
+    *p.slot = Eval::make_score(mg, eg);
+    if (p.mirror) *p.mirror = *p.slot;
+}
+
+// ---------------------------------------------------------------------------
+// Coordinate descent. For each parameter, try +1 and -1. Take whichever
+// improves loss. Iterate passes until no parameter improves in a full pass
+// (or `--passes` cap reached). Shuffles parameter order each pass to avoid
+// any pathological deterministic walk.
+
+static double coordinate_descent(double K, int max_passes) {
+    std::mt19937 rng(0xC0FFEE);
+    std::vector<size_t> order(params.size());
+    for (size_t i = 0; i < params.size(); i++) order[i] = i;
+
+    double best_loss = total_loss(K);
+    fprintf(stderr, "tuner: starting loss = %.6f\n", best_loss);
+
+    for (int pass = 0; max_passes == 0 || pass < max_passes; pass++) {
+        std::shuffle(order.begin(), order.end(), rng);
+
+        int accepted = 0;
+        time_t pass_start = time(NULL);
+
+        for (size_t idx = 0; idx < order.size(); idx++) {
+            Param& p = params[order[idx]];
+
+            // Try +1
+            tweak(p, +1);
+            double loss_plus = total_loss(K);
+
+            if (loss_plus < best_loss) {
+                best_loss = loss_plus;
+                accepted++;
+                continue;
+            }
+
+            // Revert and try -1
+            tweak(p, -1);  // undo +1 → back to original
+            tweak(p, -1);  // step to -1
+            double loss_minus = total_loss(K);
+
+            if (loss_minus < best_loss) {
+                best_loss = loss_minus;
+                accepted++;
+                continue;
+            }
+
+            // Neither direction helped, revert to original.
+            tweak(p, +1);
+        }
+
+        time_t elapsed = time(NULL) - pass_start;
+        fprintf(stderr, "tuner: pass %d done, accepted %d / %zu, loss=%.6f, elapsed=%lds\n",
+                pass + 1, accepted, params.size(), best_loss, (long)elapsed);
+
+        if (accepted == 0) {
+            fprintf(stderr, "tuner: converged after pass %d (no improvements)\n", pass + 1);
+            break;
+        }
+    }
+
+    return best_loss;
+}
+
+// ---------------------------------------------------------------------------
+// Output formatter. Prints a copy-pasteable values.h-style block of the
+// tuned PSTs and mobility tables. PSTs are emitted with material baked in
+// (the tuned `Eval::score_casas[BRANCAS][p][x]` halves include the original
+// VALOR_*_MG / VALOR_*_EG contribution). To adopt these in values.h, set the
+// material defines to 0 before regenerating from the new PSTs, or split the
+// material out manually (mean of each piece's mg/eg array works as the new
+// material value, residual goes back into the PST).
+
+static void print_pst_array(const char* name, int piece, bool is_mg) {
+    fprintf(stdout, "\tconst int %s[64] = {\n", name);
+    for (int rank = 0; rank < 8; rank++) {
+        fprintf(stdout, "\t\t");
+        for (int file = 0; file < 8; file++) {
+            int x = rank * 8 + file;
+            int v = is_mg ? Eval::mg_score(Eval::score_casas[BRANCAS][piece][x])
+                          : Eval::eg_score(Eval::score_casas[BRANCAS][piece][x]);
+            fprintf(stdout, "%5d%s", v, (file == 7 && rank == 7) ? "\n" : ",");
+            if (file == 7 && rank != 7) fprintf(stdout, "\n");
+        }
+    }
+    fprintf(stdout, "\t};\n\n");
+}
+
+static void print_mobility_array(const char* name, const Eval::Score* tbl, int len, bool is_mg) {
+    fprintf(stdout, "\tconst int %s[%d] = {\n\t\t", name, len);
+    for (int i = 0; i < len; i++) {
+        int v = is_mg ? Eval::mg_score(tbl[i]) : Eval::eg_score(tbl[i]);
+        fprintf(stdout, "%5d%s", v, (i == len - 1) ? "\n" : ",");
+        if ((i + 1) % 8 == 0 && i != len - 1) fprintf(stdout, "\n\t\t");
+    }
+    fprintf(stdout, "\t};\n\n");
+}
+
+static void print_tuned_values() {
+    fprintf(stdout, "// ==== TUNED VALUES (paste into values.h, set VALOR_*_MG/_EG to 0) ====\n");
+    fprintf(stdout, "// PSTs below have material baked in.\n\n");
+
+    print_pst_array("peao_score_mg",   P, true);
+    print_pst_array("peao_score_eg",   P, false);
+    print_pst_array("cavalo_score_mg", C, true);
+    print_pst_array("cavalo_score_eg", C, false);
+    print_pst_array("bispo_score_mg",  B, true);
+    print_pst_array("bispo_score_eg",  B, false);
+    print_pst_array("torre_score_mg",  T, true);
+    print_pst_array("torre_score_eg",  T, false);
+    print_pst_array("dama_score_mg",   D, true);
+    print_pst_array("dama_score_eg",   D, false);
+    print_pst_array("rei_score_mg",    R, true);
+    print_pst_array("rei_score_eg",    R, false);
+
+    print_mobility_array("mobilidade_cavalo_mg", Eval::mobilidade_cavalo, 9,  true);
+    print_mobility_array("mobilidade_cavalo_eg", Eval::mobilidade_cavalo, 9,  false);
+    print_mobility_array("mobilidade_bispo_mg",  Eval::mobilidade_bispo,  14, true);
+    print_mobility_array("mobilidade_bispo_eg",  Eval::mobilidade_bispo,  14, false);
+    print_mobility_array("mobilidade_torre_mg",  Eval::mobilidade_torre,  15, true);
+    print_mobility_array("mobilidade_torre_eg",  Eval::mobilidade_torre,  15, false);
+    print_mobility_array("mobilidade_dama_mg",   Eval::mobilidade_dama,   28, true);
+    print_mobility_array("mobilidade_dama_eg",   Eval::mobilidade_dama,   28, false);
+
+    fprintf(stdout, "// ==== end tuned values ====\n");
+}
+
+// ---------------------------------------------------------------------------
+// Entry point.
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <dataset.txt>\n", argv[0]);
-        fprintf(stderr, "  Dataset format: one position per line, FEN fields + result.\n");
-        fprintf(stderr, "  Result token: 1.0 / 0.5 / 0.0 (or 1-0 / 1/2-1/2 / 0-1).\n");
+        fprintf(stderr, "Usage: %s <dataset.txt> [--max N] [--passes P]\n", argv[0]);
+        fprintf(stderr, "  --max N      Cap dataset to N positions (random shuffle then truncate). Default: 200000. 0 = unlimited.\n");
+        fprintf(stderr, "  --passes P   Stop after P coord-descent passes. Default: 30. 0 = unlimited.\n");
         return 1;
+    }
+
+    int max_positions = 200000;
+    int max_passes    = 30;
+
+    for (int i = 2; i < argc; i++) {
+        if (!strcmp(argv[i], "--max") && i + 1 < argc) {
+            max_positions = atoi(argv[++i]);
+        } else if (!strcmp(argv[i], "--passes") && i + 1 < argc) {
+            max_passes = atoi(argv[++i]);
+        }
     }
 
     fprintf(stderr, "tuner: initializing engine...\n");
@@ -217,12 +416,25 @@ int main(int argc, char **argv) {
     fprintf(stderr, "tuner: loading dataset from %s ...\n", argv[1]);
     load_dataset(argv[1]);
 
+    // Random subsample to keep coord-descent passes fast on huge datasets.
+    if (max_positions > 0 && (int)dataset.size() > max_positions) {
+        std::mt19937 rng(0xDA7A);  // deterministic shuffle for reproducible runs
+        std::shuffle(dataset.begin(), dataset.end(), rng);
+        dataset.resize(max_positions);
+        fprintf(stderr, "tuner: subsampled to %d positions\n", max_positions);
+    }
+
     fprintf(stderr, "tuner: optimizing K ...\n");
     double K = optimize_K();
-    double loss = total_loss(K);
+    fprintf(stderr, "tuner: optimal K = %.4f\n", K);
 
-    fprintf(stderr, "tuner: optimal K = %.4f, initial loss = %.6f\n", K, loss);
-    fprintf(stderr, "tuner: skeleton ready. Coordinate descent ships in commit 2.\n");
+    register_params();
+
+    fprintf(stderr, "tuner: starting coordinate descent (max %d passes)...\n", max_passes);
+    double final_loss = coordinate_descent(K, max_passes);
+    fprintf(stderr, "tuner: final loss = %.6f\n", final_loss);
+
+    print_tuned_values();
 
     return 0;
 }
