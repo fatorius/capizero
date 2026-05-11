@@ -250,7 +250,14 @@ static void register_params() {
     for (int i = 0; i < 15; i++){ params.push_back({&Eval::mobilidade_torre[i],  NULL, true});  params.push_back({&Eval::mobilidade_torre[i],  NULL, false}); }
     for (int i = 0; i < 28; i++){ params.push_back({&Eval::mobilidade_dama[i],   NULL, true});  params.push_back({&Eval::mobilidade_dama[i],   NULL, false}); }
 
-    fprintf(stderr, "tuner: registered %zu parameters (PSTs + mobility, mg+eg halves)\n", params.size());
+    // King safety weights: mg-only (eg half permanently 0, not registered),
+    // side-independent (no mirror).
+    params.push_back({&Eval::ks_weight_c, NULL, true});
+    params.push_back({&Eval::ks_weight_b, NULL, true});
+    params.push_back({&Eval::ks_weight_t, NULL, true});
+    params.push_back({&Eval::ks_weight_d, NULL, true});
+
+    fprintf(stderr, "tuner: registered %zu parameters (PSTs + mobility + king safety, mg+eg halves)\n", params.size());
 }
 
 // Apply delta (typically ±1) to one half of the parameter, mirroring to
@@ -384,6 +391,11 @@ static void print_tuned_values() {
     print_mobility_array("mobilidade_torre_eg",  Eval::mobilidade_torre,  15, false);
     print_mobility_array("mobilidade_dama_mg",   Eval::mobilidade_dama,   28, true);
     print_mobility_array("mobilidade_dama_eg",   Eval::mobilidade_dama,   28, false);
+
+    fprintf(stdout, "\t#define KS_WEIGHT_C %d\n",   Eval::mg_score(Eval::ks_weight_c));
+    fprintf(stdout, "\t#define KS_WEIGHT_B %d\n",   Eval::mg_score(Eval::ks_weight_b));
+    fprintf(stdout, "\t#define KS_WEIGHT_T %d\n",   Eval::mg_score(Eval::ks_weight_t));
+    fprintf(stdout, "\t#define KS_WEIGHT_D %d\n\n", Eval::mg_score(Eval::ks_weight_d));
 
     fprintf(stdout, "// ==== end tuned values ====\n");
 }

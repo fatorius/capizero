@@ -43,6 +43,21 @@ namespace Values{
 	#define BISHOP_PAIR_MG 15
 	#define BISHOP_PAIR_EG 45
 
+	// King safety. For each side L we count L's attacks landing in the
+	// 9-square zone around the enemy king (king + 8 neighbors), weighted
+	// per attacker type. The accumulated "pressao" gets a quadratic mg
+	// bonus: bonus = pressao² / KS_SCALE. Quadratic so the second/third
+	// attacker matters disproportionately more than the first (one piece
+	// near the king is fine, three pieces is mate). Mg-only because heavy
+	// pieces come off in the endgame and the king becomes an active piece,
+	// where this term would invert in motivation. Initial weights are
+	// SF-classical-era literature defaults — Texel tuner adjusts them.
+	#define KS_WEIGHT_C 20
+	#define KS_WEIGHT_B 20
+	#define KS_WEIGHT_T 40
+	#define KS_WEIGHT_D 80
+	#define KS_SCALE   256
+
 	#define PHASE_PEAO    0
 	#define PHASE_CAVALO  1
 	#define PHASE_BISPO   1
