@@ -49,3 +49,7 @@ config.json
 *.epd
 *.book
 
+# Tuner outputs
+tuned_values*.txt
+tuner*.log
+
