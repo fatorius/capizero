@@ -54,6 +54,10 @@ void Game::nova_posicao(){
     Eval::piece_mat[BRANCAS] = Eval::peao_mat[BRANCAS] = 0;
     Eval::piece_mat[PRETAS] = Eval::peao_mat[PRETAS] = 0;
 
+    // Reset the incremental phase counter so the adicionar_piece loop
+    // below rebuilds it from scratch (just like the material counters above).
+    Eval::fase_valor = 0;
+
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         if (Bitboard::tabuleiro[casa] < VAZIO){
             if (Bitboard::bit_lados[BRANCAS] & Bitboard::mask[casa]){

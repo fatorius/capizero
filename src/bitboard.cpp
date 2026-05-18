@@ -1,6 +1,7 @@
 #include "bitboard.h"
 
 #include "update.h"
+#include "eval.h"
 
 #include <string.h>
 #include <stdint.h>
@@ -208,6 +209,10 @@ void Bitboard::init_board(){
     memset(bit_pieces, 0, sizeof(bit_pieces));
     memset(bit_lados, 0, sizeof(bit_lados));
     bit_total = 0;
+
+    // Reset incremental phase counter before the per-square adicionar_piece
+    // loop accumulates it back to PHASE_MAX for the starting position.
+    Eval::fase_valor = 0;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; ++casa) {
         tabuleiro[casa] = VAZIO;

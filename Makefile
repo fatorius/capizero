@@ -80,6 +80,14 @@ bench: clean ./src/bench_tests.o $(SRCS)
 	@ echo "================="
 	@ echo "capi_bench compilado com sucesso"
 
+# Texel-style eval tuner. Reuses the engine's eval/board/state code; tuner.cpp
+# adds the dataset loader, loss function, and (eventually) coordinate-descent
+# tuning loop. Runs as: ./capi_tuner <dataset.txt>
+tuner: clean ./src/tuner.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o capi_tuner ./src/tuner.o $(SRCS)
+	@ echo "================="
+	@ echo "capi_tuner compilado com sucesso"
+
 magics: ./src/generate_magics.cpp
 	@ $(COMP) -c $(CXXFLAGS) ./src/generate_magics.cpp -o ./src/generate_magics.o
 	@ $(COMP) -o generate_magics ./src/generate_magics.o 

@@ -3,39 +3,92 @@
 #include "bitboard.h"
 #include "consts.h"
 #include "game.h"
+#include "gen.h"
 
 
-int Eval::score_casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
-int Eval::reis_score_finais[LADOS][CASAS_DO_TABULEIRO];
+Eval::Score Eval::score_casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 int Eval::passados[LADOS][CASAS_DO_TABULEIRO];
 
 int Eval::peao_mat[LADOS];
 int Eval::piece_mat[LADOS];
 
+int Eval::fase_valor = 0;
+
+// Phase weight per piece type, indexed by the {P, C, B, T, D, R} encoding
+// in consts.h. Mirrors Values::PHASE_* macros — kept here as a contiguous
+// array so Update::adicionar_piece / Update::remover_piece can do a single
+// indexed load instead of a switch.
+const int Eval::phase_weights[6] = {
+    PHASE_PEAO, PHASE_CAVALO, PHASE_BISPO, PHASE_TORRE, PHASE_DAMA, PHASE_REI
+};
+
+// Mobility tables. Definitions are storage-only; the values live in
+// `Values::mobilidade_*_mg / _eg` in values.h and get packed into Score
+// pairs at startup by init_eval_tables. Same pattern capizero uses for
+// PSTs (raw values in Values::, packed/initialized in init_eval_tables).
+Eval::Score Eval::mobilidade_cavalo[9];
+Eval::Score Eval::mobilidade_bispo[14];
+Eval::Score Eval::mobilidade_torre[15];
+Eval::Score Eval::mobilidade_dama[28];
+
 int peao_ala_da_dama[LADOS],peao_ala_do_rei[LADOS];
 
 void Eval::init_eval_tables(){
+    // Phase 1 of the tapered-eval rollout still has mg = eg, so the packed
+    // score per square just duplicates the legacy single value into both
+    // halves. Future passes will differentiate (e.g. king PST: mg = rei_score,
+    // eg = rei_finais_score, dropping the conditional swap below).
     for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
-        score_casas[BRANCAS][P][x] = Values::peao_score[x] + VALOR_PEAO;
-        score_casas[BRANCAS][C][x] = Values::cavalo_score[x] + VALOR_CAVALO;
-        score_casas[BRANCAS][B][x] = Values::bispo_score[x] + VALOR_BISPO;
-        score_casas[BRANCAS][T][x] = Values::torre_score[x] + VALOR_TORRE;
-        score_casas[BRANCAS][D][x] = Values::dama_score[x] + VALOR_DAMA;
-        score_casas[BRANCAS][R][x] = Values::rei_score[x];
+        const int xf = Consts::flip[x];
 
-        score_casas[PRETAS][P][x] = Values::peao_score[Consts::flip[x]] + VALOR_PEAO;
-        score_casas[PRETAS][C][x] = Values::cavalo_score[Consts::flip[x]] + VALOR_CAVALO;
-        score_casas[PRETAS][B][x] = Values::bispo_score[Consts::flip[x]] + VALOR_BISPO;
-        score_casas[PRETAS][T][x] = Values::torre_score[Consts::flip[x]] + VALOR_TORRE;
-        score_casas[PRETAS][D][x] = Values::dama_score[Consts::flip[x]] + VALOR_DAMA;
-        score_casas[PRETAS][R][x] = Values::rei_score[Consts::flip[x]];
-        
-        reis_score_finais[BRANCAS][x] = Values::rei_finais_score[x] - score_casas[BRANCAS][R][x];
-        reis_score_finais[PRETAS][x] = Values::rei_finais_score[x] - score_casas[PRETAS][R][x];
+        score_casas[BRANCAS][P][x] = make_score(VALOR_PEAO_MG   + Values::peao_score_mg[x],
+                                                VALOR_PEAO_EG   + Values::peao_score_eg[x]);
+        score_casas[BRANCAS][C][x] = make_score(VALOR_CAVALO_MG + Values::cavalo_score_mg[x],
+                                                VALOR_CAVALO_EG + Values::cavalo_score_eg[x]);
+        score_casas[BRANCAS][B][x] = make_score(VALOR_BISPO_MG  + Values::bispo_score_mg[x],
+                                                VALOR_BISPO_EG  + Values::bispo_score_eg[x]);
+        score_casas[BRANCAS][T][x] = make_score(VALOR_TORRE_MG  + Values::torre_score_mg[x],
+                                                VALOR_TORRE_EG  + Values::torre_score_eg[x]);
+        score_casas[BRANCAS][D][x] = make_score(VALOR_DAMA_MG   + Values::dama_score_mg[x],
+                                                VALOR_DAMA_EG   + Values::dama_score_eg[x]);
+        score_casas[BRANCAS][R][x] = make_score(Values::rei_score_mg[x],
+                                                Values::rei_score_eg[x]);
+
+        score_casas[PRETAS][P][x] = make_score(VALOR_PEAO_MG   + Values::peao_score_mg[xf],
+                                               VALOR_PEAO_EG   + Values::peao_score_eg[xf]);
+        score_casas[PRETAS][C][x] = make_score(VALOR_CAVALO_MG + Values::cavalo_score_mg[xf],
+                                               VALOR_CAVALO_EG + Values::cavalo_score_eg[xf]);
+        score_casas[PRETAS][B][x] = make_score(VALOR_BISPO_MG  + Values::bispo_score_mg[xf],
+                                               VALOR_BISPO_EG  + Values::bispo_score_eg[xf]);
+        score_casas[PRETAS][T][x] = make_score(VALOR_TORRE_MG  + Values::torre_score_mg[xf],
+                                               VALOR_TORRE_EG  + Values::torre_score_eg[xf]);
+        score_casas[PRETAS][D][x] = make_score(VALOR_DAMA_MG   + Values::dama_score_mg[xf],
+                                               VALOR_DAMA_EG   + Values::dama_score_eg[xf]);
+        score_casas[PRETAS][R][x] = make_score(Values::rei_score_mg[xf],
+                                               Values::rei_score_eg[xf]);
 
         passados[BRANCAS][x] = Values::peao_passado_score[Consts::flip[x]];
         passados[PRETAS][x] = Values::peao_passado_score[x];
     }
+
+    // Pack mobility tables. Values live in values.h as parallel mg/eg
+    // arrays; build the packed Score lookup once at startup.
+    for (int i = 0; i < 9; i++){
+        mobilidade_cavalo[i] = make_score(Values::mobilidade_cavalo_mg[i], Values::mobilidade_cavalo_eg[i]);
+    }
+    for (int i = 0; i < 14; i++){
+        mobilidade_bispo[i] = make_score(Values::mobilidade_bispo_mg[i], Values::mobilidade_bispo_eg[i]);
+    }
+    for (int i = 0; i < 15; i++){
+        mobilidade_torre[i] = make_score(Values::mobilidade_torre_mg[i], Values::mobilidade_torre_eg[i]);
+    }
+    for (int i = 0; i < 28; i++){
+        mobilidade_dama[i] = make_score(Values::mobilidade_dama_mg[i], Values::mobilidade_dama_eg[i]);
+    }
+}
+
+int Eval::fase(){
+    return (fase_valor > PHASE_MAX) ? PHASE_MAX : fase_valor;
 }
 
 void Eval::atualizar_materiais(){
@@ -99,7 +152,13 @@ int avaliar_torre(const int l, const int casa){
 }
 
 int Eval::avaliar(){
-    int score[LADOS] = {0, 0};
+    // Single packed accumulator per side. mg lives in the high 16 bits,
+    // eg in the low 16; both halves accumulate in lockstep through plain
+    // int32 addition. Single-valued bonuses (avaliar_peao, avaliar_torre,
+    // king PST swap, pawn shield) are wrapped via make_score(v, v) so the
+    // same delta lands in both halves. Future tapered terms differentiate
+    // by passing distinct mg/eg values to make_score.
+    Score score[LADOS] = {0, 0};
 
     peao_ala_da_dama[BRANCAS] = 0;
     peao_ala_do_rei[BRANCAS] = 0;
@@ -110,14 +169,22 @@ int Eval::avaliar(){
     int casa;
 
     for (int l = 0; l < LADOS; l++){
-        
+
+        // Mobility uses popcount of attack squares that aren't own pieces.
+        // Each attacked square counts; enemy-occupied squares (capturable
+        // targets) and empty squares both contribute. Phase-aware weights
+        // recognize that bishop/rook mobility matters more in the endgame
+        // where boards are open, while knight mobility is roughly uniform.
+        const Bitboard::u64 nao_proprios = ~Bitboard::bit_lados[l];
+
         t1 = Bitboard::bit_pieces[l][P];
         while (t1){
             casa = Bitboard::bitscan(t1);
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][P][casa];
-            score[l] += avaliar_peao(l, casa);
+            const int peao_b = avaliar_peao(l, casa);
+            score[l] += make_score(peao_b, peao_b);
         }
 
         t1 = Bitboard::bit_pieces[l][C];
@@ -126,6 +193,7 @@ int Eval::avaliar(){
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][C][casa];
+            score[l] += mobilidade_cavalo[Bitboard::popcount(Gen::bit_moves_cavalo[casa] & nao_proprios)];
         }
 
         t1 = Bitboard::bit_pieces[l][B];
@@ -134,6 +202,11 @@ int Eval::avaliar(){
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][B][casa];
+            score[l] += mobilidade_bispo[Bitboard::popcount(Gen::atacantes_bispo(casa) & nao_proprios)];
+        }
+
+        if (Bitboard::popcount(Bitboard::bit_pieces[l][B]) >= 2){
+            score[l] += make_score(BISHOP_PAIR_MG, BISHOP_PAIR_EG);
         }
 
         t1 = Bitboard::bit_pieces[l][T];
@@ -142,7 +215,9 @@ int Eval::avaliar(){
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][T][casa];
-            score[l] += avaliar_torre(l, casa);
+            const int torre_b = avaliar_torre(l, casa);
+            score[l] += make_score(torre_b, torre_b);
+            score[l] += mobilidade_torre[Bitboard::popcount(Gen::atacantes_torre(casa) & nao_proprios)];
         }
 
         t1 = Bitboard::bit_pieces[l][D];
@@ -151,32 +226,38 @@ int Eval::avaliar(){
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][D][casa];
+            score[l] += mobilidade_dama[Bitboard::popcount((Gen::atacantes_bispo(casa) | Gen::atacantes_torre(casa)) & nao_proprios)];
         }
     }
 
-    if (Bitboard::bit_pieces[PRETAS][D] == 0){
-        score[BRANCAS] += reis_score_finais[BRANCAS][Bitboard::bitscan(Bitboard::bit_pieces[BRANCAS][R])];
+    // Pawn shield is a midgame-only concept (king wants to stay tucked
+    // behind pawns while the opponent has heavy pieces; in the endgame
+    // the king should be active). The legacy code gated this on
+    // `enemy_queen_present` as a binary proxy for "still mg"; with the
+    // king PST now natively tapered, we just apply the shield to the mg
+    // half and let the phase interpolation fade it out as material thins.
+    int shield_w = 0;
+    if (Bitboard::bit_pieces[BRANCAS][R] & Bitboard::mask_ala_do_rei){
+        shield_w = peao_ala_do_rei[BRANCAS];
     }
-    else{
-        if (Bitboard::bit_pieces[BRANCAS][R] & Bitboard::mask_ala_do_rei){
-            score[BRANCAS] += peao_ala_do_rei[BRANCAS];
-        }
-        else if (Bitboard::bit_pieces[BRANCAS][R] & Bitboard::mask_ala_da_dama){
-            score[BRANCAS] += peao_ala_da_dama[BRANCAS];
-        }
+    else if (Bitboard::bit_pieces[BRANCAS][R] & Bitboard::mask_ala_da_dama){
+        shield_w = peao_ala_da_dama[BRANCAS];
     }
+    score[BRANCAS] += make_score(shield_w, 0);
 
-    if (Bitboard::bit_pieces[BRANCAS][D] == 0){
-        score[PRETAS] += reis_score_finais[PRETAS][Bitboard::bitscan(Bitboard::bit_pieces[PRETAS][R])];
+    int shield_b = 0;
+    if (Bitboard::bit_pieces[PRETAS][R] & Bitboard::mask_ala_do_rei){
+        shield_b = peao_ala_do_rei[PRETAS];
     }
-    else {
-        if (Bitboard::bit_pieces[PRETAS][R] & Bitboard::mask_ala_do_rei){
-            score[PRETAS] += peao_ala_do_rei[PRETAS];
-        }
-        else if (Bitboard::bit_pieces[PRETAS][R] & Bitboard::mask_ala_da_dama){
-            score[PRETAS] += peao_ala_da_dama[PRETAS];
-        }
+    else if (Bitboard::bit_pieces[PRETAS][R] & Bitboard::mask_ala_da_dama){
+        shield_b = peao_ala_da_dama[PRETAS];
     }
+    score[PRETAS] += make_score(shield_b, 0);
 
-    return score[Game::lado] - score[Game::xlado];
+    // Side-to-move difference, then unpack and interpolate.
+    const Score diff = score[Game::lado] - score[Game::xlado];
+    const int mg_diff = mg_score(diff);
+    const int eg_diff = eg_score(diff);
+    const int phase = fase();
+    return (mg_diff * phase + eg_diff * (PHASE_MAX - phase)) / PHASE_MAX;
 }
