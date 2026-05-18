@@ -480,29 +480,40 @@ void Search::pensar(bool verbose){
             }
         }
 
+        int delta = TAMANHO_JANELA_DE_PESQUISA;
         if (profundidade == 1){
             alpha = ALPHA_INICIAL;
-            beta = BETA_INICIAL;
+            beta  = BETA_INICIAL;
         }
         else{
-            alpha = melhor_linha - TAMANHO_JANELA_DE_PESQUISA;
-            beta = melhor_linha + TAMANHO_JANELA_DE_PESQUISA;
+            alpha = melhor_linha - delta;
+            beta  = melhor_linha + delta;
         }
 
-        melhor_linha = pesquisa(alpha, beta, profundidade, true);
-
-        if (melhor_linha <= alpha){
-            alpha = (melhor_linha - (TAMANHO_JANELA_DE_PESQUISA * READAPTACAO_JANELA_DE_PESQUISA));
+        int fails = 0;
+        while (true){
             melhor_linha = pesquisa(alpha, beta, profundidade, true);
-        }
-        else if (melhor_linha >= beta){
-            if (profundidade == 1){
-                beta = BETA_INICIAL;
+
+            if (melhor_linha > alpha && melhor_linha < beta) break;
+            if (++fails > MAX_ASPIRATION_FAILS) break;
+
+            if (fails == MAX_ASPIRATION_FAILS){
+                // Final attempt — full window, guaranteed to return a usable
+                // score on the next iteration.
+                alpha = ALPHA_INICIAL;
+                beta  = BETA_INICIAL;
+                continue;
+            }
+
+            delta *= 2;
+            if (melhor_linha <= alpha){
+                alpha = melhor_linha - delta;
+                if (alpha < ALPHA_INICIAL) alpha = ALPHA_INICIAL;
             }
             else{
-                beta = (melhor_linha + (TAMANHO_JANELA_DE_PESQUISA * READAPTACAO_JANELA_DE_PESQUISA));
+                beta = melhor_linha + delta;
+                if (beta > BETA_INICIAL) beta = BETA_INICIAL;
             }
-            melhor_linha = pesquisa(alpha, beta, profundidade, true);
         }
 
         if (Hash::hash_lookup(Game::lado)){

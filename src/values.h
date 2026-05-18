@@ -52,13 +52,6 @@ namespace Values{
 	#define PHASE_REI     0
 	#define PHASE_MAX    24
 
-	// Tapered mobility tables, indexed by attack-count (popcount of the
-	// piece's attack bitboard with own pieces masked out). Stored here as
-	// parallel mg/eg int arrays — `Eval::init_eval_tables` packs them into
-	// `Eval::mobilidade_*` Score tables at startup. Curve shape: brutal
-	// negative at trapped (low index), near-linear in the middle, saturating
-	// at the top. First-pass literature values; will be Texel-tuned later.
-	//   Knight max attack-count = 8, bishop = 13, rook = 14, queen = 27.
 	const int mobilidade_cavalo_mg[9] = {
 		-40, -15,  -3,   0,   3,   6,   9,  11,  13
 	};
@@ -91,9 +84,8 @@ namespace Values{
 	#define REDUCAO_IID /4
 	#define PROFUNDIDADE_CONDICAO_IID 5
 
-	// WINDOWS
 	#define TAMANHO_JANELA_DE_PESQUISA 20
-	#define READAPTACAO_JANELA_DE_PESQUISA 3
+	#define MAX_ASPIRATION_FAILS 3
 
 	// VALORES PARA ORDENAÇÃO DE LANCES
 	#define SCORE_ROQUE        5000000
@@ -104,8 +96,6 @@ namespace Values{
 	#define SCORE_CAPTURAS_V  50000000
 	#define PONTUACAO_HASH   100000000
 
-	// Promotion move scoring. Queen above MVV/LVA so it is always tried first,
-	// knight moderate (tactical value). R/B are not generated.
 	#define SCORE_PROMO_Q_CAP  (SCORE_CAPTURAS_V + 1000000)
 	#define SCORE_PROMO_Q      60000000
 	#define SCORE_PROMO_N_CAP  18000000
@@ -113,12 +103,6 @@ namespace Values{
 
 	#define REDUCAO_LMR 3
 
-	// Null-move pruning depth reduction. Dynamic R: heavier pruning at deep
-	// depths where the search tree is huge and the marginal cost of missing
-	// tactics is offset by the breadth gain; lighter pruning near the leaves
-	// where the reduced-depth subsearch needs to retain enough resolution
-	// to be informative. With R_NULL_HIGH = 3 and the threshold at 6, a
-	// depth-6 null-move recurses at depth 2 (still beats qsearch by 2 plies).
 	#define R_NULL_LOW          2
 	#define R_NULL_HIGH         3
 	#define R_NULL_DEPTH_THRESH 6
