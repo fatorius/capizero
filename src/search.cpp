@@ -257,6 +257,36 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         check = 1;
     }
 
+    // Futility / reverse-futility pruning. Both depend on a static eval and
+    // both are only safe at non-PV, non-check, low-depth nodes (where the
+    // static eval is a reasonable proxy for the deep-search outcome).
+    //
+    // Additional guards required for correctness:
+    //   - mate-distance: when beta (RFP) or alpha (FP) is near mate, returning
+    //     a static-eval-based score would silently corrupt mate detection.
+    //   - non-pawn material on side to move (RFP only): in zugzwang territory
+    //     static eval is unreliable — any move makes things worse, same
+    //     justification as NMP's zugzwang guard.
+    int static_eval = 0;
+    const bool side_has_pieces =
+        Bitboard::bit_pieces[Game::lado][C] | Bitboard::bit_pieces[Game::lado][B]
+      | Bitboard::bit_pieces[Game::lado][T] | Bitboard::bit_pieces[Game::lado][D];
+    const bool can_futility = !pv && !check && profundidade <= FUTILITY_DEPTH_THRESH;
+
+    if (can_futility){
+        static_eval = Eval::avaliar();
+
+        // Reverse futility (a.k.a. static null-move). Returning the midpoint
+        // of static_eval and beta (not static_eval directly) keeps the score
+        // a valid lower bound (≥ beta) while moderating grand-parent cutoffs
+        // when static_eval is far above beta.
+        if (side_has_pieces
+            && beta < VALOR_XEQUE_MATE_BRANCAS - MAX_PLY
+            && static_eval - FUTILITY_MARGIN_PER_PLY * profundidade >= beta){
+            return (static_eval + beta) / 2;
+        }
+    }
+
     // Null-move pruning. If we hand the opponent a free move and they still
     // can't beat beta with a reduced-depth search, our actual move can only
     // produce an even better score — return beta. Guarded against:
@@ -329,6 +359,18 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         // when called a second time after already scoring a capture).
         if (candidato >= Game::qntt_lances_totais[Game::ply + 1]){
             if (quiets_generated) break;
+            // Optimization: if forward futility would prune every quiet move
+            // we'd generate (and we already have at least one legal move
+            // searched, so we won't trigger a spurious mate/stalemate),
+            // skip quiet generation entirely. Mate-distance guard mirrors
+            // the per-move FP check below — we never skip moves when we
+            // might be escaping (or delivering) a forced mate.
+            if (can_futility
+                && lances_legais_na_posicao > 0
+                && alpha > VALOR_XEQUE_MATE_PRETAS + MAX_PLY
+                && static_eval + FUTILITY_MARGIN_PER_PLY * profundidade + FUTILITY_MARGIN_FP_EXTRA <= alpha){
+                break;
+            }
             // Reach here only when there was no TT hit, or when TT hit had
             // an enemy-occupied destination (capture path). In both cases
             // the TT move — if any — was already discovered and boosted
@@ -339,6 +381,22 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         }
 
         ordenar_lances(candidato);
+
+        // Forward futility pruning: at low depth with at least one legal
+        // move already explored, skip quiet (non-capture, non-promotion)
+        // moves whose optimistic value still can't beat alpha. Captures and
+        // promotions are exempt because their material swing easily exceeds
+        // the futility margin. Mate-distance guard: never FP-prune when
+        // alpha is mate-near — escaping a forced mate often goes through
+        // a quiet move that the static eval drastically underrates.
+        if (can_futility
+            && lances_legais_na_posicao > 0
+            && alpha > VALOR_XEQUE_MATE_PRETAS + MAX_PLY
+            && Gen::lista_de_lances[candidato].promove == 0
+            && !(Bitboard::mask[Gen::lista_de_lances[candidato].destino] & Bitboard::bit_total)
+            && static_eval + FUTILITY_MARGIN_PER_PLY * profundidade + FUTILITY_MARGIN_FP_EXTRA <= alpha){
+            continue;
+        }
 
         // verifica se o lance é legal
         if (!Update::fazer_lance(Gen::lista_de_lances[candidato].inicio, Gen::lista_de_lances[candidato].destino, Gen::lista_de_lances[candidato].promove)){
