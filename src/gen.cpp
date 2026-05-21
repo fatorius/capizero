@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <stdio.h>
+#include "attacks.h"
 
 #if defined(__BMI2__) && !defined(NOT_USE_PEXT)
     #include <immintrin.h>
@@ -511,7 +512,10 @@ void Gen::gerar_capturas_busca(const int lado_a_mover, const int contraLado){
             adicionar_promocao_variantes(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
         }
         else{
-            adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
+            int captured = Bitboard::tabuleiro[casa_destino];
+            int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
+            adicionar_captura(casa, casa_destino,
+                sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
         }
     }
     while (t2){
@@ -522,7 +526,10 @@ void Gen::gerar_capturas_busca(const int lado_a_mover, const int contraLado){
             adicionar_promocao_variantes(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
         }
         else{
-            adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
+            int captured = Bitboard::tabuleiro[casa_destino];
+            int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
+            adicionar_captura(casa, casa_destino,
+                sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
         }
     }
 
@@ -535,7 +542,10 @@ void Gen::gerar_capturas_busca(const int lado_a_mover, const int contraLado){
         while (t2){
             casa_destino = Bitboard::bitscan(t2);
             t2 &= Bitboard::not_mask[casa_destino];
-            adicionar_captura(casa, casa_destino, Values::cx[Bitboard::tabuleiro[casa_destino]]);
+            int captured = Bitboard::tabuleiro[casa_destino];
+            int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
+            adicionar_captura(casa, casa_destino,
+                sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
         }
     }
 
@@ -552,7 +562,10 @@ void Gen::gerar_capturas_busca(const int lado_a_mover, const int contraLado){
         while (ataques_deslizantes){
             casa_destino = Bitboard::bitscan(ataques_deslizantes);
             ataques_deslizantes &= Bitboard::not_mask[casa_destino];
-            adicionar_captura(casa, casa_destino, Values::bx[Bitboard::tabuleiro[casa_destino]]);
+            int captured = Bitboard::tabuleiro[casa_destino];
+            int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
+            adicionar_captura(casa, casa_destino,
+                sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
         }
     }
 
@@ -569,7 +582,10 @@ void Gen::gerar_capturas_busca(const int lado_a_mover, const int contraLado){
         while (ataques_deslizantes){
             casa_destino = Bitboard::bitscan(ataques_deslizantes);
             ataques_deslizantes &= Bitboard::not_mask[casa_destino];
-            adicionar_captura(casa, casa_destino, Values::tx[Bitboard::tabuleiro[casa_destino]]);
+            int captured = Bitboard::tabuleiro[casa_destino];
+            int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
+            adicionar_captura(casa, casa_destino,
+                sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
         }
     }
 
@@ -586,7 +602,10 @@ void Gen::gerar_capturas_busca(const int lado_a_mover, const int contraLado){
         while (ataques_deslizantes){
             casa_destino = Bitboard::bitscan(ataques_deslizantes);
             ataques_deslizantes &= Bitboard::not_mask[casa_destino];
-            adicionar_captura(casa, casa_destino, Values::dx[Bitboard::tabuleiro[casa_destino]]);
+            int captured = Bitboard::tabuleiro[casa_destino];
+            int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
+            adicionar_captura(casa, casa_destino,
+                sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
         }
     }
 
@@ -596,7 +615,10 @@ void Gen::gerar_capturas_busca(const int lado_a_mover, const int contraLado){
     while (t1){
         casa_destino = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa_destino];
-        adicionar_captura(casa, casa_destino, Values::rx[Bitboard::tabuleiro[casa_destino]]);
+        int captured = Bitboard::tabuleiro[casa_destino];
+        int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
+        adicionar_captura(casa, casa_destino,
+            sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
     }
 
     Game::qntt_lances_totais[Game::ply + 1] = mc;
