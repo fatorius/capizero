@@ -16,17 +16,6 @@ namespace Values{
 	#define VALOR_DAMA 900
 	#define VALOR_REI 10000
 
-	#define VALOR_PEAO_MG    0
-	#define VALOR_PEAO_EG    0
-	#define VALOR_CAVALO_MG  0
-	#define VALOR_CAVALO_EG  0
-	#define VALOR_BISPO_MG   0
-	#define VALOR_BISPO_EG   0
-	#define VALOR_TORRE_MG   0
-	#define VALOR_TORRE_EG   0
-	#define VALOR_DAMA_MG    0
-	#define VALOR_DAMA_EG    0
-
 	const int pieces_valor[6] =
 	{
 		VALOR_PEAO, VALOR_CAVALO, VALOR_BISPO, VALOR_TORRE, VALOR_DAMA, VALOR_REI
