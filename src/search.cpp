@@ -443,7 +443,7 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         }
         else{
             if (-pesquisa(-alpha - 1, -alpha, nova_profundidade, false) > alpha){
-                score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true);
+                score_candidato = -pesquisa(-beta, -alpha, profundidade - 1, true);
             }
             else{
                 Update::desfaz_lance();
