@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <setjmp.h>
+#include <math.h>
 
 #include "update.h"
 #include "game.h"
@@ -406,29 +407,43 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         lances_legais_na_posicao++;
 
 
-        // REDUÇÕES E EXTENSÕES
-        if (check == 1){ // extensões
-            nova_profundidade = profundidade; // extensões de xeques
+        // EXTENSÕES E REDUÇÕES (LMR)
+        if (check == 1){
+            nova_profundidade = profundidade; // extensão de xeque
         }
-        else{ // reduções
-            if (Gen::lista_de_lances[candidato].score > SCORE_DE_CAPTURA_VANTAJOSAS || lances_legais_na_posicao == 1){
+        else if (Gen::lista_de_lances[candidato].score > SCORE_DE_CAPTURA_VANTAJOSAS
+                 || lances_legais_na_posicao == 1){
+            nova_profundidade = profundidade - 1; // primeira peça ou captura vantajosa: sem redução
+        }
+        else if (lances_legais_na_posicao >= 2 && profundidade >= 3){
+            // LMR: redução logarítmica para lances quietos tardios em nós não-PV.
+            // Exclui: TT, killers, contralances e capturas (via score >= SCORE_CONTRALANCE
+            // ou destino ocupado) e promoções.
+            const bool nao_reduzir =
+                Gen::lista_de_lances[candidato].score >= PONTUACAO_HASH
+                || Gen::lista_de_lances[candidato].promove != 0;
+
+            if (nao_reduzir){
                 nova_profundidade = profundidade - 1;
             }
-            else if (Gen::lista_de_lances[candidato].score > 0){
-                nova_profundidade = profundidade - 2;
-            }
             else{
-                nova_profundidade = profundidade - REDUCAO_LMR;
+                int lmr_r = (int)(log((double)profundidade) * log((double)lances_legais_na_posicao) / 2.0);
+                if (lmr_r < 1) lmr_r = 1;
+                nova_profundidade = profundidade - 1 - lmr_r;
+                if (nova_profundidade < 1) nova_profundidade = 1;
             }
+        }
+        else{
+            nova_profundidade = profundidade - 1;
         }
 
         // pesquisa da variante principal (pvs)
         if (pesquisandoPV){
-            score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true); // extender profundidade???     
+            score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true);
         }
         else{
             if (-pesquisa(-alpha - 1, -alpha, nova_profundidade, false) > alpha){
-                score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true); 
+                score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true);
             }
             else{
                 Update::desfaz_lance();
