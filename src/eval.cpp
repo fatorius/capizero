@@ -49,31 +49,19 @@ void Eval::init_eval_tables(){
     for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
         const int xf = Consts::flip[x];
 
-        score_casas[BRANCAS][P][x] = make_score(VALOR_PEAO_MG   + Values::peao_score_mg[x],
-                                                VALOR_PEAO_EG   + Values::peao_score_eg[x]);
-        score_casas[BRANCAS][C][x] = make_score(VALOR_CAVALO_MG + Values::cavalo_score_mg[x],
-                                                VALOR_CAVALO_EG + Values::cavalo_score_eg[x]);
-        score_casas[BRANCAS][B][x] = make_score(VALOR_BISPO_MG  + Values::bispo_score_mg[x],
-                                                VALOR_BISPO_EG  + Values::bispo_score_eg[x]);
-        score_casas[BRANCAS][T][x] = make_score(VALOR_TORRE_MG  + Values::torre_score_mg[x],
-                                                VALOR_TORRE_EG  + Values::torre_score_eg[x]);
-        score_casas[BRANCAS][D][x] = make_score(VALOR_DAMA_MG   + Values::dama_score_mg[x],
-                                                VALOR_DAMA_EG   + Values::dama_score_eg[x]);
-        score_casas[BRANCAS][R][x] = make_score(Values::rei_score_mg[x],
-                                                Values::rei_score_eg[x]);
+        score_casas[BRANCAS][P][x] = make_score(Values::peao_score_mg[x], Values::peao_score_eg[x]);
+        score_casas[BRANCAS][C][x] = make_score(Values::cavalo_score_mg[x], Values::cavalo_score_eg[x]);
+        score_casas[BRANCAS][B][x] = make_score(Values::bispo_score_mg[x], Values::bispo_score_eg[x]);
+        score_casas[BRANCAS][T][x] = make_score(Values::torre_score_mg[x], Values::torre_score_eg[x]);
+        score_casas[BRANCAS][D][x] = make_score(Values::dama_score_mg[x], Values::dama_score_eg[x]);
+        score_casas[BRANCAS][R][x] = make_score(Values::rei_score_mg[x], Values::rei_score_eg[x]);
 
-        score_casas[PRETAS][P][x] = make_score(VALOR_PEAO_MG   + Values::peao_score_mg[xf],
-                                               VALOR_PEAO_EG   + Values::peao_score_eg[xf]);
-        score_casas[PRETAS][C][x] = make_score(VALOR_CAVALO_MG + Values::cavalo_score_mg[xf],
-                                               VALOR_CAVALO_EG + Values::cavalo_score_eg[xf]);
-        score_casas[PRETAS][B][x] = make_score(VALOR_BISPO_MG  + Values::bispo_score_mg[xf],
-                                               VALOR_BISPO_EG  + Values::bispo_score_eg[xf]);
-        score_casas[PRETAS][T][x] = make_score(VALOR_TORRE_MG  + Values::torre_score_mg[xf],
-                                               VALOR_TORRE_EG  + Values::torre_score_eg[xf]);
-        score_casas[PRETAS][D][x] = make_score(VALOR_DAMA_MG   + Values::dama_score_mg[xf],
-                                               VALOR_DAMA_EG   + Values::dama_score_eg[xf]);
-        score_casas[PRETAS][R][x] = make_score(Values::rei_score_mg[xf],
-                                               Values::rei_score_eg[xf]);
+        score_casas[PRETAS][P][x] = make_score(Values::peao_score_mg[xf], Values::peao_score_eg[xf]);
+        score_casas[PRETAS][C][x] = make_score(Values::cavalo_score_mg[xf], Values::cavalo_score_eg[xf]);
+        score_casas[PRETAS][B][x] = make_score(Values::bispo_score_mg[xf], Values::bispo_score_eg[xf]);
+        score_casas[PRETAS][T][x] = make_score(Values::torre_score_mg[xf], Values::torre_score_eg[xf]);
+        score_casas[PRETAS][D][x] = make_score(Values::dama_score_mg[xf], Values::dama_score_eg[xf]);
+        score_casas[PRETAS][R][x] = make_score(Values::rei_score_mg[xf], Values::rei_score_eg[xf]);
 
         passados[BRANCAS][x] = Values::peao_passado_score[Consts::flip[x]];
         passados[PRETAS][x] = Values::peao_passado_score[x];

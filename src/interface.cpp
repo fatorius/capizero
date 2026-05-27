@@ -216,7 +216,7 @@ char *Interface::lance_para_string(int inicio, int destino, int promove){
             break;
         }
     
-        sprintf(str, "%c%d%c%d%c",
+        snprintf(str, sizeof(str), "%c%d%c%d%c",
             Consts::colunas[inicio] + 'a',
             Consts::linhas[inicio] + 1,
             Consts::colunas[destino] + 'a',
@@ -224,7 +224,7 @@ char *Interface::lance_para_string(int inicio, int destino, int promove){
             c);
     }
     else{
-        sprintf(str, "%c%d%c%d",
+        snprintf(str, sizeof(str), "%c%d%c%d",
 			Consts::colunas[inicio] + 'a',
 			Consts::linhas[inicio] + 1,
 			Consts::colunas[destino] + 'a',

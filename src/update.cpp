@@ -103,8 +103,8 @@ void Update::desfaz_lance(){
 
 bool Update::fazer_lance(const int inicio, const int destino, const int promove){
     if (!(Bitboard::bit_lados[Game::lado] & Bitboard::mask[inicio])) return false;
-    if (  Bitboard::bit_lados[Game::lado] & Bitboard::mask[destino])  return false;
-
+    if (Bitboard::bit_lados[Game::lado] & Bitboard::mask[destino])  return false;
+    
     // 1. lida com o roque do rei, movendo também a torre
     if (abs(inicio - destino) == ROQUE && Bitboard::tabuleiro[inicio] == R){
 
@@ -600,6 +600,7 @@ void Update::setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4
     // 6. DEFINE A CASA DE EN PASSANT
     j = &Game::lista_do_jogo[Game::hply-1];
     memset(j, 0, sizeof(Game::jogo));
+    
     if (casa_en_passant[0] != '-'){
         j->inicio = obter_casa_inicio_por_en_passant(casa_en_passant);
         j->destino = obter_casa_destino_por_en_passant(casa_en_passant);
