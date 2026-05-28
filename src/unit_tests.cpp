@@ -10,7 +10,7 @@
 #include "init.h"
 
 int main(){
-    printf("capizero %s por Hugo Souza 2023\n", CAPIZERO_VERSION);
+    printf("capizero %s por Hugo Souza 2026\n", CAPIZERO_VERSION);
     printf("build %d \n", BUILDNO);
     printf("compilado em %s \n\n", __TIMESTAMP__);
     printf("executando testes unitários \n\n\n");
