@@ -102,6 +102,9 @@ void Update::desfaz_lance(){
 }
 
 bool Update::fazer_lance(const int inicio, const int destino, const int promove){
+    if (!(Bitboard::bit_lados[Game::lado] & Bitboard::mask[inicio])) return false;
+    if (Bitboard::bit_lados[Game::lado] & Bitboard::mask[destino])  return false;
+    
     // 1. lida com o roque do rei, movendo também a torre
     if (abs(inicio - destino) == ROQUE && Bitboard::tabuleiro[inicio] == R){
 
@@ -513,6 +516,8 @@ int obter_casa_destino_por_en_passant(char ep[2]){
 
 void Update::setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4], char casa_en_passant[2], char hm[4], char fm[4]){
     //1. LIMPA O TABULEIRO
+    Hash::chaveAtual = 0;
+    Hash::lockAtual  = 0;
     memset(Bitboard::bit_pieces, 0, sizeof(Bitboard::bit_pieces));
     memset(Bitboard::bit_lados, 0, sizeof(Bitboard::bit_lados));
     Bitboard::bit_total = 0;
@@ -593,9 +598,10 @@ void Update::setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4
     Game::hply = 1;
 
     // 6. DEFINE A CASA DE EN PASSANT
+    j = &Game::lista_do_jogo[Game::hply-1];
+    memset(j, 0, sizeof(Game::jogo));
+    
     if (casa_en_passant[0] != '-'){
-        j = &Game::lista_do_jogo[Game::hply-1];
-
         j->inicio = obter_casa_inicio_por_en_passant(casa_en_passant);
         j->destino = obter_casa_destino_por_en_passant(casa_en_passant);
     }

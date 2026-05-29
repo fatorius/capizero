@@ -70,6 +70,24 @@ namespace Gen{
             return bit_magicas_torre[casa][((Bitboard::bit_total & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])];
         #endif
     }
+    // Occupancy-parameterised variants — identical magic lookups but use an
+    // explicit `occ` bitboard instead of `Bitboard::bit_total`. Used by the
+    // SEE exchange evaluator so it can simulate piece removal without touching
+    // the real board state.
+    inline Bitboard::u64 atacantes_bispo_occ(int casa, Bitboard::u64 occ){
+        #ifdef USE_PEXT
+            return bit_magicas_bispo[casa][_pext_u64(occ, bit_casas_relevantes_bispo[casa])];
+        #else
+            return bit_magicas_bispo[casa][((occ & bit_casas_relevantes_bispo[casa]) * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa])];
+        #endif
+    }
+    inline Bitboard::u64 atacantes_torre_occ(int casa, Bitboard::u64 occ){
+        #ifdef USE_PEXT
+            return bit_magicas_torre[casa][_pext_u64(occ, bit_casas_relevantes_torres[casa])];
+        #else
+            return bit_magicas_torre[casa][((occ & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])];
+        #endif
+    }
 
     void init_lookup_tables();
     // Full pseudo-legal move list (captures + quiets). Used by perft and by

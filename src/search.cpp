@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <setjmp.h>
+#include <math.h>
 
 #include "update.h"
 #include "game.h"
@@ -257,6 +258,36 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         check = 1;
     }
 
+    // Futility / reverse-futility pruning. Both depend on a static eval and
+    // both are only safe at non-PV, non-check, low-depth nodes (where the
+    // static eval is a reasonable proxy for the deep-search outcome).
+    //
+    // Additional guards required for correctness:
+    //   - mate-distance: when beta (RFP) or alpha (FP) is near mate, returning
+    //     a static-eval-based score would silently corrupt mate detection.
+    //   - non-pawn material on side to move (RFP only): in zugzwang territory
+    //     static eval is unreliable — any move makes things worse, same
+    //     justification as NMP's zugzwang guard.
+    int static_eval = 0;
+    const bool side_has_pieces =
+        Bitboard::bit_pieces[Game::lado][C] | Bitboard::bit_pieces[Game::lado][B]
+      | Bitboard::bit_pieces[Game::lado][T] | Bitboard::bit_pieces[Game::lado][D];
+    const bool can_futility = !pv && !check && profundidade <= FUTILITY_DEPTH_THRESH;
+
+    if (can_futility){
+        static_eval = Eval::avaliar();
+
+        // Reverse futility (a.k.a. static null-move). Returning the midpoint
+        // of static_eval and beta (not static_eval directly) keeps the score
+        // a valid lower bound (≥ beta) while moderating grand-parent cutoffs
+        // when static_eval is far above beta.
+        if (side_has_pieces
+            && beta < VALOR_XEQUE_MATE_BRANCAS - MAX_PLY
+            && static_eval - FUTILITY_MARGIN_PER_PLY * profundidade >= beta){
+            return (static_eval + beta) / 2;
+        }
+    }
+
     // Null-move pruning. If we hand the opponent a free move and they still
     // can't beat beta with a reduced-depth search, our actual move can only
     // produce an even better score — return beta. Guarded against:
@@ -329,6 +360,18 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         // when called a second time after already scoring a capture).
         if (candidato >= Game::qntt_lances_totais[Game::ply + 1]){
             if (quiets_generated) break;
+            // Optimization: if forward futility would prune every quiet move
+            // we'd generate (and we already have at least one legal move
+            // searched, so we won't trigger a spurious mate/stalemate),
+            // skip quiet generation entirely. Mate-distance guard mirrors
+            // the per-move FP check below — we never skip moves when we
+            // might be escaping (or delivering) a forced mate.
+            if (can_futility
+                && lances_legais_na_posicao > 0
+                && alpha > VALOR_XEQUE_MATE_PRETAS + MAX_PLY
+                && static_eval + FUTILITY_MARGIN_PER_PLY * profundidade + FUTILITY_MARGIN_FP_EXTRA <= alpha){
+                break;
+            }
             // Reach here only when there was no TT hit, or when TT hit had
             // an enemy-occupied destination (capture path). In both cases
             // the TT move — if any — was already discovered and boosted
@@ -340,6 +383,22 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
 
         ordenar_lances(candidato);
 
+        // Forward futility pruning: at low depth with at least one legal
+        // move already explored, skip quiet (non-capture, non-promotion)
+        // moves whose optimistic value still can't beat alpha. Captures and
+        // promotions are exempt because their material swing easily exceeds
+        // the futility margin. Mate-distance guard: never FP-prune when
+        // alpha is mate-near — escaping a forced mate often goes through
+        // a quiet move that the static eval drastically underrates.
+        if (can_futility
+            && lances_legais_na_posicao > 0
+            && alpha > VALOR_XEQUE_MATE_PRETAS + MAX_PLY
+            && Gen::lista_de_lances[candidato].promove == 0
+            && !(Bitboard::mask[Gen::lista_de_lances[candidato].destino] & Bitboard::bit_total)
+            && static_eval + FUTILITY_MARGIN_PER_PLY * profundidade + FUTILITY_MARGIN_FP_EXTRA <= alpha){
+            continue;
+        }
+
         // verifica se o lance é legal
         if (!Update::fazer_lance(Gen::lista_de_lances[candidato].inicio, Gen::lista_de_lances[candidato].destino, Gen::lista_de_lances[candidato].promove)){
             continue;
@@ -348,29 +407,43 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         lances_legais_na_posicao++;
 
 
-        // REDUÇÕES E EXTENSÕES
-        if (check == 1){ // extensões
-            nova_profundidade = profundidade; // extensões de xeques
+        // EXTENSÕES E REDUÇÕES (LMR)
+        if (check == 1){
+            nova_profundidade = profundidade; // extensão de xeque
         }
-        else{ // reduções
-            if (Gen::lista_de_lances[candidato].score > SCORE_DE_CAPTURA_VANTAJOSAS || lances_legais_na_posicao == 1){
+        else if (Gen::lista_de_lances[candidato].score > SCORE_DE_CAPTURA_VANTAJOSAS
+                 || lances_legais_na_posicao == 1){
+            nova_profundidade = profundidade - 1; // primeira peça ou captura vantajosa: sem redução
+        }
+        else if (lances_legais_na_posicao >= 2 && profundidade >= 3){
+            // LMR: redução logarítmica para lances quietos tardios em nós não-PV.
+            // Exclui: TT, killers, contralances e capturas (via score >= SCORE_CONTRALANCE
+            // ou destino ocupado) e promoções.
+            const bool nao_reduzir =
+                Gen::lista_de_lances[candidato].score >= PONTUACAO_HASH
+                || Gen::lista_de_lances[candidato].promove != 0;
+
+            if (nao_reduzir){
                 nova_profundidade = profundidade - 1;
             }
-            else if (Gen::lista_de_lances[candidato].score > 0){
-                nova_profundidade = profundidade - 2;
-            }
             else{
-                nova_profundidade = profundidade - REDUCAO_LMR;
+                int lmr_r = (int)(log((double)profundidade) * log((double)lances_legais_na_posicao) / 2.0);
+                if (lmr_r < 1) lmr_r = 1;
+                nova_profundidade = profundidade - 1 - lmr_r;
+                if (nova_profundidade < 1) nova_profundidade = 1;
             }
+        }
+        else{
+            nova_profundidade = profundidade - 1;
         }
 
         // pesquisa da variante principal (pvs)
         if (pesquisandoPV){
-            score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true); // extender profundidade???     
+            score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true);
         }
         else{
             if (-pesquisa(-alpha - 1, -alpha, nova_profundidade, false) > alpha){
-                score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true); 
+                score_candidato = -pesquisa(-beta, -alpha, profundidade - 1, true);
             }
             else{
                 Update::desfaz_lance();
@@ -480,29 +553,40 @@ void Search::pensar(bool verbose){
             }
         }
 
+        int delta = TAMANHO_JANELA_DE_PESQUISA;
         if (profundidade == 1){
             alpha = ALPHA_INICIAL;
-            beta = BETA_INICIAL;
+            beta  = BETA_INICIAL;
         }
         else{
-            alpha = melhor_linha - TAMANHO_JANELA_DE_PESQUISA;
-            beta = melhor_linha + TAMANHO_JANELA_DE_PESQUISA;
+            alpha = melhor_linha - delta;
+            beta  = melhor_linha + delta;
         }
 
-        melhor_linha = pesquisa(alpha, beta, profundidade, true);
-
-        if (melhor_linha <= alpha){
-            alpha = (melhor_linha - (TAMANHO_JANELA_DE_PESQUISA * READAPTACAO_JANELA_DE_PESQUISA));
+        int fails = 0;
+        while (true){
             melhor_linha = pesquisa(alpha, beta, profundidade, true);
-        }
-        else if (melhor_linha >= beta){
-            if (profundidade == 1){
-                beta = BETA_INICIAL;
+
+            if (melhor_linha > alpha && melhor_linha < beta) break;
+            if (++fails > MAX_ASPIRATION_FAILS) break;
+
+            if (fails == MAX_ASPIRATION_FAILS){
+                // Final attempt — full window, guaranteed to return a usable
+                // score on the next iteration.
+                alpha = ALPHA_INICIAL;
+                beta  = BETA_INICIAL;
+                continue;
+            }
+
+            delta *= 2;
+            if (melhor_linha <= alpha){
+                alpha = melhor_linha - delta;
+                if (alpha < ALPHA_INICIAL) alpha = ALPHA_INICIAL;
             }
             else{
-                beta = (melhor_linha + (TAMANHO_JANELA_DE_PESQUISA * READAPTACAO_JANELA_DE_PESQUISA));
+                beta = melhor_linha + delta;
+                if (beta > BETA_INICIAL) beta = BETA_INICIAL;
             }
-            melhor_linha = pesquisa(alpha, beta, profundidade, true);
         }
 
         if (Hash::hash_lookup(Game::lado)){

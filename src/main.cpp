@@ -19,7 +19,7 @@ int main(int argc, char **argv){
     bool headless = (argc >= 2);
 
     if (!headless){
-        printf("capizero %s por Hugo Souza 2023\n", CAPIZERO_VERSION);
+        printf("capizero %s por Hugo Souza 2026\n", CAPIZERO_VERSION);
         printf("build %d \n", BUILDNO);
         printf("compilado em %s \n", __TIMESTAMP__);
 

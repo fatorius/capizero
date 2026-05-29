@@ -31,7 +31,15 @@ Eval::Score Eval::mobilidade_bispo[14];
 Eval::Score Eval::mobilidade_torre[15];
 Eval::Score Eval::mobilidade_dama[28];
 
+Eval::Score Eval::ks_weight_c, Eval::ks_weight_b, Eval::ks_weight_t, Eval::ks_weight_d;
+
 int peao_ala_da_dama[LADOS],peao_ala_do_rei[LADOS];
+
+// King safety zone: 9 squares around each square (king + 8 neighbors).
+// Built once at startup; eval-time we look up the enemy king's zone and
+// AND each attacker's bitboard against it. File-scope (not exposed in
+// eval.h) because no other TU needs it.
+static Bitboard::u64 king_zone[CASAS_DO_TABULEIRO];
 
 void Eval::init_eval_tables(){
     // Phase 1 of the tapered-eval rollout still has mg = eg, so the packed
@@ -41,31 +49,19 @@ void Eval::init_eval_tables(){
     for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
         const int xf = Consts::flip[x];
 
-        score_casas[BRANCAS][P][x] = make_score(VALOR_PEAO_MG   + Values::peao_score_mg[x],
-                                                VALOR_PEAO_EG   + Values::peao_score_eg[x]);
-        score_casas[BRANCAS][C][x] = make_score(VALOR_CAVALO_MG + Values::cavalo_score_mg[x],
-                                                VALOR_CAVALO_EG + Values::cavalo_score_eg[x]);
-        score_casas[BRANCAS][B][x] = make_score(VALOR_BISPO_MG  + Values::bispo_score_mg[x],
-                                                VALOR_BISPO_EG  + Values::bispo_score_eg[x]);
-        score_casas[BRANCAS][T][x] = make_score(VALOR_TORRE_MG  + Values::torre_score_mg[x],
-                                                VALOR_TORRE_EG  + Values::torre_score_eg[x]);
-        score_casas[BRANCAS][D][x] = make_score(VALOR_DAMA_MG   + Values::dama_score_mg[x],
-                                                VALOR_DAMA_EG   + Values::dama_score_eg[x]);
-        score_casas[BRANCAS][R][x] = make_score(Values::rei_score_mg[x],
-                                                Values::rei_score_eg[x]);
+        score_casas[BRANCAS][P][x] = make_score(Values::peao_score_mg[x], Values::peao_score_eg[x]);
+        score_casas[BRANCAS][C][x] = make_score(Values::cavalo_score_mg[x], Values::cavalo_score_eg[x]);
+        score_casas[BRANCAS][B][x] = make_score(Values::bispo_score_mg[x], Values::bispo_score_eg[x]);
+        score_casas[BRANCAS][T][x] = make_score(Values::torre_score_mg[x], Values::torre_score_eg[x]);
+        score_casas[BRANCAS][D][x] = make_score(Values::dama_score_mg[x], Values::dama_score_eg[x]);
+        score_casas[BRANCAS][R][x] = make_score(Values::rei_score_mg[x], Values::rei_score_eg[x]);
 
-        score_casas[PRETAS][P][x] = make_score(VALOR_PEAO_MG   + Values::peao_score_mg[xf],
-                                               VALOR_PEAO_EG   + Values::peao_score_eg[xf]);
-        score_casas[PRETAS][C][x] = make_score(VALOR_CAVALO_MG + Values::cavalo_score_mg[xf],
-                                               VALOR_CAVALO_EG + Values::cavalo_score_eg[xf]);
-        score_casas[PRETAS][B][x] = make_score(VALOR_BISPO_MG  + Values::bispo_score_mg[xf],
-                                               VALOR_BISPO_EG  + Values::bispo_score_eg[xf]);
-        score_casas[PRETAS][T][x] = make_score(VALOR_TORRE_MG  + Values::torre_score_mg[xf],
-                                               VALOR_TORRE_EG  + Values::torre_score_eg[xf]);
-        score_casas[PRETAS][D][x] = make_score(VALOR_DAMA_MG   + Values::dama_score_mg[xf],
-                                               VALOR_DAMA_EG   + Values::dama_score_eg[xf]);
-        score_casas[PRETAS][R][x] = make_score(Values::rei_score_mg[xf],
-                                               Values::rei_score_eg[xf]);
+        score_casas[PRETAS][P][x] = make_score(Values::peao_score_mg[xf], Values::peao_score_eg[xf]);
+        score_casas[PRETAS][C][x] = make_score(Values::cavalo_score_mg[xf], Values::cavalo_score_eg[xf]);
+        score_casas[PRETAS][B][x] = make_score(Values::bispo_score_mg[xf], Values::bispo_score_eg[xf]);
+        score_casas[PRETAS][T][x] = make_score(Values::torre_score_mg[xf], Values::torre_score_eg[xf]);
+        score_casas[PRETAS][D][x] = make_score(Values::dama_score_mg[xf], Values::dama_score_eg[xf]);
+        score_casas[PRETAS][R][x] = make_score(Values::rei_score_mg[xf], Values::rei_score_eg[xf]);
 
         passados[BRANCAS][x] = Values::peao_passado_score[Consts::flip[x]];
         passados[PRETAS][x] = Values::peao_passado_score[x];
@@ -85,6 +81,20 @@ void Eval::init_eval_tables(){
     for (int i = 0; i < 28; i++){
         mobilidade_dama[i] = make_score(Values::mobilidade_dama_mg[i], Values::mobilidade_dama_eg[i]);
     }
+
+    // King zone = king attack mask | the king square itself (the 3x3 block
+    // around each square). One precomputed bitboard per square so eval-time
+    // is one load + one AND per attacker.
+    for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
+        king_zone[x] = Gen::bit_moves_rei[x] | Bitboard::mask[x];
+    }
+
+    // King safety weights — mg in low 16, eg=0 in high 16. Tuner only
+    // adjusts the mg half.
+    ks_weight_c = make_score(KS_WEIGHT_C, 0);
+    ks_weight_b = make_score(KS_WEIGHT_B, 0);
+    ks_weight_t = make_score(KS_WEIGHT_T, 0);
+    ks_weight_d = make_score(KS_WEIGHT_D, 0);
 }
 
 int Eval::fase(){
@@ -168,6 +178,24 @@ int Eval::avaliar(){
     Bitboard::u64 t1;
     int casa;
 
+    // King zones for both sides. When iterating side L's pieces, we count
+    // attacks landing in zona_inimiga[l] — the zone around the OTHER king,
+    // i.e. the squares L is threatening.
+    const int rei_branco_sq = Bitboard::bitscan(Bitboard::bit_pieces[BRANCAS][R]);
+    const int rei_preto_sq  = Bitboard::bitscan(Bitboard::bit_pieces[PRETAS][R]);
+    const Bitboard::u64 zona_inimiga[LADOS] = {
+        king_zone[rei_preto_sq],
+        king_zone[rei_branco_sq]
+    };
+
+    // Snapshot KS weights once. They're stored as Score objects (so the
+    // tuner can mutate them at runtime), but only the mg half is meaningful.
+    // Extracting once per eval avoids redundant unpacks in the hot loop.
+    const int kw_c = mg_score(ks_weight_c);
+    const int kw_b = mg_score(ks_weight_b);
+    const int kw_t = mg_score(ks_weight_t);
+    const int kw_d = mg_score(ks_weight_d);
+
     for (int l = 0; l < LADOS; l++){
 
         // Mobility uses popcount of attack squares that aren't own pieces.
@@ -176,6 +204,8 @@ int Eval::avaliar(){
         // recognize that bishop/rook mobility matters more in the endgame
         // where boards are open, while knight mobility is roughly uniform.
         const Bitboard::u64 nao_proprios = ~Bitboard::bit_lados[l];
+        const Bitboard::u64 zona = zona_inimiga[l];
+        int pressao_rei = 0;
 
         t1 = Bitboard::bit_pieces[l][P];
         while (t1){
@@ -193,7 +223,9 @@ int Eval::avaliar(){
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][C][casa];
-            score[l] += mobilidade_cavalo[Bitboard::popcount(Gen::bit_moves_cavalo[casa] & nao_proprios)];
+            const Bitboard::u64 att = Gen::bit_moves_cavalo[casa];
+            score[l] += mobilidade_cavalo[Bitboard::popcount(att & nao_proprios)];
+            pressao_rei += Bitboard::popcount(att & zona) * kw_c;
         }
 
         t1 = Bitboard::bit_pieces[l][B];
@@ -202,7 +234,9 @@ int Eval::avaliar(){
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][B][casa];
-            score[l] += mobilidade_bispo[Bitboard::popcount(Gen::atacantes_bispo(casa) & nao_proprios)];
+            const Bitboard::u64 att = Gen::atacantes_bispo(casa);
+            score[l] += mobilidade_bispo[Bitboard::popcount(att & nao_proprios)];
+            pressao_rei += Bitboard::popcount(att & zona) * kw_b;
         }
 
         if (Bitboard::popcount(Bitboard::bit_pieces[l][B]) >= 2){
@@ -217,7 +251,9 @@ int Eval::avaliar(){
             score[l] += score_casas[l][T][casa];
             const int torre_b = avaliar_torre(l, casa);
             score[l] += make_score(torre_b, torre_b);
-            score[l] += mobilidade_torre[Bitboard::popcount(Gen::atacantes_torre(casa) & nao_proprios)];
+            const Bitboard::u64 att = Gen::atacantes_torre(casa);
+            score[l] += mobilidade_torre[Bitboard::popcount(att & nao_proprios)];
+            pressao_rei += Bitboard::popcount(att & zona) * kw_t;
         }
 
         t1 = Bitboard::bit_pieces[l][D];
@@ -226,8 +262,15 @@ int Eval::avaliar(){
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][D][casa];
-            score[l] += mobilidade_dama[Bitboard::popcount((Gen::atacantes_bispo(casa) | Gen::atacantes_torre(casa)) & nao_proprios)];
+            const Bitboard::u64 att = Gen::atacantes_bispo(casa) | Gen::atacantes_torre(casa);
+            score[l] += mobilidade_dama[Bitboard::popcount(att & nao_proprios)];
+            pressao_rei += Bitboard::popcount(att & zona) * kw_d;
         }
+
+        // Quadratic king-safety bonus, mg-only. The squaring is what makes
+        // the term care about *multiple* attackers — a lone knight near the
+        // enemy king is uninteresting, but two attackers compound.
+        score[l] += make_score((pressao_rei * pressao_rei) / KS_SCALE, 0);
     }
 
     // Pawn shield is a midgame-only concept (king wants to stay tucked

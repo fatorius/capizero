@@ -64,6 +64,13 @@ namespace Eval{
     extern Score mobilidade_torre[15];
     extern Score mobilidade_dama[28];
 
+    // King safety weights, stored as mg-only packed Scores (eg half always
+    // zero). Tuned via the standard Score-tuning machinery in tuner.cpp;
+    // eg stays 0 because king-safety pressure is a midgame concept and the
+    // phase taper alone provides the endgame fade. Initial values come from
+    // Values::KS_WEIGHT_* and get assigned in init_eval_tables.
+    extern Score ks_weight_c, ks_weight_b, ks_weight_t, ks_weight_d;
+
     void init_eval_tables();
     void atualizar_materiais();
 
