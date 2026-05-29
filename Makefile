@@ -88,6 +88,22 @@ tuner: clean ./src/tuner.o $(SRCS)
 	@ echo "================="
 	@ echo "capi_tuner compilado com sucesso"
 
+# Self-play data collector — Phase A. Plays engine-vs-engine games, samples
+# quiet positions during play, writes them out labeled with the game's WDL
+# result. Output feeds capi_resolve (Phase B) and then capi_tuner.
+selfplay: clean ./src/selfplay.o ./src/fen_serializer.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o capi_selfplay ./src/selfplay.o ./src/fen_serializer.o $(SRCS)
+	@ echo "================="
+	@ echo "capi_selfplay compilado com sucesso"
+
+# PV-resolver — Phase B. For each input position, runs a high-depth search,
+# walks the PV through the TT, and emits the leaf position with the original
+# game's WDL. Produces the final dataset for capi_tuner.
+resolve: clean ./src/resolve.o ./src/fen_serializer.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o capi_resolve ./src/resolve.o ./src/fen_serializer.o $(SRCS)
+	@ echo "================="
+	@ echo "capi_resolve compilado com sucesso"
+
 magics: ./src/generate_magics.cpp
 	@ $(COMP) -c $(CXXFLAGS) ./src/generate_magics.cpp -o ./src/generate_magics.o
 	@ $(COMP) -o generate_magics ./src/generate_magics.o 
