@@ -60,7 +60,7 @@ static int   opt_resign_cp        = 800;
 static int   opt_draw_plies       = 8;
 static int   opt_draw_cp          = 8;
 static int   opt_tt_mb            = 64;
-static int   opt_random_open_plies= 0;        // random plies on top of startpos (or book pos)
+static int   opt_random_open_plies= 4;        // random plies on top of startpos (or book pos)
 static const char* opt_out        = "selfplay_raw.txt";
 static const char* opt_book       = NULL;
 static unsigned int opt_seed      = 0;
@@ -74,7 +74,7 @@ static void usage(const char* argv0) {
         "  --out FILE               Output file (default selfplay_raw.txt)\n"
         "  --time-per-move MS       Fixed time per move in ms (default 100)\n"
         "  --depth-fixed D          Override: fixed depth instead of time\n"
-        "  --opening-plies P        Random plies after book setup (default 0)\n"
+        "  --opening-plies P        Random plies after book setup (default 4)\n"
         "  --book FILE              Opening book EPD (one position per line)\n"
         "  --skip-opening-plies N   Skip dumping positions until hply >= N (default 10)\n"
         "  --resign-plies K         Adjudicate winner if |score|>resign-cp for K plies (default 4)\n"
