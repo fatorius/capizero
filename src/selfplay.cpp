@@ -603,9 +603,13 @@ int main(int argc, char** argv) {
     for (int g = 1; g <= opt_games; g++) {
         const int n = play_one_game(out, rng);
         total_positions += n;
-        if (opt_verbose || g % 50 == 0) {
-            fprintf(stderr, "selfplay: %d/%d games, %d positions dumped, %lds elapsed\n",
-                    g, opt_games, total_positions, (long)(time(NULL) - t0));
+        if (opt_verbose || g % 100 == 0) {
+            const long elapsed = (long)(time(NULL) - t0);
+            const double gps   = elapsed > 0 ? (double)g / elapsed : 0.0;
+            const long   eta   = gps > 0 ? (long)((opt_games - g) / gps) : 0;
+            fprintf(stderr,
+                "selfplay: game %d/%d | positions %d | %.1f games/s | elapsed %lds | ETA %lds\n",
+                g, opt_games, total_positions, gps, elapsed, eta);
             fflush(out);
         }
     }
