@@ -1,5 +1,5 @@
 /*
-Nesse arquivo estão definidos os valores usados na avaliação de
+Nesse arquivo estão definidos os valores usados na avaliação de 
 posições da engine, o valor absoluto de casa peça, os valores dos
 adicionais para peão e torre, e os valores de cada casa para as peças
 */
@@ -7,351 +7,378 @@ adicionais para peão e torre, e os valores de cada casa para as peças
 #ifndef VALUES
 #define VALUES
 
-namespace Values
-{
-// VALORES DAS PEÇAS
-#define VALOR_PEAO 100
-#define VALOR_CAVALO 300
-#define VALOR_BISPO 315
-#define VALOR_TORRE 500
-#define VALOR_DAMA 900
-#define VALOR_REI 10000
+namespace Values{
+	// VALORES DAS PEÇAS
+	#define VALOR_PEAO 100
+	#define VALOR_CAVALO 300
+	#define VALOR_BISPO 315
+	#define VALOR_TORRE 500
+	#define VALOR_DAMA 900
+	#define VALOR_REI 10000
 
-const int pieces_valor[6] = {VALOR_PEAO, VALOR_CAVALO, VALOR_BISPO, VALOR_TORRE, VALOR_DAMA, VALOR_REI};
+	const int pieces_valor[6] =
+	{
+		VALOR_PEAO, VALOR_CAVALO, VALOR_BISPO, VALOR_TORRE, VALOR_DAMA, VALOR_REI
+	};
 
-// VALORES DAS ESTRUTURAS
-#define EN_PASSANT_SCORE 10
-#define ISOLADO_SCORE 10
 
-#define COLUNA_SEMI_ABERTA_BONUS 11
-#define COLUNA_ABERTA_BONUS 40
+	// VALORES DAS ESTRUTURAS
+	#define EN_PASSANT_SCORE 10
+	#define ISOLADO_SCORE 10
 
-#define BISHOP_PAIR_MG 15
-#define BISHOP_PAIR_EG 45
+	#define COLUNA_SEMI_ABERTA_BONUS 11
+	#define COLUNA_ABERTA_BONUS 40
 
-// King safety
-#define KS_WEIGHT_C 22
-#define KS_WEIGHT_B -15
-#define KS_WEIGHT_T 89
-#define KS_WEIGHT_D 144
-#define KS_SCALE 256
+	#define BISHOP_PAIR_MG 15
+	#define BISHOP_PAIR_EG 45
 
-#define PHASE_PEAO 0
-#define PHASE_CAVALO 1
-#define PHASE_BISPO 1
-#define PHASE_TORRE 2
-#define PHASE_DAMA 4
-#define PHASE_REI 0
-#define PHASE_MAX 24
+	// King safety. For each side L we count L's attacks landing in the
+	// 9-square zone around the enemy king (king + 8 neighbors), weighted
+	// per attacker type. The accumulated "pressao" gets a quadratic mg
+	// bonus: bonus = pressao² / KS_SCALE. Quadratic so the second/third
+	// attacker matters disproportionately more than the first (one piece
+	// near the king is fine, three pieces is mate). Mg-only because heavy
+	// pieces come off in the endgame and the king becomes an active piece,
+	// where this term would invert in motivation. Initial weights are
+	// SF-classical-era literature defaults — Texel tuner adjusts them.
+	#define KS_WEIGHT_C 20
+	#define KS_WEIGHT_B 21
+	#define KS_WEIGHT_T 41
+	#define KS_WEIGHT_D 81
+	#define KS_SCALE   256
 
-const int mobilidade_cavalo_mg[9] = {
-	-82, -39, -29, -30, -29, -31, -34, -32,
-	-32};
+	#define PHASE_PEAO    0
+	#define PHASE_CAVALO  1
+	#define PHASE_BISPO   1
+	#define PHASE_TORRE   2
+	#define PHASE_DAMA    4
+	#define PHASE_REI     0
+	#define PHASE_MAX    24
 
-const int mobilidade_cavalo_eg[9] = {
-	-25, 24, 6, 3, 19, 31, 28, 36,
-	29};
+	const int mobilidade_cavalo_mg[9] = {
+		-38, -13,  -1,   2,   5,   7,   7,   9,  11
+	};
+	const int mobilidade_cavalo_eg[9] = {
+		-33, -10,  -1,   2,   5,   8,  11,  13,  15
+	};
+	const int mobilidade_bispo_mg[14] = {
+		-23, -11,  -4,  -2,   1,   3,   9,   9,   8,   9,  10,  11,  13,  14
+	};
+	const int mobilidade_bispo_eg[14] = {
+		-28, -17,  -5,   1,   6,   9,  12,  19,  21,  23,  23,  25,  23,  24
+	};
+	const int mobilidade_torre_mg[15] = {
+		-23,  -8,  -2,  -2,   0,   3,   4,   5,   6,   7,   8,   8,   8,   8,   8
+	};
+	const int mobilidade_torre_eg[15] = {
+		-33, -13,  -6,  -1,   7,  12,  17,  20,  22,  25,  27,  26,  26,  27,  28
+	};
+	const int mobilidade_dama_mg[28] = {
+		-13,  -6,  -1,   1,   2,   0,   2,   2,   3,   7,   9,  10,  11,  12,
+		 13,  14,  15,  16,  17,  17,  16,  17,  16,  13,  15,  13,  13,  17
+	};
+	const int mobilidade_dama_eg[28] = {
+		-22, -10,  -6,   0,   0,   2,   4,   6,   8,  10,  16,  18,  20,  22,
+		 24,  26,  28,  30,  31,  32,  33,  34,  35,  35,  32,  32,  32,  36
+	};
 
-const int mobilidade_bispo_mg[14] = {
-	-71, -56, -43, -41, -34, -26, -19, -21,
-	-19, -20, -12, -5, 28, 42};
 
-const int mobilidade_bispo_eg[14] = {
-	-59, -51, -25, 1, 8, 24, 24, 37,
-	39, 50, 39, 51, 26, 21};
+	// REDUÇÕES E CONDIÇÕES
+	#define REDUCAO_IID /4
+	#define PROFUNDIDADE_CONDICAO_IID 5
 
-const int mobilidade_torre_mg[15] = {
-	-41, -24, -31, -22, -15, -6, -2, 0,
-	-1, 7, 9, 16, 24, -8, 1};
+	#define TAMANHO_JANELA_DE_PESQUISA 20
+	#define MAX_ASPIRATION_FAILS 3
 
-const int mobilidade_torre_eg[15] = {
-	-45, -28, -28, -12, -11, 1, 0, -2,
-	7, -1, 1, -7, -10, -8, -13};
+	// VALORES PARA ORDENAÇÃO DE LANCES
+	#define SCORE_ROQUE        5000000
+	#define SCORE_CAPTURAS_D   8000000
+	#define SCORE_CONTRALANCE  9000000
+	#define SCORE_KILLER_2     9500000
+	#define SCORE_KILLER_1    10000000
+	#define SCORE_CAPTURAS_V  50000000
+	#define PONTUACAO_HASH   100000000
 
-const int mobilidade_dama_mg[28] = {
-	-21, -23, -22, -18, -17, -11, -14, -13,
-	-7, -7, -4, -5, -1, 7, 0, -4,
-	3, 7, 4, 17, 19, 54, -21, 8,
-	-44, -7, 11, -72};
+	#define SCORE_PROMO_Q_CAP  (SCORE_CAPTURAS_V + 1000000)
+	#define SCORE_PROMO_Q      60000000
+	#define SCORE_PROMO_N_CAP  18000000
+	#define SCORE_PROMO_N      17000000
 
-const int mobilidade_dama_eg[28] = {
-	-18, 1, -17, -19, -20, -9, -15, 0,
-	-15, -1, 4, 19, 22, 14, 12, 24,
-	11, 10, 2, -16, -26, -105, -31, -64,
-	-51, -89, -23, -152};
+	#define REDUCAO_LMR 3
 
-// REDUÇÕES E CONDIÇÕES
-#define REDUCAO_IID / 4
-#define PROFUNDIDADE_CONDICAO_IID 5
+	#define R_NULL_LOW          2
+	#define R_NULL_HIGH         3
+	#define R_NULL_DEPTH_THRESH 6
 
-#define TAMANHO_JANELA_DE_PESQUISA 20
-#define MAX_ASPIRATION_FAILS 3
+	// Futility / reverse-futility pruning. Both fire only at low depths
+	// (≤ FUTILITY_DEPTH_THRESH) and only at non-PV, non-check nodes.
+	//   RFP: at node entry, if static_eval - margin >= beta → return early.
+	//   FP : in move loop, skip quiet/non-promo moves when
+	//        static_eval + margin + extra <= alpha (after at least one legal
+	//        move has been searched, so we never return false stalemate).
+	// Margins scale with depth — deeper depths get bigger margins because
+	// the search has more room to swing the score.
+	#define FUTILITY_DEPTH_THRESH      6
+	#define FUTILITY_MARGIN_PER_PLY    100   // 1 pawn per ply
+	#define FUTILITY_MARGIN_FP_EXTRA   50    // FP gets a little extra slack vs RFP
 
-// VALORES PARA ORDENAÇÃO DE LANCES
-#define SCORE_ROQUE 5000000
-#define SCORE_CAPTURAS_D 8000000
-#define SCORE_CONTRALANCE 9000000
-#define SCORE_KILLER_2 9500000
-#define SCORE_KILLER_1 10000000
-#define SCORE_CAPTURAS_V 50000000
-#define PONTUACAO_HASH 100000000
+	// ordenação de capturas
+	#define SCORE_CAPTURAS_DESVANTAJOSAS SCORE_CAPTURAS_D
+	#define SCORE_DE_CAPTURA_VANTAJOSAS SCORE_CAPTURAS_V
+	#define CAPTURAS_IGUAIS 0
 
-#define SCORE_PROMO_Q_CAP (SCORE_CAPTURAS_V + 1000000)
-#define SCORE_PROMO_Q 60000000
-#define SCORE_PROMO_N_CAP 18000000
-#define SCORE_PROMO_N 17000000
+	const int px[6] = {
+		SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS,   //Peão x Peão
+		SCORE_DE_CAPTURA_VANTAJOSAS + 20,                //Peão x Cavalo
+		SCORE_DE_CAPTURA_VANTAJOSAS + 20, 		         //Peão x Bispo
+		SCORE_DE_CAPTURA_VANTAJOSAS + 40,                //Peão x Torre
+		SCORE_DE_CAPTURA_VANTAJOSAS + 80, 		         //Peão x Dama
+		SCORE_DE_CAPTURA_VANTAJOSAS      		         //Peão x Rei
+	};
 
-#define REDUCAO_LMR 3
+	const int cx[6] = {
+		SCORE_CAPTURAS_DESVANTAJOSAS - 20,               //Cavalo x Peao
+		SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS,   //Cavalo x Cavalo
+		SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS,   //Cavalo x Bispo
+		SCORE_DE_CAPTURA_VANTAJOSAS + 20,                //Cavalo x Torre
+		SCORE_DE_CAPTURA_VANTAJOSAS + 60, 	             //Cavalo x Dama
+		SCORE_DE_CAPTURA_VANTAJOSAS                      //Cavalo x Rei
+	};
 
-#define R_NULL_LOW 2
-#define R_NULL_HIGH 3
-#define R_NULL_DEPTH_THRESH 6
+	const int bx[6] = {
+		SCORE_CAPTURAS_DESVANTAJOSAS - 20,				//Bispo x Peao  
+		SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS,  //Bispo x Cavalo
+		SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS, 	//Bispo x Bispo
+		SCORE_DE_CAPTURA_VANTAJOSAS + 20, 				//Bispo x Torre
+		SCORE_DE_CAPTURA_VANTAJOSAS + 60, 				//Bispo x Dama
+		SCORE_DE_CAPTURA_VANTAJOSAS						//Bispo x Rei
+	};
 
-#define FUTILITY_DEPTH_THRESH 6
-#define FUTILITY_MARGIN_PER_PLY 100 // 1 pawn per ply
-#define FUTILITY_MARGIN_FP_EXTRA 50 // FP gets a little extra slack vs RFP
+	const int tx[6] = {
+		SCORE_CAPTURAS_DESVANTAJOSAS - 40,				//Torre x Peao
+		SCORE_CAPTURAS_DESVANTAJOSAS - 10,				//Torre x Cavalo
+		SCORE_CAPTURAS_DESVANTAJOSAS - 10,  			//Torre x Bispo
+		SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS, 	//Torre x Torre
+		SCORE_DE_CAPTURA_VANTAJOSAS + 40, 				//Torre x Dama
+		SCORE_DE_CAPTURA_VANTAJOSAS						//Torre x Rei
+	};
 
-// ordenação de capturas
-#define SCORE_CAPTURAS_DESVANTAJOSAS SCORE_CAPTURAS_D
-#define SCORE_DE_CAPTURA_VANTAJOSAS SCORE_CAPTURAS_V
-#define CAPTURAS_IGUAIS 0
+	const int dx[6] = {
+		SCORE_CAPTURAS_DESVANTAJOSAS - 80,				//Dama x Peao
+		SCORE_CAPTURAS_DESVANTAJOSAS - 60,				//Dama x Cavalo
+		SCORE_CAPTURAS_DESVANTAJOSAS - 60,				//Dama x Bispo
+		SCORE_CAPTURAS_DESVANTAJOSAS - 40,  			//Dama x Torre
+		SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS, 	//Dama x Dama
+		SCORE_DE_CAPTURA_VANTAJOSAS						//Dama x Rei
+	};
 
-const int px[6] = {
-	SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS, // Peão x Peão
-	SCORE_DE_CAPTURA_VANTAJOSAS + 20,			   // Peão x Cavalo
-	SCORE_DE_CAPTURA_VANTAJOSAS + 20,			   // Peão x Bispo
-	SCORE_DE_CAPTURA_VANTAJOSAS + 40,			   // Peão x Torre
-	SCORE_DE_CAPTURA_VANTAJOSAS + 80,			   // Peão x Dama
-	SCORE_DE_CAPTURA_VANTAJOSAS					   // Peão x Rei
-};
+	const int rx[6] = {
+		SCORE_DE_CAPTURA_VANTAJOSAS + 10, 				//Rei x Peao
+		SCORE_DE_CAPTURA_VANTAJOSAS + 30, 				//Rei x Cavalo
+		SCORE_DE_CAPTURA_VANTAJOSAS + 30, 				//Rei x Bispo
+		SCORE_DE_CAPTURA_VANTAJOSAS + 50, 				//Rei x Torre
+		SCORE_DE_CAPTURA_VANTAJOSAS + 90, 				//Rei x Dama
+		SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS	//Rei x Rei
+	};
 
-const int cx[6] = {
-	SCORE_CAPTURAS_DESVANTAJOSAS - 20,			   // Cavalo x Peao
-	SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS, // Cavalo x Cavalo
-	SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS, // Cavalo x Bispo
-	SCORE_DE_CAPTURA_VANTAJOSAS + 20,			   // Cavalo x Torre
-	SCORE_DE_CAPTURA_VANTAJOSAS + 60,			   // Cavalo x Dama
-	SCORE_DE_CAPTURA_VANTAJOSAS					   // Cavalo x Rei
-};
+	// VALORES PARA PESQUISA
+	#define ALPHA_INICIAL -1000000
+	#define BETA_INICIAL 1000000
 
-const int bx[6] = {
-	SCORE_CAPTURAS_DESVANTAJOSAS - 20,			   // Bispo x Peao
-	SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS, // Bispo x Cavalo
-	SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS, // Bispo x Bispo
-	SCORE_DE_CAPTURA_VANTAJOSAS + 20,			   // Bispo x Torre
-	SCORE_DE_CAPTURA_VANTAJOSAS + 60,			   // Bispo x Dama
-	SCORE_DE_CAPTURA_VANTAJOSAS					   // Bispo x Rei
-};
+	#define VALOR_XEQUE_MATE_PADRAO -999999
+	#define MELHOR_SCORE_INICIAL -1000001
 
-const int tx[6] = {
-	SCORE_CAPTURAS_DESVANTAJOSAS - 40,			   // Torre x Peao
-	SCORE_CAPTURAS_DESVANTAJOSAS - 10,			   // Torre x Cavalo
-	SCORE_CAPTURAS_DESVANTAJOSAS - 10,			   // Torre x Bispo
-	SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS, // Torre x Torre
-	SCORE_DE_CAPTURA_VANTAJOSAS + 40,			   // Torre x Dama
-	SCORE_DE_CAPTURA_VANTAJOSAS					   // Torre x Rei
-};
+	#define VALOR_EMPATE 0
+	#define VALOR_XEQUE_MATE_BRANCAS 999999
+	#define VALOR_XEQUE_MATE_PRETAS -999999
 
-const int dx[6] = {
-	SCORE_CAPTURAS_DESVANTAJOSAS - 80,			   // Dama x Peao
-	SCORE_CAPTURAS_DESVANTAJOSAS - 60,			   // Dama x Cavalo
-	SCORE_CAPTURAS_DESVANTAJOSAS - 60,			   // Dama x Bispo
-	SCORE_CAPTURAS_DESVANTAJOSAS - 40,			   // Dama x Torre
-	SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS, // Dama x Dama
-	SCORE_DE_CAPTURA_VANTAJOSAS					   // Dama x Rei
-};
+	#define VERIFICACAO_DE_LANCES 4095
 
-const int rx[6] = {
-	SCORE_DE_CAPTURA_VANTAJOSAS + 10,			  // Rei x Peao
-	SCORE_DE_CAPTURA_VANTAJOSAS + 30,			  // Rei x Cavalo
-	SCORE_DE_CAPTURA_VANTAJOSAS + 30,			  // Rei x Bispo
-	SCORE_DE_CAPTURA_VANTAJOSAS + 50,			  // Rei x Torre
-	SCORE_DE_CAPTURA_VANTAJOSAS + 90,			  // Rei x Dama
-	SCORE_DE_CAPTURA_VANTAJOSAS + CAPTURAS_IGUAIS // Rei x Rei
-};
 
-// VALORES PARA PESQUISA
-#define ALPHA_INICIAL -1000000
-#define BETA_INICIAL 1000000
+	// tabelas de casas
+	const int defesa_ala_da_dama[2][64]=
+	{
+	{
+		0, 0, 0, 0, 0, 0, 0, 0,
+		8,11, 8, 0, 0, 0, 0, 0,
+		8, 6, 8, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0
+	},
+	{
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		8, 6, 8, 0, 0, 0, 0, 0,
+		8,11, 8, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0
+	}};
 
-#define VALOR_XEQUE_MATE_PADRAO -999999
-#define MELHOR_SCORE_INICIAL -1000001
+	const int defesa_ala_do_rei[2][64]=
+	{
+	{
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 8,11, 8,
+		0, 0, 0, 0, 0, 8, 6, 8,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0
+	},
+	{
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 8, 6, 8,
+		0, 0, 0, 0, 0, 8,11, 8,
+		0, 0, 0, 0, 0, 0, 0, 0
+	}};
 
-#define VALOR_EMPATE 0
-#define VALOR_XEQUE_MATE_BRANCAS 999999
-#define VALOR_XEQUE_MATE_PRETAS -999999
+	const int peao_score_mg[64] = {
+		   82,   82,   82,   82,   82,   82,   82,   82,
+		   49,   79,   64,   61,   67,  104,  118,   62,
+		   58,   79,   77,   74,   87,   87,  113,   72,
+		   57,   82,   79,   92,   97,   90,   94,   59,
+		   67,   93,   86,  101,  107,   96,   98,   61,
+		   74,   87,  106,  111,  145,  139,  105,   60,
+		  182,  218,  145,  179,  152,  210,  114,   73,
+		   82,   82,   82,   82,   82,   82,   82,   82
+	};
+	const int peao_score_eg[64] = {
+		   94,   94,   94,   94,   94,   94,   94,   94,
+		  109,  100,  104,  106,  109,   96,   94,   89,
+		  100,  100,   90,   97,   96,   91,   91,   88,
+		  109,  105,   93,   89,   89,   88,   99,   95,
+		  128,  117,  109,   97,   94,  100,  113,  113,
+		  186,  192,  177,  159,  148,  145,  174,  176,
+		  274,  265,  254,  230,  241,  225,  257,  279,
+		   94,   94,   94,   94,   94,   94,   94,   94
+	};
 
-#define VERIFICACAO_DE_LANCES 4095
+	const int cavalo_score_mg[64] = {
+		  230,  318,  281,  306,  322,  311,  320,  312,
+		  308,  286,  327,  336,  338,  353,  325,  320,
+		  316,  330,  347,  349,  358,  352,  360,  323,
+		  326,  343,  355,  352,  367,  355,  360,  331,
+		  330,  356,  358,  388,  372,  404,  357,  361,
+		  292,  395,  376,  400,  423,  468,  409,  383,
+		  266,  298,  407,  375,  362,  401,  342,  322,
+		  172,  250,  302,  290,  400,  242,  324,  231
+	};
+	const int cavalo_score_eg[64] = {
+		  250,  232,  260,  268,  261,  265,  233,  216,
+		  241,  263,  269,  278,  281,  259,  260,  239,
+		  256,  280,  278,  298,  293,  276,  263,  257,
+		  265,  277,  299,  308,  299,  300,  287,  265,
+		  266,  286,  305,  305,  305,  294,  291,  265,
+		  259,  263,  293,  292,  282,  274,  264,  242,
+		  258,  275,  254,  281,  274,  257,  259,  231,
+		  225,  245,  270,  255,  252,  256,  220,  184
+	};
 
-// tabelas de casas
-const int defesa_ala_da_dama[2][64] = {
-	{0, 0, 0, 0, 0, 0, 0, 0,
-	 8, 11, 8, 0, 0, 0, 0, 0,
-	 8, 6, 8, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0},
-	{0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 8, 6, 8, 0, 0, 0, 0, 0,
-	 8, 11, 8, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0}
-};
+	const int bispo_score_mg[64] = {
+		  334,  364,  353,  346,  350,  354,  328,  346,
+		  367,  382,  379,  363,  370,  384,  396,  366,
+		  367,  378,  378,  378,  377,  390,  381,  377,
+		  357,  378,  376,  389,  399,  375,  377,  371,
+		  359,  372,  382,  417,  400,  400,  374,  365,
+		  351,  400,  406,  403,  402,  417,  404,  365,
+		  338,  379,  349,  354,  393,  422,  381,  320,
+		  338,  371,  285,  330,  338,  321,  374,  359
+	};
+	const int bispo_score_eg[64] = {
+		  276,  288,  276,  290,  286,  279,  290,  282,
+		  281,  277,  288,  294,  299,  286,  280,  268,
+		  283,  292,  303,  305,  308,  298,  288,  284,
+		  289,  300,  308,  314,  306,  305,  296,  286,
+		  293,  308,  307,  308,  313,  308,  302,  301,
+		  299,  291,  296,  298,  297,  305,  299,  303,
+		  291,  293,  304,  287,  293,  286,  291,  285,
+		  285,  278,  288,  291,  292,  290,  282,  275
+	};
 
-const int defesa_ala_do_rei[2][64] = {
-	{0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 8, 11, 8,
-	 0, 0, 0, 0, 0, 8, 6, 8,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0},
-	{0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0,
-	 0, 0, 0, 0, 0, 8, 6, 8,
-	 0, 0, 0, 0, 0, 8, 11, 8,
-	 0, 0, 0, 0, 0, 0, 0, 0}
-};
+	const int torre_score_mg[64] = {
+		  460,  466,  476,  492,  491,  486,  442,  449,
+		  431,  459,  455,  466,  474,  486,  473,  408,
+		  434,  454,  459,  458,  478,  475,  474,  446,
+		  439,  453,  463,  474,  484,  472,  485,  456,
+		  455,  468,  482,  503,  499,  512,  471,  459,
+		  470,  498,  501,  511,  496,  524,  540,  495,
+		  502,  507,  533,  537,  555,  546,  505,  523,
+		  511,  518,  507,  526,  538,  488,  510,  522
+	};
+	const int torre_score_eg[64] = {
+		  505,  515,  513,  509,  505,  501,  518,  494,
+		  504,  504,  510,  512,  501,  501,  499,  511,
+		  506,  510,  505,  509,  503,  498,  506,  498,
+		  514,  519,  518,  514,  505,  508,  506,  503,
+		  518,  517,  523,  514,  515,  515,  513,  516,
+		  521,  518,  518,  515,  518,  511,  509,  511,
+		  525,  525,  523,  521,  510,  514,  522,  517,
+		  524,  524,  528,  525,  522,  526,  522,  519
+	};
 
-const int peao_score_mg[64] = {
-	82, 82, 82, 82, 82, 82, 82, 82,
-	75, 99, 74, 78, 76, 112, 148, 73,
-	90, 94, 90, 96, 95, 93, 130, 86,
-	75, 91, 89, 117, 115, 108, 105, 61,
-	84, 105, 94, 118, 123, 105, 106, 66,
-	95, 82, 92, 142, 128, 127, 123, 87,
-	286, 251, 229, 255, 234, 175, 124, 142,
-	82, 82, 82, 82, 82, 82, 82, 82};
+	const int dama_score_mg[64] = {
+		 1022, 1009, 1018, 1035, 1012, 1000,  992,  977,
+		  992, 1019, 1034, 1025, 1031, 1038, 1024, 1026,
+		 1009, 1026, 1016, 1021, 1018, 1025, 1040, 1030,
+		 1014, 1001, 1014, 1013, 1021, 1023, 1030, 1024,
+		 1000, 1000, 1007, 1009, 1022, 1044, 1025, 1028,
+		 1012, 1007, 1030, 1031, 1054, 1083, 1074, 1084,
+		 1003,  984, 1018, 1024, 1011, 1084, 1055, 1081,
+		  999, 1027, 1056, 1039, 1084, 1071, 1070, 1072
+	};
+	const int dama_score_eg[64] = {
+		  901,  910,  912,  894,  929,  902,  914,  897,
+		  916,  915,  904,  918,  918,  911,  901,  902,
+		  918,  911,  951,  940,  943,  951,  944,  939,
+		  918,  966,  953,  982,  969,  972,  977,  961,
+		  941,  960,  958,  983,  995,  978,  995,  974,
+		  918,  944,  943,  983,  985,  973,  957,  947,
+		  921,  958,  968,  979,  996,  963,  968,  938,
+		  929,  960,  960,  965,  965,  957,  948,  958
+	};
 
-const int peao_score_eg[64] = {
-	94, 94, 94, 94, 94, 94, 94, 94,
-	152, 144, 138, 125, 138, 136, 120, 118,
-	138, 133, 116, 110, 117, 122, 108, 120,
-	156, 148, 128, 119, 114, 108, 129, 134,
-	177, 160, 141, 128, 124, 129, 149, 157,
-	250, 247, 231, 205, 190, 185, 208, 227,
-	355, 352, 318, 301, 310, 322, 352, 346,
-	94, 94, 94, 94, 94, 94, 94, 94};
+	const int rei_score_mg[64] = {
+		-15,  36,  12, -54,   8, -28,  24,  14,
+		  1,   7,  -8, -64, -43, -16,   9,   8,
+		-14, -14, -22, -46, -44, -30, -15, -27,
+		-49,  -1, -27, -39, -46, -44, -33, -51,
+		-17, -20, -12, -27, -30, -25, -14, -36,
+		 -9,  24,   2, -16, -20,   6,  22, -22,
+		 29,  -1, -20,  -7,  -8,  -4, -38, -29,
+		-65,  23,  16, -15, -56, -34,   2,  13
+	};
+	const int rei_score_eg[64] = {
+		-53, -34, -21, -11, -28, -14, -24, -43,
+		-27, -11,   4,  13,  14,   4,  -5, -17,
+		-19,  -3,  11,  21,  23,  16,   7,  -9,
+		-18,  -4,  21,  24,  27,  23,   9, -11,
+		 -8,  22,  24,  27,  26,  33,  26,   3,
+		 10,  17,  23,  15,  20,  45,  44,  13,
+		-12,  17,  14,  17,  17,  38,  23,  11,
+		-74, -35, -18, -18, -11,  15,   4, -17
+	};
 
-const int cavalo_score_mg[64] = {
-	232, 290, 248, 281, 293, 302, 287, 297,
-	267, 272, 310, 332, 324, 340, 310, 277,
-	283, 326, 329, 346, 368, 344, 343, 296,
-	299, 313, 346, 340, 350, 353, 361, 316,
-	290, 340, 371, 368, 365, 396, 353, 355,
-	294, 372, 284, 330, 372, 357, 388, 387,
-	324, 306, 396, 175, 200, 406, 314, 339,
-	181, 239, 190, 165, 333, 125, 399, 300};
-
-const int cavalo_score_eg[64] = {
-	251, 211, 235, 268, 256, 248, 208, 188,
-	202, 270, 232, 274, 283, 255, 228, 221,
-	262, 270, 275, 310, 298, 286, 271, 245,
-	259, 295, 321, 327, 315, 326, 295, 260,
-	305, 295, 343, 334, 339, 318, 308, 269,
-	266, 280, 368, 350, 326, 338, 273, 210,
-	243, 310, 269, 363, 368, 266, 279, 235,
-	306, 323, 299, 277, 312, 278, 310, 249};
-
-const int bispo_score_mg[64] = {
-	293, 355, 350, 333, 351, 335, 291, 353,
-	368, 373, 373, 354, 359, 388, 384, 353,
-	366, 373, 356, 366, 364, 387, 373, 350,
-	348, 366, 361, 374, 353, 358, 355, 363,
-	370, 351, 387, 372, 384, 363, 375, 359,
-	309, 407, 206, 342, 376, 219, 408, 343,
-	335, 350, 353, 162, 218, 407, 342, 348,
-	375, 290, 136, 134, 172, 172, 402, 305};
-
-const int bispo_score_eg[64] = {
-	224, 273, 265, 296, 276, 288, 262, 223,
-	243, 275, 277, 293, 306, 267, 286, 267,
-	287, 301, 316, 323, 326, 297, 290, 300,
-	251, 330, 325, 336, 330, 306, 299, 296,
-	263, 336, 327, 340, 341, 342, 308, 284,
-	327, 313, 390, 346, 328, 387, 309, 352,
-	287, 324, 318, 365, 358, 298, 309, 305,
-	278, 315, 346, 348, 352, 334, 322, 276};
-
-const int torre_score_mg[64] = {
-	455, 458, 468, 489, 498, 470, 413, 431,
-	410, 447, 417, 434, 469, 488, 439, 349,
-	404, 426, 423, 423, 464, 447, 454, 421,
-	428, 420, 461, 471, 469, 444, 457, 425,
-	445, 443, 471, 505, 517, 507, 430, 466,
-	460, 526, 488, 518, 530, 527, 560, 524,
-	497, 483, 524, 517, 555, 570, 524, 558,
-	507, 529, 519, 431, 427, 418, 539, 534};
-
-const int torre_score_eg[64] = {
-	494, 486, 492, 489, 478, 503, 502, 468,
-	447, 450, 481, 491, 458, 469, 475, 453,
-	461, 489, 468, 475, 471, 470, 490, 454,
-	491, 509, 496, 483, 480, 484, 493, 488,
-	508, 508, 515, 495, 492, 505, 521, 488,
-	531, 503, 517, 518, 517, 506, 491, 484,
-	535, 541, 519, 535, 519, 502, 517, 520,
-	523, 522, 498, 533, 545, 546, 516, 527};
-
-const int dama_score_mg[64] = {
-	1016, 983, 1004, 1036, 1000, 976, 926, 974,
-	941, 983, 1035, 1029, 1039, 1042, 1015, 980,
-	988, 1020, 1013, 1010, 1019, 1015, 1025, 992,
-	1010, 981, 1014, 1007, 1012, 1018, 1024, 997,
-	1005, 983, 1023, 991, 1015, 1030, 1017, 1030,
-	995, 995, 1018, 1026, 1031, 1078, 1058, 1073,
-	986, 969, 1002, 1016, 991, 1098, 1057, 1093,
-	1044, 1026, 1054, 1034, 1081, 1106, 1147, 1082};
-
-const int dama_score_eg[64] = {
-	869, 864, 875, 877, 879, 880, 844, 863,
-	864, 872, 884, 891, 901, 902, 846, 903,
-	893, 889, 950, 942, 886, 948, 941, 925,
-	901, 977, 940, 998, 967, 974, 960, 990,
-	920, 979, 994, 1004, 1030, 1026, 994, 963,
-	927, 957, 975, 1001, 1016, 995, 959, 950,
-	952, 996, 989, 1015, 1017, 968, 995, 957,
-	729, 849, 871, 872, 913, 845, 754, 858};
-
-const int rei_score_mg[64] = {
-	-15, 36, 12, -54, 8, -28, 24, 14,
-	1, 7, -8, -64, -43, -16, 9, 8,
-	-14, -14, -22, -46, -44, -30, -15, -27,
-	-49, -1, -27, -39, -46, -44, -33, -51,
-	-17, -20, -12, -27, -30, -25, -14, -36,
-	-9, 24, 2, -16, -20, 6, 22, -22,
-	29, -1, -20, -7, -8, -4, -38, -29,
-	-65, 23, 16, -15, -56, -34, 2, 13};
-
-const int rei_score_eg[64] = {
-	-53, -34, -21, -11, -28, -14, -24, -43,
-	-27, -11, 4, 13, 14, 4, -5, -17,
-	-19, -3, 11, 21, 23, 16, 7, -9,
-	-18, -4, 21, 24, 27, 23, 9, -11,
-	-8, 22, 24, 27, 26, 33, 26, 3,
-	10, 17, 23, 15, 20, 45, 44, 13,
-	-12, 17, 14, 17, 17, 38, 23, 11,
-	-74, -35, -18, -18, -11, 15, 4, -17};
-
-const int peao_passado_score[64] = {
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	60, 60, 60, 60, 60, 60, 60, 60,
-	30, 30, 30, 30, 30, 30, 30, 30,
-	15, 15, 15, 15, 15, 15, 15, 15,
-	8, 8, 8, 8, 8, 8, 8, 8,
-	8, 8, 8, 8, 8, 8, 8, 8,
-	0, 0, 0, 0, 0, 0, 0, 0};
-
+	const int peao_passado_score[64] = 
+	{
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		60,  60,  60,  60  ,60, 60, 60, 60,
+		30, 30, 30, 30, 30, 30, 30, 30,
+		15, 15, 15, 15,15, 15, 15, 15, 
+		8, 8, 8, 8, 8, 8, 8, 8,
+		8, 8, 8, 8, 8, 8, 8, 8,
+		0, 0, 0, 0, 0, 0, 0, 0
+	};
 };
 
 #endif
