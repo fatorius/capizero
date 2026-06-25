@@ -482,7 +482,7 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
 
     if (!lances_legais_na_posicao){
         if (Attacks::casa_esta_sendo_atacada(Game::xlado, Bitboard::bitscan(Bitboard::bit_pieces[Game::lado][R]))){
-            return VALOR_XEQUE_MATE_PADRAO - Game::ply;
+            return VALOR_XEQUE_MATE_PADRAO + Game::ply;
         }
         else{
             return VALOR_EMPATE;
