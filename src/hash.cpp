@@ -20,10 +20,6 @@ int Hash::hash_score, Hash::hash_depth, Hash::hash_bound, Hash::hash_promove;
 
 size_t Hash::tt_entries_per_side = 0;
 
-// Mate scores stored in the TT must be relative to the entry's own position,
-// not to the search root. On store we add ply for positive mates (subtract for
-// negative mates); on load we reverse. MATE_THRESHOLD is the boundary above
-// which a score is treated as mate-distance.
 #define MATE_THRESHOLD (VALOR_XEQUE_MATE_BRANCAS - MAX_PLY)
 
 static int score_to_tt(int s, int ply){
@@ -75,15 +71,10 @@ void Hash::realocar_tt(int size_mb){
 }
 
 int aleatorio(const int x){
-    // rand() intentionally unseeded: deterministic Zobrist keys across runs
-    // give reproducible bench node counts and TT behavior for SPRT testing.
-    // Do not call srand() here.
     return rand() % x;
 }
 
 static Bitboard::u64 aleatorio64(){
-    // Build a full 64-bit value from four 16-bit chunks of rand().
-    // RAND_MAX is guaranteed to be >= 32767, so 16-bit chunks are portable.
     return ((Bitboard::u64)(rand() & 0xFFFF))
          | ((Bitboard::u64)(rand() & 0xFFFF) << 16)
          | ((Bitboard::u64)(rand() & 0xFFFF) << 32)
@@ -102,10 +93,6 @@ void Hash::iniciar_hash(){
         }
     }
 
-    // Deliberately defer TT allocation: GUIs typically send
-    // `setoption name Hash value N` before any search, so allocating a default
-    // up front just wastes memory. The first lookup/store triggers allocation
-    // at DEFAULT_TT_MB if setoption never arrives.
 }
 
 static void ensure_tt_allocated(){
@@ -125,9 +112,6 @@ void Hash::adicionar_hash(const int ld, const Gen::lance lc,
     ensure_tt_allocated();
     hashp* ptr = &hashpos[ld][chaveAtual % tt_entries_per_side];
 
-    // Depth-preferred replacement: if the bucket already holds an entry for
-    // this exact position, keep it unless the incoming entry is at least as
-    // deep. Different positions always overwrite.
     if (ptr->hashlock == lockAtual && depth < ptr->depth){
         return;
     }
@@ -147,8 +131,6 @@ void Hash::adicionar_pontuacao_de_hash(){
         if (m.inicio != hash_inicio || m.destino != hash_destino){
             continue;
         }
-        // With four promotion variants per (src,dst) pair, the promote piece
-        // disambiguates. For non-promotion entries both sides carry 0.
         if (m.promove != hash_promove){
             continue;
         }

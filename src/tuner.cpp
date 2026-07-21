@@ -1,36 +1,3 @@
-/*
- * Texel-style eval tuner for capizero.
- *
- * Mutates `Eval::score_casas` (per-piece PSTs with material baked in) and
- * `Eval::mobilidade_*` (per-piece-type mobility lookup tables) via coordinate
- * descent. For each parameter, tries ±1 cp steps and accepts whichever
- * reduces total dataset loss; iterates passes until a full pass yields no
- * accepted change.
- *
- * Build with `make tuner`. Run as: `./capi_tuner <dataset.txt> [--max N] [--passes P]`.
- *
- * Dataset format: one position per line, FEN fields + result token. Tokenizer
- * treats whitespace, '|', '[', and ']' as separators so the common formats
- * (Stockfish "FEN [result]", Ethereal "FEN result", plain "FEN | result") all
- * parse. Result token: 1.0 / 0.5 / 0.0 (or 1-0 / 1/2-1/2 / 0-1).
- *
- * CLI flags:
- *   --max N      Cap dataset to N positions (random shuffle, then truncate).
- *                Default: 200000. Use 0 for unlimited.
- *   --passes P   Stop after P full passes regardless of convergence.
- *                Default: 30. Use 0 for unlimited.
- *
- * Output: prints a copy-pasteable values.h-style block to stdout once
- * convergence is reached. The block has material baked into PSTs (so the user
- * should set `VALOR_*_MG` / `VALOR_*_EG` to 0 in values.h when adopting, or
- * the tuner can split material out — currently bakes for simplicity).
- *
- * Performance note: on a 10M-position dataset, naive coord descent is ~100h
- * to converge. Default `--max 200000` keeps a single pass at ~6 minutes on
- * M3, ~20 passes ~= 2 hours. If convergence quality is insufficient, raise
- * `--max` and rerun starting from the previous output as the new baseline.
- */
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -49,9 +16,6 @@
 #include "bitboard.h"
 #include "eval.h"
 
-// Compact per-position record. Stored as parsed FEN tokens so the inner loop
-// can re-set the board cheaply via Update::setar_posicao without re-tokenizing
-// strings every pass.
 struct TuningPos {
     char fen[96];
     char lado[4];
@@ -63,12 +27,6 @@ struct TuningPos {
 };
 
 static std::vector<TuningPos> dataset;
-
-// ---------------------------------------------------------------------------
-// FEN line parsing.
-// Accepts tokens separated by space, tab, '|', '[', or ']' to handle the
-// common dataset variants (Stockfish-style "FEN [1.0]", Ethereal-style
-// "FEN | 1.0", or plain "FEN 1.0"). Missing hm/fm fields default to 0/1.
 
 static bool result_to_float(const char *s, float &out) {
     if (!strcmp(s, "1.0") || !strcmp(s, "1") || !strcmp(s, "1-0")) {
@@ -150,15 +108,6 @@ static void load_dataset(const char *path) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Loss function. For each position, set up the board, get the static eval
-// from white's perspective, apply sigmoid, compute squared error vs game
-// result. Total loss = mean over dataset.
-//
-// `K` is the sigmoid scaling constant; optimal K varies per engine (different
-// eval scales) and is the first thing tuned. Standard formulation:
-//   P(white wins) = 1 / (1 + 10^(-K * eval_cp / 400))
-
 static inline double sigmoid(double cp, double K) {
     return 1.0 / (1.0 + std::pow(10.0, -K * cp / 400.0));
 }
@@ -169,14 +118,8 @@ static double total_loss(double K) {
     for (int i = 0; i < n; i++) {
         TuningPos &p = dataset[i];
 
-        // setar_posicao takes non-const char* (legacy C-style API). Cast
-        // away const for the call; the function doesn't actually mutate
-        // the input strings.
         Update::setar_posicao(p.fen, p.lado, p.roques, p.ep, p.hm, p.fm);
 
-        // Eval::avaliar returns the score from the side-to-move's perspective.
-        // Normalize to white's perspective for the sigmoid: a positive number
-        // always means "good for white".
         int eval_cp = Eval::avaliar();
         if (Game::lado == PRETAS) eval_cp = -eval_cp;
 
@@ -186,12 +129,6 @@ static double total_loss(double K) {
     }
     return sum / (double)n;
 }
-
-// ---------------------------------------------------------------------------
-// K optimization via ternary search.
-// The loss function is convex in K (single minimum), so ternary search
-// converges to the optimum in O(log) iterations. ~30 iterations gives
-// K precision around 1e-4 starting from [0.1, 3.0].
 
 static double optimize_K() {
     double low = 0.1, high = 3.0;
@@ -208,34 +145,16 @@ static double optimize_K() {
     return (low + high) / 2.0;
 }
 
-// ---------------------------------------------------------------------------
-// Parameter registry.
-//
-// Each "parameter" is one int16-sized half (mg or eg) of a packed
-// Eval::Score slot. We tune two classes of slots:
-//
-//   1. `Eval::score_casas[BRANCAS][p][x]` — white-side PST + material per
-//      piece-type and square. After each accepted tweak, the corresponding
-//      black-side slot `score_casas[PRETAS][p][Consts::flip[x]]` is updated
-//      to mirror, keeping the eval symmetric. Black is never tuned directly.
-//
-//   2. `Eval::mobilidade_*[i]` — phase-aware mobility lookup tables. These
-//      are side-independent (same value applies to both colors via popcount),
-//      so no mirroring needed.
-//
-// Total params: 6 piece types × 64 squares × 2 halves (mg/eg) + sum of
-// (9 + 14 + 15 + 28) × 2 halves = 768 + 132 = 900.
 
 struct Param {
-    Eval::Score* slot;          // pointer to a packed Score we tune
-    Eval::Score* mirror;        // black-side mirror (NULL for non-PST slots)
-    bool is_mg;                  // tune the mg half or the eg half
+    Eval::Score* slot;
+    Eval::Score* mirror;
+    bool is_mg;
 };
 
 static std::vector<Param> params;
 
 static void register_params() {
-    // PSTs: white side, with black mirror.
     for (int p = P; p <= R; p++) {
         for (int x = 0; x < CASAS_DO_TABULEIRO; x++) {
             Eval::Score* white = &Eval::score_casas[BRANCAS][p][x];
@@ -244,14 +163,11 @@ static void register_params() {
             params.push_back({white, black, false});  // eg
         }
     }
-    // Mobility tables: side-independent, no mirror.
     for (int i = 0; i < 9;  i++){ params.push_back({&Eval::mobilidade_cavalo[i], NULL, true});  params.push_back({&Eval::mobilidade_cavalo[i], NULL, false}); }
     for (int i = 0; i < 14; i++){ params.push_back({&Eval::mobilidade_bispo[i],  NULL, true});  params.push_back({&Eval::mobilidade_bispo[i],  NULL, false}); }
     for (int i = 0; i < 15; i++){ params.push_back({&Eval::mobilidade_torre[i],  NULL, true});  params.push_back({&Eval::mobilidade_torre[i],  NULL, false}); }
     for (int i = 0; i < 28; i++){ params.push_back({&Eval::mobilidade_dama[i],   NULL, true});  params.push_back({&Eval::mobilidade_dama[i],   NULL, false}); }
 
-    // King safety weights: mg-only (eg half permanently 0, not registered),
-    // side-independent (no mirror).
     params.push_back({&Eval::ks_weight_c, NULL, true});
     params.push_back({&Eval::ks_weight_b, NULL, true});
     params.push_back({&Eval::ks_weight_t, NULL, true});
@@ -260,8 +176,6 @@ static void register_params() {
     fprintf(stderr, "tuner: registered %zu parameters (PSTs + mobility + king safety, mg+eg halves)\n", params.size());
 }
 
-// Apply delta (typically ±1) to one half of the parameter, mirroring to
-// black if this is a PST slot.
 static inline void tweak(const Param& p, int delta) {
     int mg = Eval::mg_score(*p.slot);
     int eg = Eval::eg_score(*p.slot);
@@ -271,11 +185,6 @@ static inline void tweak(const Param& p, int delta) {
     if (p.mirror) *p.mirror = *p.slot;
 }
 
-// ---------------------------------------------------------------------------
-// Coordinate descent. For each parameter, try +1 and -1. Take whichever
-// improves loss. Iterate passes until no parameter improves in a full pass
-// (or `--passes` cap reached). Shuffles parameter order each pass to avoid
-// any pathological deterministic walk.
 
 static double coordinate_descent(double K, int max_passes) {
     std::mt19937 rng(0xC0FFEE);
@@ -331,15 +240,6 @@ static double coordinate_descent(double K, int max_passes) {
 
     return best_loss;
 }
-
-// ---------------------------------------------------------------------------
-// Output formatter. Prints a copy-pasteable values.h-style block of the
-// tuned PSTs and mobility tables. PSTs are emitted with material baked in
-// (the tuned `Eval::score_casas[BRANCAS][p][x]` halves include the original
-// VALOR_*_MG / VALOR_*_EG contribution). To adopt these in values.h, set the
-// material defines to 0 before regenerating from the new PSTs, or split the
-// material out manually (mean of each piece's mg/eg array works as the new
-// material value, residual goes back into the PST).
 
 static void print_pst_array(const char* name, int piece, bool is_mg) {
     fprintf(stdout, "\tconst int %s[64] = {\n", name);

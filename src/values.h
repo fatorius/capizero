@@ -1,9 +1,3 @@
-/*
-Nesse arquivo estão definidos os valores usados na avaliação de 
-posições da engine, o valor absoluto de casa peça, os valores dos
-adicionais para peão e torre, e os valores de cada casa para as peças
-*/
-
 #ifndef VALUES
 #define VALUES
 
@@ -32,15 +26,6 @@ namespace Values{
 	#define BISHOP_PAIR_MG 15
 	#define BISHOP_PAIR_EG 45
 
-	// King safety. For each side L we count L's attacks landing in the
-	// 9-square zone around the enemy king (king + 8 neighbors), weighted
-	// per attacker type. The accumulated "pressao" gets a quadratic mg
-	// bonus: bonus = pressao² / KS_SCALE. Quadratic so the second/third
-	// attacker matters disproportionately more than the first (one piece
-	// near the king is fine, three pieces is mate). Mg-only because heavy
-	// pieces come off in the endgame and the king becomes an active piece,
-	// where this term would invert in motivation. Initial weights are
-	// SF-classical-era literature defaults — Texel tuner adjusts them.
 	#define KS_WEIGHT_C 20
 	#define KS_WEIGHT_B 21
 	#define KS_WEIGHT_T 41
@@ -110,14 +95,6 @@ namespace Values{
 	#define R_NULL_HIGH         3
 	#define R_NULL_DEPTH_THRESH 6
 
-	// Futility / reverse-futility pruning. Both fire only at low depths
-	// (≤ FUTILITY_DEPTH_THRESH) and only at non-PV, non-check nodes.
-	//   RFP: at node entry, if static_eval - margin >= beta → return early.
-	//   FP : in move loop, skip quiet/non-promo moves when
-	//        static_eval + margin + extra <= alpha (after at least one legal
-	//        move has been searched, so we never return false stalemate).
-	// Margins scale with depth — deeper depths get bigger margins because
-	// the search has more room to swing the score.
 	#define FUTILITY_DEPTH_THRESH      6
 	#define FUTILITY_MARGIN_PER_PLY    100   // 1 pawn per ply
 	#define FUTILITY_MARGIN_FP_EXTRA   50    // FP gets a little extra slack vs RFP

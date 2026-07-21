@@ -12,13 +12,6 @@
 #endif
 
 namespace Gen{
-    // Packed move: squares fit in 6 bits (0-63), promotion piece in 4 bits
-    // (0-15, actual range 0-5). Stored as uint8_t for direct byte load/store
-    // (no bit-field shift+mask overhead). Score stays int32_t — values reach
-    // ~1e8 for the TT move boost, well outside 16-bit range.
-    // Layout: 4 bytes payload + 4 bytes score = 8 bytes per entry
-    // (was 16 bytes as 4× int). Halves footprint of lista_de_lances,
-    // killers_primarios/secundarios, and contraLance_heuristica.
     typedef struct{
         uint8_t inicio;
         uint8_t destino;
@@ -51,11 +44,6 @@ namespace Gen{
     extern Bitboard::u64 bit_peao_capturas[LADOS][CASAS_DO_TABULEIRO];
     extern Bitboard::u64 bit_peao_defende[LADOS][CASAS_DO_TABULEIRO];
 
-    // Sliding-piece attack bitboards given current `Bitboard::bit_total`
-    // occupancy. Inline so eval/mobility code gets the magic-table lookup
-    // without a function-call boundary. gen.cpp's hot paths still inline
-    // the same incantation manually — adopting these in those spots is a
-    // followup cleanup, not a behavior change.
     inline Bitboard::u64 atacantes_bispo(int casa){
         #ifdef USE_PEXT
             return bit_magicas_bispo[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_bispo[casa])];
@@ -70,10 +58,6 @@ namespace Gen{
             return bit_magicas_torre[casa][((Bitboard::bit_total & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])];
         #endif
     }
-    // Occupancy-parameterised variants — identical magic lookups but use an
-    // explicit `occ` bitboard instead of `Bitboard::bit_total`. Used by the
-    // SEE exchange evaluator so it can simulate piece removal without touching
-    // the real board state.
     inline Bitboard::u64 atacantes_bispo_occ(int casa, Bitboard::u64 occ){
         #ifdef USE_PEXT
             return bit_magicas_bispo[casa][_pext_u64(occ, bit_casas_relevantes_bispo[casa])];
@@ -90,21 +74,9 @@ namespace Gen{
     }
 
     void init_lookup_tables();
-    // Full pseudo-legal move list (captures + quiets). Used by perft and by
-    // anything outside `Search::pesquisa` that wants the whole list at once.
     void gerar_lances(const int lado_a_mover, const int contraLado);
-    // Captures only (including EP and pawn capture-promotions with Q+N
-    // variants). Emits Q+N for capture-promos; contrast with `gerar_capturas`
-    // below which emits Q-only for qsearch. Used as the first stage of
-    // `pesquisa`'s lazy move generation.
     void gerar_capturas_busca(const int lado_a_mover, const int contraLado);
-    // Quiet moves only (castling, pawn pushes including quiet promos, and all
-    // non-capture piece moves). Appends onto an existing capture list by
-    // starting from `qntt_lances_totais[ply+1]`; must run after a capture
-    // generator that set that boundary.
     void gerar_silenciosos(const int lado_a_mover, const int contraLado);
-    // Qsearch captures (Q-only promo, no EP). Do not confuse with
-    // `gerar_capturas_busca`.
     void gerar_capturas(const int lado_a_mover, const int contraLado);
     unsigned long long perft_node(int profunidade);
     unsigned long long perft(int profunidade);

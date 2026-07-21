@@ -60,11 +60,7 @@ void Fen::serialize(char* out) {
 
     out[pos++] = ' ';
 
-    // 4. En passant target. setar_posicao stashes the (inicio, destino) of a
-    //    synthetic double-pawn-push in lista_do_jogo[hply-1] when parsing an
-    //    EP square, and real double pushes leave the same shape there. So if
-    //    the last record looks like a 2-square pawn advance (piece at destino
-    //    is a pawn, |destino - inicio| == 16), the EP square sits between them.
+    // 4. En passant target. 
     bool ep_emitted = false;
     if (Game::hply > 1) {
         const Game::jogo& last = Game::lista_do_jogo[Game::hply - 1];
@@ -89,8 +85,7 @@ void Fen::serialize(char* out) {
 
     out[pos++] = ' ';
 
-    // 6. Fullmove number. White-to-move at hply=1 → fullmove=1; the formula
-    //    (hply + 1) / 2 advances on each black→white transition.
+    // 6. Fullmove number. 
     pos += std::sprintf(out + pos, "%d", (Game::hply + 1) / 2);
 
     out[pos] = '\0';

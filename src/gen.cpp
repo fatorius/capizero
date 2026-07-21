@@ -371,9 +371,6 @@ void Gen::init_lookup_tables(){
 int calcularBonusHeuristicas(const int origem, const int destino){
     Gen::lance contraLance = Search::contraLance_heuristica[Game::lista_do_jogo[Game::hply].inicio][Game::lista_do_jogo[Game::hply].destino];
 
-    // Killer and counter-move tables store full lance values including the
-    // promote piece. For non-promotion moves both sides carry 0, so the
-    // equality stays consistent; for promotions it disambiguates variants.
     if (Search::killers_primarios[Game::ply].inicio == origem
         && Search::killers_primarios[Game::ply].destino == destino
         && Search::killers_primarios[Game::ply].promove == Gen::lista_de_lances[mc].promove){
@@ -417,11 +414,6 @@ void adicionar_lance(const int origem, const int destino){
     mc++;
 }
 
-// Emit Q + N promotion variants for a pawn reaching the back rank. Rook and
-// bishop are skipped: R-promotion only matters in rare stalemate-avoidance
-// positions, and B is dominated by Q in essentially every legal setup — the
-// branching-factor cost of generating them outweighs the Elo they save.
-// Captured-piece value is rolled into both scores so MVV/LVA is preserved.
 void adicionar_promocao_variantes(const int origem, const int destino, const int piece_capturado){
     const int cap_bonus = (piece_capturado < VAZIO) ? Values::pieces_valor[piece_capturado] : 0;
     const bool is_capture = (piece_capturado < VAZIO);
@@ -732,8 +724,6 @@ void Gen::gerar_silenciosos(const int lado_a_mover, const int contraLado){
     Game::qntt_lances_totais[Game::ply + 1] = mc;
 }
 
-// Preserves the full-list API for perft and non-search callers. Staged search
-// uses `gerar_capturas_busca` + `gerar_silenciosos` directly.
 void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
     gerar_capturas_busca(lado_a_mover, contraLado);
     gerar_silenciosos(lado_a_mover, contraLado);
@@ -745,10 +735,7 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
     mc = Game::qntt_lances_totais[Game::ply];
 
 
-    // 1. gera capturas de peao. Quiet pawn pushes to the back rank (quiet
-    // promotions) are deliberately NOT generated here: quiescence uses
-    // Update::fazer_captura which has no path for non-capture destinations,
-    // and expanding the qsearch move surface is a separate follow-up.
+    // 1. gera capturas de peao. 
     // 1.1 verifica quais casas estao disponiveis
     if (lado_a_mover == BRANCAS){
         t1 = Bitboard::bit_pieces[BRANCAS][P] & ((Bitboard::bit_lados[PRETAS] & Bitboard::not_coluna_h) >> 7);

@@ -14,18 +14,10 @@ int Eval::piece_mat[LADOS];
 
 int Eval::fase_valor = 0;
 
-// Phase weight per piece type, indexed by the {P, C, B, T, D, R} encoding
-// in consts.h. Mirrors Values::PHASE_* macros — kept here as a contiguous
-// array so Update::adicionar_piece / Update::remover_piece can do a single
-// indexed load instead of a switch.
 const int Eval::phase_weights[6] = {
     PHASE_PEAO, PHASE_CAVALO, PHASE_BISPO, PHASE_TORRE, PHASE_DAMA, PHASE_REI
 };
 
-// Mobility tables. Definitions are storage-only; the values live in
-// `Values::mobilidade_*_mg / _eg` in values.h and get packed into Score
-// pairs at startup by init_eval_tables. Same pattern capizero uses for
-// PSTs (raw values in Values::, packed/initialized in init_eval_tables).
 Eval::Score Eval::mobilidade_cavalo[9];
 Eval::Score Eval::mobilidade_bispo[14];
 Eval::Score Eval::mobilidade_torre[15];
@@ -35,17 +27,9 @@ Eval::Score Eval::ks_weight_c, Eval::ks_weight_b, Eval::ks_weight_t, Eval::ks_we
 
 int peao_ala_da_dama[LADOS],peao_ala_do_rei[LADOS];
 
-// King safety zone: 9 squares around each square (king + 8 neighbors).
-// Built once at startup; eval-time we look up the enemy king's zone and
-// AND each attacker's bitboard against it. File-scope (not exposed in
-// eval.h) because no other TU needs it.
 static Bitboard::u64 king_zone[CASAS_DO_TABULEIRO];
 
 void Eval::init_eval_tables(){
-    // Phase 1 of the tapered-eval rollout still has mg = eg, so the packed
-    // score per square just duplicates the legacy single value into both
-    // halves. Future passes will differentiate (e.g. king PST: mg = rei_score,
-    // eg = rei_finais_score, dropping the conditional swap below).
     for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
         const int xf = Consts::flip[x];
 
@@ -67,8 +51,6 @@ void Eval::init_eval_tables(){
         passados[PRETAS][x] = Values::peao_passado_score[x];
     }
 
-    // Pack mobility tables. Values live in values.h as parallel mg/eg
-    // arrays; build the packed Score lookup once at startup.
     for (int i = 0; i < 9; i++){
         mobilidade_cavalo[i] = make_score(Values::mobilidade_cavalo_mg[i], Values::mobilidade_cavalo_eg[i]);
     }
@@ -82,15 +64,10 @@ void Eval::init_eval_tables(){
         mobilidade_dama[i] = make_score(Values::mobilidade_dama_mg[i], Values::mobilidade_dama_eg[i]);
     }
 
-    // King zone = king attack mask | the king square itself (the 3x3 block
-    // around each square). One precomputed bitboard per square so eval-time
-    // is one load + one AND per attacker.
     for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
         king_zone[x] = Gen::bit_moves_rei[x] | Bitboard::mask[x];
     }
 
-    // King safety weights — mg in low 16, eg=0 in high 16. Tuner only
-    // adjusts the mg half.
     ks_weight_c = make_score(KS_WEIGHT_C, 0);
     ks_weight_b = make_score(KS_WEIGHT_B, 0);
     ks_weight_t = make_score(KS_WEIGHT_T, 0);
@@ -162,12 +139,6 @@ int avaliar_torre(const int l, const int casa){
 }
 
 int Eval::avaliar(){
-    // Single packed accumulator per side. mg lives in the high 16 bits,
-    // eg in the low 16; both halves accumulate in lockstep through plain
-    // int32 addition. Single-valued bonuses (avaliar_peao, avaliar_torre,
-    // king PST swap, pawn shield) are wrapped via make_score(v, v) so the
-    // same delta lands in both halves. Future tapered terms differentiate
-    // by passing distinct mg/eg values to make_score.
     Score score[LADOS] = {0, 0};
 
     peao_ala_da_dama[BRANCAS] = 0;
@@ -178,9 +149,6 @@ int Eval::avaliar(){
     Bitboard::u64 t1;
     int casa;
 
-    // King zones for both sides. When iterating side L's pieces, we count
-    // attacks landing in zona_inimiga[l] — the zone around the OTHER king,
-    // i.e. the squares L is threatening.
     const int rei_branco_sq = Bitboard::bitscan(Bitboard::bit_pieces[BRANCAS][R]);
     const int rei_preto_sq  = Bitboard::bitscan(Bitboard::bit_pieces[PRETAS][R]);
     const Bitboard::u64 zona_inimiga[LADOS] = {
@@ -188,21 +156,12 @@ int Eval::avaliar(){
         king_zone[rei_branco_sq]
     };
 
-    // Snapshot KS weights once. They're stored as Score objects (so the
-    // tuner can mutate them at runtime), but only the mg half is meaningful.
-    // Extracting once per eval avoids redundant unpacks in the hot loop.
     const int kw_c = mg_score(ks_weight_c);
     const int kw_b = mg_score(ks_weight_b);
     const int kw_t = mg_score(ks_weight_t);
     const int kw_d = mg_score(ks_weight_d);
 
     for (int l = 0; l < LADOS; l++){
-
-        // Mobility uses popcount of attack squares that aren't own pieces.
-        // Each attacked square counts; enemy-occupied squares (capturable
-        // targets) and empty squares both contribute. Phase-aware weights
-        // recognize that bishop/rook mobility matters more in the endgame
-        // where boards are open, while knight mobility is roughly uniform.
         const Bitboard::u64 nao_proprios = ~Bitboard::bit_lados[l];
         const Bitboard::u64 zona = zona_inimiga[l];
         int pressao_rei = 0;
@@ -267,18 +226,9 @@ int Eval::avaliar(){
             pressao_rei += Bitboard::popcount(att & zona) * kw_d;
         }
 
-        // Quadratic king-safety bonus, mg-only. The squaring is what makes
-        // the term care about *multiple* attackers — a lone knight near the
-        // enemy king is uninteresting, but two attackers compound.
         score[l] += make_score((pressao_rei * pressao_rei) / KS_SCALE, 0);
     }
 
-    // Pawn shield is a midgame-only concept (king wants to stay tucked
-    // behind pawns while the opponent has heavy pieces; in the endgame
-    // the king should be active). The legacy code gated this on
-    // `enemy_queen_present` as a binary proxy for "still mg"; with the
-    // king PST now natively tapered, we just apply the shield to the mg
-    // half and let the phase interpolation fade it out as material thins.
     int shield_w = 0;
     if (Bitboard::bit_pieces[BRANCAS][R] & Bitboard::mask_ala_do_rei){
         shield_w = peao_ala_do_rei[BRANCAS];
@@ -297,7 +247,6 @@ int Eval::avaliar(){
     }
     score[PRETAS] += make_score(shield_b, 0);
 
-    // Side-to-move difference, then unpack and interpolate.
     const Score diff = score[Game::lado] - score[Game::xlado];
     const int mg_diff = mg_score(diff);
     const int eg_diff = eg_score(diff);

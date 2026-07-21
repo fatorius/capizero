@@ -1,20 +1,3 @@
-/*
- * capizero self-play data collector (Phase A).
- *
- * Plays engine-vs-engine games with fixed-time or fixed-depth search per move,
- * filters out non-quiet positions (in-check, opening plies, capture/check best
- * moves, eval-vs-qsearch divergence), and dumps each surviving position with
- * the game's eventual WDL result as a tuner-compatible line:
- *
- *     <FEN> [1.0|0.5|0.0]
- *
- * The output feeds capi_resolve (Phase B), which walks each position's PV to a
- * leaf, producing the final dataset for capi_tuner.
- *
- * Build with `make selfplay`. Run as: `./capi_selfplay --games N [opts]`.
- * See parse_args() / usage() for the full flag list.
- */
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -41,8 +24,6 @@
 #include "eval.h"
 #include "fen_serializer.h"
 
-// Static qsearch entry lives in search.cpp without a header declaration; expose
-// via extern so the eval-vs-qsearch quiet filter can call it.
 extern int pesquisa_rapida(int alpha, int beta);
 
 // ---------------------------------------------------------------------------
@@ -126,17 +107,7 @@ static void parse_args(int argc, char** argv) {
     if (opt_seed == 0) opt_seed = (unsigned)time(NULL);
 }
 
-// ---------------------------------------------------------------------------
-// FEN round-trip smoke test. Sets the board via Update::setar_posicao on a
-// handful of FENs covering common edge cases (startpos, castling, EP, mid-
-// game), serializes back, and checks for string equality. Run with --smoke.
-
 static int smoke_test() {
-    // setar_posicao discards FEN fullmove (always resets hply=1), so we can't
-    // round-trip the fullmove field on non-startpos FENs. The smoke test
-    // works at the engine-state level: after setar_posicao, Fen::serialize
-    // should emit a FEN whose first FIVE fields exactly match the input, and
-    // whose sixth field (fullmove) matches the engine's reset hply=1.
     struct Case {
         const char* placement;
         const char* side;
@@ -425,14 +396,6 @@ static int play_one_game(FILE* out, std::mt19937& rng) {
         // Search this position.
         Search::pensar(false);
 
-        // Read root TT entry: holds best move + score from side-to-move POV.
-        // The entry can be missing if the search hit timeout after a colliding
-        // child entry evicted the root's previous-iteration entry — that's a
-        // real failure mode under tight TC + small TT, not a mate. So we first
-        // disambiguate by counting legal moves; if any exist, we recover by
-        // picking the first legal move and continuing the game (suboptimal
-        // play this turn, but the dataset doesn't depend on optimality —
-        // just on getting a labeled WDL out of the game).
         const int side_at_root = Game::lado;
         int from, to, promo, score_stm;
         if (!Hash::hash_lookup(side_at_root)) {

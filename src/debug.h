@@ -6,7 +6,7 @@
 namespace Debug{
     void printBitboard(Bitboard::u64 bitboard);
     void print(const char* msg);
-} // namespace Debug
+} 
 
 
 #endif

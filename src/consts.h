@@ -1,13 +1,3 @@
-/*
-Nesse arquivo estão definidos todas as constantes
-que serão usadas para gerar os bitboards da engine,
-além de simbolos constantes para casas, peças, colunas
-etc
-
-Também estão linkadas dois outros arquivos header: params e values
-*/
-
-
 #ifndef CONSTS
 #define CONSTS
 

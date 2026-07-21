@@ -74,12 +74,6 @@ int pesquisa_quiescence(int inicio, const int destino){
         recapturas_feitas++;
         recaptura++;
 
-        // No node-counter increment here. `pesquisa_rapida` (the qsearch
-        // entry) counts each qsearch invocation; the recapture loop is part
-        // of a SEE-style evaluation, not independent search nodes. Counting
-        // every recapture step inflated `lances_avaliados` and made the time
-        // poll (`lances_avaliados & VERIFICACAO_DE_LANCES`) fire more often
-        // than the search-node-count interpretation suggests.
         menor_recaptura = Attacks::menor_atacante(Game::lado, Game::xlado, destino); // ordena por MVA/LVV
 
         if (menor_recaptura > -1){
@@ -235,12 +229,6 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
     const int  tt_depth = tt_hit ? Hash::hash_depth : -1;
     const int  tt_bound = tt_hit ? Hash::hash_bound : TT_BOUND_NONE;
 
-    // Snapshot the TT move before any recursion can call hash_lookup and
-    // stomp the Hash::hash_* globals. The second adicionar_pontuacao_de_hash
-    // call (after lazy quiet generation) runs after we've recursed into
-    // child searches for captures, each of which overwrites those globals
-    // with their own TT entries — without this snapshot the second call
-    // boosts an arbitrary move from a descendant position.
     const int tt_mv_inicio  = tt_hit ? Hash::hash_inicio  : 0;
     const int tt_mv_destino = tt_hit ? Hash::hash_destino : 0;
     const int tt_mv_promove = tt_hit ? Hash::hash_promove : 0;
@@ -258,16 +246,7 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         check = 1;
     }
 
-    // Futility / reverse-futility pruning. Both depend on a static eval and
-    // both are only safe at non-PV, non-check, low-depth nodes (where the
-    // static eval is a reasonable proxy for the deep-search outcome).
-    //
-    // Additional guards required for correctness:
-    //   - mate-distance: when beta (RFP) or alpha (FP) is near mate, returning
-    //     a static-eval-based score would silently corrupt mate detection.
-    //   - non-pawn material on side to move (RFP only): in zugzwang territory
-    //     static eval is unreliable — any move makes things worse, same
-    //     justification as NMP's zugzwang guard.
+    // Futility / reverse-futility pruning. 
     int static_eval = 0;
     const bool side_has_pieces =
         Bitboard::bit_pieces[Game::lado][C] | Bitboard::bit_pieces[Game::lado][B]
@@ -277,10 +256,7 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
     if (can_futility){
         static_eval = Eval::avaliar();
 
-        // Reverse futility (a.k.a. static null-move). Returning the midpoint
-        // of static_eval and beta (not static_eval directly) keeps the score
-        // a valid lower bound (≥ beta) while moderating grand-parent cutoffs
-        // when static_eval is far above beta.
+        // Reverse futility (a.k.a. static null-move). 
         if (side_has_pieces
             && beta < VALOR_XEQUE_MATE_BRANCAS - MAX_PLY
             && static_eval - FUTILITY_MARGIN_PER_PLY * profundidade >= beta){
@@ -288,18 +264,7 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         }
     }
 
-    // Null-move pruning. If we hand the opponent a free move and they still
-    // can't beat beta with a reduced-depth search, our actual move can only
-    // produce an even better score — return beta. Guarded against:
-    //   - in-check: passing would leave the king in check (illegal).
-    //   - PV nodes: PVS expects exact scores; null-move's null-window result
-    //     isn't usable.
-    //   - already-null nodes: prevent two null-moves in a row, which would
-    //     just be a deeper skip equivalent to a single bigger R.
-    //   - low depth: at depth-1-R below 1 we'd hit qsearch, no info gained.
-    //   - zugzwang risk: if we have only pawns + king, "passing" is often
-    //     strictly worse than any move (opposition, etc.), so the null-move
-    //     bet is unsafe.
+    // Null-move pruning.
     if (!check && !pv && null_permitido
         && profundidade >= 3
         && (Bitboard::bit_pieces[Game::lado][C] | Bitboard::bit_pieces[Game::lado][B]
@@ -315,15 +280,6 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
     }
 
     // Staged move generation.
-    // - IID: needs the whole list up-front to score quiet moves, so full gen.
-    // - TT hit whose destination holds an enemy piece: almost certainly a
-    //   capture, so lazy quiet gen is safe (TT capture lives in captures
-    //   list, gets boosted, tried first; if it cuts off we skip quiet gen).
-    // - TT hit whose destination is empty: either a quiet move or EP. Full
-    //   gen so the TT quiet is in the list and gets boosted to the top.
-    //   (Phase A regressed here by searching all captures before discovering
-    //   the TT quiet — this branch is what Phase B adds to prevent that.)
-    // - No TT hit: pure lazy (captures now, quiets on exhaustion).
     const bool iid_path = !tt_hit && (profundidade > PROFUNDIDADE_CONDICAO_IID) && pv;
 
     bool quiets_generated;
@@ -355,9 +311,7 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
     bool pesquisandoPV = true;
 
     for (int candidato = Game::qntt_lances_totais[Game::ply]; ; ++candidato){
-        // Exhausted captures? Lazily generate quiets and re-boost the TT move
-        // if it happens to be quiet (adicionar_pontuacao_de_hash is a no-op
-        // when called a second time after already scoring a capture).
+        // Exhausted captures?
         if (candidato >= Game::qntt_lances_totais[Game::ply + 1]){
             if (quiets_generated) break;
             // Optimization: if forward futility would prune every quiet move
@@ -373,9 +327,7 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
                 break;
             }
             // Reach here only when there was no TT hit, or when TT hit had
-            // an enemy-occupied destination (capture path). In both cases
-            // the TT move — if any — was already discovered and boosted
-            // during the capture stage, so no re-boost is needed here.
+            // an enemy-occupied destination (capture path). 
             Gen::gerar_silenciosos(Game::lado, Game::xlado);
             quiets_generated = true;
             if (candidato >= Game::qntt_lances_totais[Game::ply + 1]) break;
@@ -383,13 +335,7 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
 
         ordenar_lances(candidato);
 
-        // Forward futility pruning: at low depth with at least one legal
-        // move already explored, skip quiet (non-capture, non-promotion)
-        // moves whose optimistic value still can't beat alpha. Captures and
-        // promotions are exempt because their material swing easily exceeds
-        // the futility margin. Mate-distance guard: never FP-prune when
-        // alpha is mate-near — escaping a forced mate often goes through
-        // a quiet move that the static eval drastically underrates.
+        // Forward futility pruning
         if (can_futility
             && lances_legais_na_posicao > 0
             && alpha > VALOR_XEQUE_MATE_PRETAS + MAX_PLY
