@@ -40,7 +40,7 @@ void Game::novo_jogo(){
 }
 
 bool Game::checar_repeticoes(){
-    for (int i = hply-4; i >= hply - cinquenta; i -=2){
+    for (int i = hply-4; i >= hply - cinquenta && i >= 0; i -=2){
         if (lista_do_jogo[i].hash == Hash::chaveAtual && lista_do_jogo[i].lock == Hash::lockAtual){
             return true;
         }

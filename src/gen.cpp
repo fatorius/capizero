@@ -301,9 +301,13 @@ Bitboard::u64 gerarLancesBispoSemMagica(int casa, Bitboard::u64 bloqueadores){
         for (int casa_destino = casa;;){
             casa_destino = dtb_moves[casa_destino][direcao];
 
+            if (casa_destino == -1){
+                break;
+            }
+
             lances |= Bitboard::mask[casa_destino];
-            
-            if ((Bitboard::mask[casa_destino] & bloqueadores) || (casa_destino == -1)){
+
+            if (Bitboard::mask[casa_destino] & bloqueadores){
                 break;
             }
         }
@@ -319,9 +323,13 @@ Bitboard::u64 gerarLancesTorreSemMagica(int casa, Bitboard::u64 bloqueadores){
         for (int casa_destino = casa;;){
             casa_destino = dtb_moves[casa_destino][direcao];
 
+            if (casa_destino == -1){
+                break;
+            }
+
             lances |= Bitboard::mask[casa_destino];
 
-            if ((Bitboard::mask[casa_destino] & bloqueadores) || (casa_destino == -1)){
+            if (Bitboard::mask[casa_destino] & bloqueadores){
                 break;
             }
         }

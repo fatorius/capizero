@@ -13,7 +13,7 @@ namespace Bench {
         "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
         "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
         "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
-        "3r3k/2r4p/1p1b3r/3TpN1q/2P4p/1P3Q2/pB4PP/5RK1 b - - 0 1",
+        "3r3k/2r4p/1p1b3r/3RpN1q/2P4p/1P3Q2/pB4PP/5RK1 b - - 0 1",
         "2r5/3pk3/8/2P5/8/2K5/8/8 w - - 5 4",
         "8/8/8/8/5kp1/P7/8/1K1N4 w - - 0 1",
         "8/8/8/5N2/8/p7/8/2NK3k w - - 0 1",
