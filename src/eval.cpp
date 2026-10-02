@@ -151,6 +151,7 @@ int Eval::avaliar(){
 
     const int rei_branco_sq = Bitboard::bitscan(Bitboard::bit_pieces[BRANCAS][R]);
     const int rei_preto_sq  = Bitboard::bitscan(Bitboard::bit_pieces[PRETAS][R]);
+    const int rei_sq[LADOS] = { rei_branco_sq, rei_preto_sq };
     const Bitboard::u64 zona_inimiga[LADOS] = {
         king_zone[rei_preto_sq],
         king_zone[rei_branco_sq]
@@ -165,6 +166,8 @@ int Eval::avaliar(){
         const Bitboard::u64 nao_proprios = ~Bitboard::bit_lados[l];
         const Bitboard::u64 zona = zona_inimiga[l];
         int pressao_rei = 0;
+
+        score[l] += score_casas[l][R][rei_sq[l]];
 
         t1 = Bitboard::bit_pieces[l][P];
         while (t1){
