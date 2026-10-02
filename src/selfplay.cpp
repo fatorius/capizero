@@ -5,6 +5,7 @@
 #include <cerrno>
 #include <ctime>
 #include <cmath>
+#include <cctype>
 #include <string>
 #include <vector>
 #include <random>
@@ -201,6 +202,17 @@ struct BookEntry {
 
 static std::vector<BookEntry> book;
 
+// EPD opcodes (bm, id, c0, ...) can land in the hm/fm slots when the book
+// omits halfmove/fullmove clocks (the norm for EPD, unlike full FEN) — only
+// accept those tokens as clocks if they're actually numeric.
+static bool is_plain_uint(const char* s) {
+    if (!s || !*s) return false;
+    for (const char* p = s; *p; p++) {
+        if (!isdigit((unsigned char)*p)) return false;
+    }
+    return true;
+}
+
 static void load_book(const char* path) {
     FILE* f = fopen(path, "r");
     if (!f) {
@@ -227,10 +239,16 @@ static void load_book(const char* path) {
         strncpy(e.ep, tok, sizeof(e.ep) - 1); e.ep[sizeof(e.ep)-1] = '\0';
 
         tok = strtok(NULL, " \t\r\n");
-        strncpy(e.hm, tok ? tok : "0", sizeof(e.hm) - 1); e.hm[sizeof(e.hm)-1] = '\0';
+        if (tok && is_plain_uint(tok)) {
+            strncpy(e.hm, tok, sizeof(e.hm) - 1); e.hm[sizeof(e.hm)-1] = '\0';
 
-        tok = strtok(NULL, " \t\r\n");
-        strncpy(e.fm, tok ? tok : "1", sizeof(e.fm) - 1); e.fm[sizeof(e.fm)-1] = '\0';
+            tok = strtok(NULL, " \t\r\n");
+            strncpy(e.fm, (tok && is_plain_uint(tok)) ? tok : "1", sizeof(e.fm) - 1); e.fm[sizeof(e.fm)-1] = '\0';
+        } else {
+            // No hm/fm fields (plain EPD) — what follows is opcodes, not FEN data.
+            strcpy(e.hm, "0");
+            strcpy(e.fm, "1");
+        }
 
         book.push_back(e);
     }
