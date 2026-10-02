@@ -186,6 +186,9 @@ static inline void tweak(const Param& p, int delta) {
 }
 
 
+static const char* checkpoint_path = NULL;
+static void write_checkpoint(int pass, double loss);
+
 static double coordinate_descent(double K, int max_passes) {
     std::mt19937 rng(0xC0FFEE);
     std::vector<size_t> order(params.size());
@@ -232,6 +235,8 @@ static double coordinate_descent(double K, int max_passes) {
         fprintf(stderr, "tuner: pass %d done, accepted %d / %zu, loss=%.6f, elapsed=%lds\n",
                 pass + 1, accepted, params.size(), best_loss, (long)elapsed);
 
+        write_checkpoint(pass + 1, best_loss);
+
         if (accepted == 0) {
             fprintf(stderr, "tuner: converged after pass %d (no improvements)\n", pass + 1);
             break;
@@ -241,63 +246,85 @@ static double coordinate_descent(double K, int max_passes) {
     return best_loss;
 }
 
-static void print_pst_array(const char* name, int piece, bool is_mg) {
-    fprintf(stdout, "\tconst int %s[64] = {\n", name);
+static void print_pst_array(FILE* out, const char* name, int piece, bool is_mg) {
+    fprintf(out, "\tconst int %s[64] = {\n", name);
     for (int rank = 0; rank < 8; rank++) {
-        fprintf(stdout, "\t\t");
+        fprintf(out, "\t\t");
         for (int file = 0; file < 8; file++) {
             int x = rank * 8 + file;
             int v = is_mg ? Eval::mg_score(Eval::score_casas[BRANCAS][piece][x])
                           : Eval::eg_score(Eval::score_casas[BRANCAS][piece][x]);
-            fprintf(stdout, "%5d%s", v, (file == 7 && rank == 7) ? "\n" : ",");
-            if (file == 7 && rank != 7) fprintf(stdout, "\n");
+            fprintf(out, "%5d%s", v, (file == 7 && rank == 7) ? "\n" : ",");
+            if (file == 7 && rank != 7) fprintf(out, "\n");
         }
     }
-    fprintf(stdout, "\t};\n\n");
+    fprintf(out, "\t};\n\n");
 }
 
-static void print_mobility_array(const char* name, const Eval::Score* tbl, int len, bool is_mg) {
-    fprintf(stdout, "\tconst int %s[%d] = {\n\t\t", name, len);
+static void print_mobility_array(FILE* out, const char* name, const Eval::Score* tbl, int len, bool is_mg) {
+    fprintf(out, "\tconst int %s[%d] = {\n\t\t", name, len);
     for (int i = 0; i < len; i++) {
         int v = is_mg ? Eval::mg_score(tbl[i]) : Eval::eg_score(tbl[i]);
-        fprintf(stdout, "%5d%s", v, (i == len - 1) ? "\n" : ",");
-        if ((i + 1) % 8 == 0 && i != len - 1) fprintf(stdout, "\n\t\t");
+        fprintf(out, "%5d%s", v, (i == len - 1) ? "\n" : ",");
+        if ((i + 1) % 8 == 0 && i != len - 1) fprintf(out, "\n\t\t");
     }
-    fprintf(stdout, "\t};\n\n");
+    fprintf(out, "\t};\n\n");
 }
 
-static void print_tuned_values() {
-    fprintf(stdout, "// ==== TUNED VALUES (paste into values.h, set VALOR_*_MG/_EG to 0) ====\n");
-    fprintf(stdout, "// PSTs below have material baked in.\n\n");
+static void print_tuned_values(FILE* out) {
+    fprintf(out, "// ==== TUNED VALUES (paste into values.h, set VALOR_*_MG/_EG to 0) ====\n");
+    fprintf(out, "// PSTs below have material baked in.\n\n");
 
-    print_pst_array("peao_score_mg",   P, true);
-    print_pst_array("peao_score_eg",   P, false);
-    print_pst_array("cavalo_score_mg", C, true);
-    print_pst_array("cavalo_score_eg", C, false);
-    print_pst_array("bispo_score_mg",  B, true);
-    print_pst_array("bispo_score_eg",  B, false);
-    print_pst_array("torre_score_mg",  T, true);
-    print_pst_array("torre_score_eg",  T, false);
-    print_pst_array("dama_score_mg",   D, true);
-    print_pst_array("dama_score_eg",   D, false);
-    print_pst_array("rei_score_mg",    R, true);
-    print_pst_array("rei_score_eg",    R, false);
+    print_pst_array(out, "peao_score_mg",   P, true);
+    print_pst_array(out, "peao_score_eg",   P, false);
+    print_pst_array(out, "cavalo_score_mg", C, true);
+    print_pst_array(out, "cavalo_score_eg", C, false);
+    print_pst_array(out, "bispo_score_mg",  B, true);
+    print_pst_array(out, "bispo_score_eg",  B, false);
+    print_pst_array(out, "torre_score_mg",  T, true);
+    print_pst_array(out, "torre_score_eg",  T, false);
+    print_pst_array(out, "dama_score_mg",   D, true);
+    print_pst_array(out, "dama_score_eg",   D, false);
+    print_pst_array(out, "rei_score_mg",    R, true);
+    print_pst_array(out, "rei_score_eg",    R, false);
 
-    print_mobility_array("mobilidade_cavalo_mg", Eval::mobilidade_cavalo, 9,  true);
-    print_mobility_array("mobilidade_cavalo_eg", Eval::mobilidade_cavalo, 9,  false);
-    print_mobility_array("mobilidade_bispo_mg",  Eval::mobilidade_bispo,  14, true);
-    print_mobility_array("mobilidade_bispo_eg",  Eval::mobilidade_bispo,  14, false);
-    print_mobility_array("mobilidade_torre_mg",  Eval::mobilidade_torre,  15, true);
-    print_mobility_array("mobilidade_torre_eg",  Eval::mobilidade_torre,  15, false);
-    print_mobility_array("mobilidade_dama_mg",   Eval::mobilidade_dama,   28, true);
-    print_mobility_array("mobilidade_dama_eg",   Eval::mobilidade_dama,   28, false);
+    print_mobility_array(out, "mobilidade_cavalo_mg", Eval::mobilidade_cavalo, 9,  true);
+    print_mobility_array(out, "mobilidade_cavalo_eg", Eval::mobilidade_cavalo, 9,  false);
+    print_mobility_array(out, "mobilidade_bispo_mg",  Eval::mobilidade_bispo,  14, true);
+    print_mobility_array(out, "mobilidade_bispo_eg",  Eval::mobilidade_bispo,  14, false);
+    print_mobility_array(out, "mobilidade_torre_mg",  Eval::mobilidade_torre,  15, true);
+    print_mobility_array(out, "mobilidade_torre_eg",  Eval::mobilidade_torre,  15, false);
+    print_mobility_array(out, "mobilidade_dama_mg",   Eval::mobilidade_dama,   28, true);
+    print_mobility_array(out, "mobilidade_dama_eg",   Eval::mobilidade_dama,   28, false);
 
-    fprintf(stdout, "\t#define KS_WEIGHT_C %d\n",   Eval::mg_score(Eval::ks_weight_c));
-    fprintf(stdout, "\t#define KS_WEIGHT_B %d\n",   Eval::mg_score(Eval::ks_weight_b));
-    fprintf(stdout, "\t#define KS_WEIGHT_T %d\n",   Eval::mg_score(Eval::ks_weight_t));
-    fprintf(stdout, "\t#define KS_WEIGHT_D %d\n\n", Eval::mg_score(Eval::ks_weight_d));
+    fprintf(out, "\t#define KS_WEIGHT_C %d\n",   Eval::mg_score(Eval::ks_weight_c));
+    fprintf(out, "\t#define KS_WEIGHT_B %d\n",   Eval::mg_score(Eval::ks_weight_b));
+    fprintf(out, "\t#define KS_WEIGHT_T %d\n",   Eval::mg_score(Eval::ks_weight_t));
+    fprintf(out, "\t#define KS_WEIGHT_D %d\n\n", Eval::mg_score(Eval::ks_weight_d));
 
-    fprintf(stdout, "// ==== end tuned values ====\n");
+    fprintf(out, "// ==== end tuned values ====\n");
+}
+
+// Overwrites the checkpoint with the current values after each pass, via a
+// temp file + rename so an interrupted write never leaves a truncated file.
+static void write_checkpoint(int pass, double loss) {
+    if (!checkpoint_path) return;
+
+    char tmp_path[1024];
+    snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", checkpoint_path);
+
+    FILE* f = fopen(tmp_path, "w");
+    if (!f) {
+        fprintf(stderr, "tuner: cannot write checkpoint %s: %s\n", tmp_path, strerror(errno));
+        return;
+    }
+    fprintf(f, "// checkpoint after pass %d, loss=%.6f\n", pass, loss);
+    print_tuned_values(f);
+    fclose(f);
+
+    if (rename(tmp_path, checkpoint_path) != 0) {
+        fprintf(stderr, "tuner: cannot rename checkpoint to %s: %s\n", checkpoint_path, strerror(errno));
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -305,9 +332,10 @@ static void print_tuned_values() {
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <dataset.txt> [--max N] [--passes P]\n", argv[0]);
-        fprintf(stderr, "  --max N      Cap dataset to N positions (random shuffle then truncate). Default: 200000. 0 = unlimited.\n");
-        fprintf(stderr, "  --passes P   Stop after P coord-descent passes. Default: 30. 0 = unlimited.\n");
+        fprintf(stderr, "Usage: %s <dataset.txt> [--max N] [--passes P] [--checkpoint FILE]\n", argv[0]);
+        fprintf(stderr, "  --max N          Cap dataset to N positions (random shuffle then truncate). Default: 200000. 0 = unlimited.\n");
+        fprintf(stderr, "  --passes P       Stop after P coord-descent passes. Default: 30. 0 = unlimited.\n");
+        fprintf(stderr, "  --checkpoint F   Rewrite F with the current tuned values after every pass.\n");
         return 1;
     }
 
@@ -319,6 +347,8 @@ int main(int argc, char **argv) {
             max_positions = atoi(argv[++i]);
         } else if (!strcmp(argv[i], "--passes") && i + 1 < argc) {
             max_passes = atoi(argv[++i]);
+        } else if (!strcmp(argv[i], "--checkpoint") && i + 1 < argc) {
+            checkpoint_path = argv[++i];
         }
     }
 
@@ -346,7 +376,7 @@ int main(int argc, char **argv) {
     double final_loss = coordinate_descent(K, max_passes);
     fprintf(stderr, "tuner: final loss = %.6f\n", final_loss);
 
-    print_tuned_values();
+    print_tuned_values(stdout);
 
     return 0;
 }
