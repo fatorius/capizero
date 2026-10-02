@@ -8,12 +8,14 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <limits>
 
 #include "consts.h"
 #include "init.h"
 #include "game.h"
 #include "update.h"
 #include "bitboard.h"
+#include "gen.h"
 #include "eval.h"
 
 struct TuningPos {
@@ -26,7 +28,7 @@ struct TuningPos {
     float result;       // 0.0, 0.5, 1.0
 };
 
-static std::vector<TuningPos> dataset;
+static std::vector<TuningPos> dataset;  // training set (validation slice is carved out in main)
 
 static bool result_to_float(const char *s, float &out) {
     if (!strcmp(s, "1.0") || !strcmp(s, "1") || !strcmp(s, "1-0")) {
@@ -112,11 +114,11 @@ static inline double sigmoid(double cp, double K) {
     return 1.0 / (1.0 + std::pow(10.0, -K * cp / 400.0));
 }
 
-static double total_loss(double K) {
+static double total_loss(double K, const std::vector<TuningPos>& set) {
     double sum = 0.0;
-    const int n = (int)dataset.size();
+    const int n = (int)set.size();
     for (int i = 0; i < n; i++) {
-        TuningPos &p = dataset[i];
+        TuningPos p = set[i];  // setar_posicao wants non-const char* fields
 
         Update::setar_posicao(p.fen, p.lado, p.roques, p.ep, p.hm, p.fm);
 
@@ -130,13 +132,13 @@ static double total_loss(double K) {
     return sum / (double)n;
 }
 
-static double optimize_K() {
+static double optimize_K(const std::vector<TuningPos>& set) {
     double low = 0.1, high = 3.0;
     for (int iter = 0; iter < 30 && (high - low) > 0.0005; iter++) {
         double m1 = low + (high - low) / 3.0;
         double m2 = high - (high - low) / 3.0;
-        double l1 = total_loss(m1);
-        double l2 = total_loss(m2);
+        double l1 = total_loss(m1, set);
+        double l2 = total_loss(m2, set);
         if (l1 < l2) high = m2;
         else         low  = m1;
         fprintf(stderr, "tuner: K-opt iter %2d: K in [%.4f, %.4f], loss=%.6f\n",
@@ -145,35 +147,114 @@ static double optimize_K() {
     return (low + high) / 2.0;
 }
 
+// ---------------------------------------------------------------------------
+// Per-parameter sample-support counting.
+//
+// Plain coordinate descent has no concept of "not enough evidence" — a PST
+// cell or mobility bucket that only a handful of training positions ever
+// touch gets the exact same ±1 acceptance rule as a cell backed by hundreds
+// of thousands of samples, so a few noisy outcomes can drag it to an extreme
+// value that minimizes training loss but means nothing (classic overfit
+// signature: non-monotonic mobility curves, wild adjacent-square PST swings
+// on rarely-occupied squares). Freezing parameters below MIN_SAMPLES removes
+// exactly those degrees of freedom instead of letting them fit noise.
+
+static long pst_support[6][CASAS_DO_TABULEIRO];
+static long mob_support_c[9], mob_support_b[14], mob_support_t[15], mob_support_d[28];
+
+static void compute_support(const std::vector<TuningPos>& set) {
+    memset(pst_support, 0, sizeof(pst_support));
+    memset(mob_support_c, 0, sizeof(mob_support_c));
+    memset(mob_support_b, 0, sizeof(mob_support_b));
+    memset(mob_support_t, 0, sizeof(mob_support_t));
+    memset(mob_support_d, 0, sizeof(mob_support_d));
+
+    for (size_t i = 0; i < set.size(); i++) {
+        TuningPos p = set[i];  // setar_posicao wants non-const char* fields
+        Update::setar_posicao(p.fen, p.lado, p.roques, p.ep, p.hm, p.fm);
+
+        for (int piece = P; piece <= R; piece++) {
+            for (int l = 0; l < LADOS; l++) {
+                Bitboard::u64 t = Bitboard::bit_pieces[l][piece];
+                while (t) {
+                    int casa = Bitboard::bitscan(t);
+                    t &= Bitboard::not_mask[casa];
+                    int x = (l == BRANCAS) ? casa : Consts::flip[casa];
+                    pst_support[piece][x]++;
+                }
+            }
+        }
+
+        for (int l = 0; l < LADOS; l++) {
+            const Bitboard::u64 nao_proprios = ~Bitboard::bit_lados[l];
+
+            Bitboard::u64 t = Bitboard::bit_pieces[l][C];
+            while (t) {
+                int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
+                mob_support_c[Bitboard::popcount(Gen::bit_moves_cavalo[casa] & nao_proprios)]++;
+            }
+            t = Bitboard::bit_pieces[l][B];
+            while (t) {
+                int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
+                mob_support_b[Bitboard::popcount(Gen::atacantes_bispo(casa) & nao_proprios)]++;
+            }
+            t = Bitboard::bit_pieces[l][T];
+            while (t) {
+                int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
+                mob_support_t[Bitboard::popcount(Gen::atacantes_torre(casa) & nao_proprios)]++;
+            }
+            t = Bitboard::bit_pieces[l][D];
+            while (t) {
+                int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
+                Bitboard::u64 att = Gen::atacantes_bispo(casa) | Gen::atacantes_torre(casa);
+                mob_support_d[Bitboard::popcount(att & nao_proprios)]++;
+            }
+        }
+    }
+}
 
 struct Param {
     Eval::Score* slot;
     Eval::Score* mirror;
     bool is_mg;
+    long support;    // training positions where this feature is active
 };
 
 static std::vector<Param> params;
+static int min_samples = 200;
 
 static void register_params() {
     for (int p = P; p <= R; p++) {
         for (int x = 0; x < CASAS_DO_TABULEIRO; x++) {
             Eval::Score* white = &Eval::score_casas[BRANCAS][p][x];
             Eval::Score* black = &Eval::score_casas[PRETAS][p][Consts::flip[x]];
-            params.push_back({white, black, true});   // mg
-            params.push_back({white, black, false});  // eg
+            long support = pst_support[p][x];
+            params.push_back({white, black, true,  support});   // mg
+            params.push_back({white, black, false, support});   // eg
         }
     }
-    for (int i = 0; i < 9;  i++){ params.push_back({&Eval::mobilidade_cavalo[i], NULL, true});  params.push_back({&Eval::mobilidade_cavalo[i], NULL, false}); }
-    for (int i = 0; i < 14; i++){ params.push_back({&Eval::mobilidade_bispo[i],  NULL, true});  params.push_back({&Eval::mobilidade_bispo[i],  NULL, false}); }
-    for (int i = 0; i < 15; i++){ params.push_back({&Eval::mobilidade_torre[i],  NULL, true});  params.push_back({&Eval::mobilidade_torre[i],  NULL, false}); }
-    for (int i = 0; i < 28; i++){ params.push_back({&Eval::mobilidade_dama[i],   NULL, true});  params.push_back({&Eval::mobilidade_dama[i],   NULL, false}); }
 
-    params.push_back({&Eval::ks_weight_c, NULL, true});
-    params.push_back({&Eval::ks_weight_b, NULL, true});
-    params.push_back({&Eval::ks_weight_t, NULL, true});
-    params.push_back({&Eval::ks_weight_d, NULL, true});
+    const long DENSE = std::numeric_limits<long>::max();
+
+    for (int i = 0; i < 9;  i++){ params.push_back({&Eval::mobilidade_cavalo[i], NULL, true,  mob_support_c[i]}); params.push_back({&Eval::mobilidade_cavalo[i], NULL, false, mob_support_c[i]}); }
+    for (int i = 0; i < 14; i++){ params.push_back({&Eval::mobilidade_bispo[i],  NULL, true,  mob_support_b[i]}); params.push_back({&Eval::mobilidade_bispo[i],  NULL, false, mob_support_b[i]}); }
+    for (int i = 0; i < 15; i++){ params.push_back({&Eval::mobilidade_torre[i],  NULL, true,  mob_support_t[i]}); params.push_back({&Eval::mobilidade_torre[i],  NULL, false, mob_support_t[i]}); }
+    for (int i = 0; i < 28; i++){ params.push_back({&Eval::mobilidade_dama[i],   NULL, true,  mob_support_d[i]}); params.push_back({&Eval::mobilidade_dama[i],   NULL, false, mob_support_d[i]}); }
+
+    // King-safety weights are dense, always-active scalars (scaled by piece
+    // count and king-zone attacks in essentially every position) — gating
+    // them doesn't address the sparse-bin overfit problem, so exempt them.
+    params.push_back({&Eval::ks_weight_c, NULL, true, DENSE});
+    params.push_back({&Eval::ks_weight_b, NULL, true, DENSE});
+    params.push_back({&Eval::ks_weight_t, NULL, true, DENSE});
+    params.push_back({&Eval::ks_weight_d, NULL, true, DENSE});
+
+    size_t frozen = 0;
+    for (size_t i = 0; i < params.size(); i++) if (params[i].support < min_samples) frozen++;
 
     fprintf(stderr, "tuner: registered %zu parameters (PSTs + mobility + king safety, mg+eg halves)\n", params.size());
+    fprintf(stderr, "tuner: %zu/%zu parameters frozen (support < %d training samples)\n",
+            frozen, params.size(), min_samples);
 }
 
 static inline void tweak(const Param& p, int delta) {
@@ -185,65 +266,21 @@ static inline void tweak(const Param& p, int delta) {
     if (p.mirror) *p.mirror = *p.slot;
 }
 
+// Snapshot/restore the live tunable state. Two Param entries (mg, eg) can
+// point at the same packed Score slot, so the snapshot is simply "current
+// value per Param index" — restoring writes the same slot twice in that
+// case, which is idempotent.
+static std::vector<Eval::Score> snapshot_params() {
+    std::vector<Eval::Score> snap(params.size());
+    for (size_t i = 0; i < params.size(); i++) snap[i] = *params[i].slot;
+    return snap;
+}
 
-static const char* checkpoint_path = NULL;
-static void write_checkpoint(int pass, double loss);
-
-static double coordinate_descent(double K, int max_passes) {
-    std::mt19937 rng(0xC0FFEE);
-    std::vector<size_t> order(params.size());
-    for (size_t i = 0; i < params.size(); i++) order[i] = i;
-
-    double best_loss = total_loss(K);
-    fprintf(stderr, "tuner: starting loss = %.6f\n", best_loss);
-
-    for (int pass = 0; max_passes == 0 || pass < max_passes; pass++) {
-        std::shuffle(order.begin(), order.end(), rng);
-
-        int accepted = 0;
-        time_t pass_start = time(NULL);
-
-        for (size_t idx = 0; idx < order.size(); idx++) {
-            Param& p = params[order[idx]];
-
-            // Try +1
-            tweak(p, +1);
-            double loss_plus = total_loss(K);
-
-            if (loss_plus < best_loss) {
-                best_loss = loss_plus;
-                accepted++;
-                continue;
-            }
-
-            // Revert and try -1
-            tweak(p, -1);  // undo +1 → back to original
-            tweak(p, -1);  // step to -1
-            double loss_minus = total_loss(K);
-
-            if (loss_minus < best_loss) {
-                best_loss = loss_minus;
-                accepted++;
-                continue;
-            }
-
-            // Neither direction helped, revert to original.
-            tweak(p, +1);
-        }
-
-        time_t elapsed = time(NULL) - pass_start;
-        fprintf(stderr, "tuner: pass %d done, accepted %d / %zu, loss=%.6f, elapsed=%lds\n",
-                pass + 1, accepted, params.size(), best_loss, (long)elapsed);
-
-        write_checkpoint(pass + 1, best_loss);
-
-        if (accepted == 0) {
-            fprintf(stderr, "tuner: converged after pass %d (no improvements)\n", pass + 1);
-            break;
-        }
+static void restore_params(const std::vector<Eval::Score>& snap) {
+    for (size_t i = 0; i < params.size(); i++) {
+        *params[i].slot = snap[i];
+        if (params[i].mirror) *params[i].mirror = snap[i];
     }
-
-    return best_loss;
 }
 
 static void print_pst_array(FILE* out, const char* name, int piece, bool is_mg) {
@@ -305,10 +342,18 @@ static void print_tuned_values(FILE* out) {
     fprintf(out, "// ==== end tuned values ====\n");
 }
 
-// Overwrites the checkpoint with the current values after each pass, via a
-// temp file + rename so an interrupted write never leaves a truncated file.
-static void write_checkpoint(int pass, double loss) {
+static const char* checkpoint_path = NULL;
+
+// Writes `snap` to the checkpoint file without disturbing the live
+// optimization state: swap in, print, swap back. Single-threaded, so this
+// is safe. Via a temp file + rename so an interrupted write never leaves a
+// truncated file.
+static void write_checkpoint(int pass, double train_loss, double val_loss,
+                              const std::vector<Eval::Score>& snap) {
     if (!checkpoint_path) return;
+
+    std::vector<Eval::Score> live = snapshot_params();
+    restore_params(snap);
 
     char tmp_path[1024];
     snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", checkpoint_path);
@@ -316,15 +361,111 @@ static void write_checkpoint(int pass, double loss) {
     FILE* f = fopen(tmp_path, "w");
     if (!f) {
         fprintf(stderr, "tuner: cannot write checkpoint %s: %s\n", tmp_path, strerror(errno));
+        restore_params(live);
         return;
     }
-    fprintf(f, "// checkpoint after pass %d, loss=%.6f\n", pass, loss);
+    fprintf(f, "// checkpoint: best validation loss=%.6f (train=%.6f) at pass %d\n",
+            val_loss, train_loss, pass);
     print_tuned_values(f);
     fclose(f);
 
     if (rename(tmp_path, checkpoint_path) != 0) {
         fprintf(stderr, "tuner: cannot rename checkpoint to %s: %s\n", checkpoint_path, strerror(errno));
     }
+
+    restore_params(live);
+}
+
+// Coordinate descent, gated by per-parameter sample support and watched by a
+// held-out validation set. Training loss alone can't tell overfitting from
+// real improvement — it only ever goes down — so acceptance still optimizes
+// training loss (that's the actual objective function), but progress is
+// judged, checkpointed, and ultimately returned by validation loss. If
+// validation loss hasn't improved for `patience` passes, stop early rather
+// than continuing to shave training loss at validation's expense.
+static double coordinate_descent(double K, int max_passes,
+                                  const std::vector<TuningPos>& val_set, int patience) {
+    std::mt19937 rng(0xC0FFEE);
+    std::vector<size_t> order(params.size());
+    for (size_t i = 0; i < params.size(); i++) order[i] = i;
+
+    double best_loss = total_loss(K, dataset);
+    double best_val_loss = total_loss(K, val_set);
+    std::vector<Eval::Score> best_val_snapshot = snapshot_params();
+    int passes_since_val_improved = 0;
+
+    fprintf(stderr, "tuner: starting loss = %.6f (train), %.6f (val)\n", best_loss, best_val_loss);
+
+    for (int pass = 0; max_passes == 0 || pass < max_passes; pass++) {
+        std::shuffle(order.begin(), order.end(), rng);
+
+        int accepted = 0, skipped_frozen = 0;
+        time_t pass_start = time(NULL);
+
+        for (size_t idx = 0; idx < order.size(); idx++) {
+            Param& p = params[order[idx]];
+
+            if (p.support < min_samples) { skipped_frozen++; continue; }
+
+            // Try +1
+            tweak(p, +1);
+            double loss_plus = total_loss(K, dataset);
+
+            if (loss_plus < best_loss) {
+                best_loss = loss_plus;
+                accepted++;
+                continue;
+            }
+
+            // Revert and try -1
+            tweak(p, -1);  // undo +1 → back to original
+            tweak(p, -1);  // step to -1
+            double loss_minus = total_loss(K, dataset);
+
+            if (loss_minus < best_loss) {
+                best_loss = loss_minus;
+                accepted++;
+                continue;
+            }
+
+            // Neither direction helped, revert to original.
+            tweak(p, +1);
+        }
+
+        time_t elapsed = time(NULL) - pass_start;
+
+        double val_loss = total_loss(K, val_set);
+        bool improved = val_loss < best_val_loss;
+        if (improved) {
+            best_val_loss = val_loss;
+            best_val_snapshot = snapshot_params();
+            passes_since_val_improved = 0;
+            write_checkpoint(pass + 1, best_loss, best_val_loss, best_val_snapshot);
+        } else {
+            passes_since_val_improved++;
+        }
+
+        fprintf(stderr, "tuner: pass %d done, accepted %d / %zu (%d frozen), "
+                        "loss=%.6f (train), %.6f (val)%s, elapsed=%lds\n",
+                pass + 1, accepted, params.size(), skipped_frozen,
+                best_loss, val_loss, improved ? " *" : "", (long)elapsed);
+
+        if (accepted == 0) {
+            fprintf(stderr, "tuner: converged after pass %d (no improvements)\n", pass + 1);
+            break;
+        }
+
+        if (patience > 0 && passes_since_val_improved >= patience) {
+            fprintf(stderr, "tuner: stopping after pass %d (validation loss hasn't improved in %d passes)\n",
+                    pass + 1, patience);
+            break;
+        }
+    }
+
+    fprintf(stderr, "tuner: restoring best-validation snapshot (val loss=%.6f)\n", best_val_loss);
+    restore_params(best_val_snapshot);
+
+    return best_val_loss;
 }
 
 // ---------------------------------------------------------------------------
@@ -332,15 +473,21 @@ static void write_checkpoint(int pass, double loss) {
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <dataset.txt> [--max N] [--passes P] [--checkpoint FILE]\n", argv[0]);
+        fprintf(stderr, "Usage: %s <dataset.txt> [--max N] [--passes P] [--checkpoint FILE]\n"
+                        "                      [--val-frac F] [--min-samples N] [--patience P]\n", argv[0]);
         fprintf(stderr, "  --max N          Cap dataset to N positions (random shuffle then truncate). Default: 200000. 0 = unlimited.\n");
         fprintf(stderr, "  --passes P       Stop after P coord-descent passes. Default: 30. 0 = unlimited.\n");
-        fprintf(stderr, "  --checkpoint F   Rewrite F with the current tuned values after every pass.\n");
+        fprintf(stderr, "  --checkpoint F   Rewrite F with the best-validation tuned values whenever validation loss improves.\n");
+        fprintf(stderr, "  --val-frac F     Fraction of the (post --max) dataset held out for validation. Default: 0.15.\n");
+        fprintf(stderr, "  --min-samples N  Freeze any parameter touched by fewer than N training positions. Default: 200.\n");
+        fprintf(stderr, "  --patience P     Stop early after P passes with no validation improvement. Default: 20. 0 = disabled.\n");
         return 1;
     }
 
     int max_positions = 200000;
     int max_passes    = 30;
+    double val_frac   = 0.15;
+    int patience      = 20;
 
     for (int i = 2; i < argc; i++) {
         if (!strcmp(argv[i], "--max") && i + 1 < argc) {
@@ -349,6 +496,12 @@ int main(int argc, char **argv) {
             max_passes = atoi(argv[++i]);
         } else if (!strcmp(argv[i], "--checkpoint") && i + 1 < argc) {
             checkpoint_path = argv[++i];
+        } else if (!strcmp(argv[i], "--val-frac") && i + 1 < argc) {
+            val_frac = atof(argv[++i]);
+        } else if (!strcmp(argv[i], "--min-samples") && i + 1 < argc) {
+            min_samples = atoi(argv[++i]);
+        } else if (!strcmp(argv[i], "--patience") && i + 1 < argc) {
+            patience = atoi(argv[++i]);
         }
     }
 
@@ -366,15 +519,33 @@ int main(int argc, char **argv) {
         fprintf(stderr, "tuner: subsampled to %d positions\n", max_positions);
     }
 
+    // Held-out validation split. Coordinate descent never sees these
+    // positions as an optimization target — they're the only thing that can
+    // tell a real improvement from the optimizer fitting training noise.
+    std::vector<TuningPos> val_set;
+    if (val_frac > 0.0 && val_frac < 1.0) {
+        std::mt19937 rng(0xFEED);
+        std::shuffle(dataset.begin(), dataset.end(), rng);
+        size_t val_n = (size_t)(dataset.size() * val_frac);
+        val_set.assign(dataset.end() - val_n, dataset.end());
+        dataset.resize(dataset.size() - val_n);
+    }
+    fprintf(stderr, "tuner: split into %zu training / %zu validation positions\n",
+            dataset.size(), val_set.size());
+
+    fprintf(stderr, "tuner: computing per-parameter sample support...\n");
+    compute_support(dataset);
+
     fprintf(stderr, "tuner: optimizing K ...\n");
-    double K = optimize_K();
+    double K = optimize_K(dataset);
     fprintf(stderr, "tuner: optimal K = %.4f\n", K);
 
     register_params();
 
-    fprintf(stderr, "tuner: starting coordinate descent (max %d passes)...\n", max_passes);
-    double final_loss = coordinate_descent(K, max_passes);
-    fprintf(stderr, "tuner: final loss = %.6f\n", final_loss);
+    fprintf(stderr, "tuner: starting coordinate descent (max %d passes, patience %d)...\n",
+            max_passes, patience);
+    double final_val_loss = coordinate_descent(K, max_passes, val_set, patience);
+    fprintf(stderr, "tuner: final validation loss = %.6f\n", final_val_loss);
 
     print_tuned_values(stdout);
 
