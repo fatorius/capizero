@@ -4,8 +4,8 @@
 EPOCH = $(shell date +%s)
 VERSION = $(shell cat version.capizero)
 VERSION_WITHOUTQUOTES = $(patsubst '"%"',%, $(VERSION))
-CXXFLAGS = -Wall -std=c++11 -O3 -march=native -flto -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
-CXXDEBUGFLAGS = -Wall -std=c++11 -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero) -g -DDEBUG_BUILD
+CXXFLAGS = -Wall -std=c++11 -I./src -O3 -march=native -flto -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
+CXXDEBUGFLAGS = -Wall -std=c++11 -I./src -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero) -g -DDEBUG_BUILD
 EXE := $(NAME)
 COMP = g++
 
@@ -52,7 +52,7 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/interface.h ./src/attacks.h \
 		./src/xboard.h ./src/uci.h \
 		./src/help.h ./src/consts.h \
-		./src/params.h ./src/tests.h \
+		./src/params.h \
 		./src/values.h ./src/bench.h \
 		./src/bench_fens.h ./src/debug.h \
 		./src/magics.h
@@ -70,43 +70,50 @@ debug: clean add_debug_variables ./src/main.o $(SRCS) $(HEADER_FILES)
 	@ echo "================="
 	@ echo "capi_debug compilado com sucesso"
 
-tests: clean ./src/unit_tests.o ./src/tests.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -o capi_tests ./src/unit_tests.o ./src/tests.o $(SRCS)
+tests: clean ./tests/unit/unit_tests.o ./tests/unit/tests.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o capi_tests ./tests/unit/unit_tests.o ./tests/unit/tests.o $(SRCS)
 	@ echo "================="
 	@ echo "capi_tests compilado com sucesso"
 
-bench: clean ./src/bench_tests.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -o capi_bench ./src/bench_tests.o $(SRCS)
+bench: clean ./tests/bench/bench_tests.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o capi_bench ./tests/bench/bench_tests.o $(SRCS)
 	@ echo "================="
 	@ echo "capi_bench compilado com sucesso"
 
 # Texel-style eval tuner. Reuses the engine's eval/board/state code; tuner.cpp
 # adds the dataset loader, loss function, and (eventually) coordinate-descent
 # tuning loop. Runs as: ./capi_tuner <dataset.txt>
-tuner: clean ./src/tuner.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -o capi_tuner ./src/tuner.o $(SRCS)
+tuner: clean ./tools/tuning/tuner.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o capi_tuner ./tools/tuning/tuner.o $(SRCS)
 	@ echo "================="
 	@ echo "capi_tuner compilado com sucesso"
+
+# Gradient-based Texel tuner (sparse features + Adam). See tools/tuning/tuner_adam.cpp.
+# Runs as: ./capi_tuner_adam <dataset.txt> [options]
+tuner_adam: clean ./tools/tuning/tuner_adam.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -pthread -o capi_tuner_adam ./tools/tuning/tuner_adam.o $(SRCS)
+	@ echo "================="
+	@ echo "capi_tuner_adam compilado com sucesso"
 
 # Self-play data collector — Phase A. Plays engine-vs-engine games, samples
 # quiet positions during play, writes them out labeled with the game's WDL
 # result. Output feeds capi_resolve (Phase B) and then capi_tuner.
-selfplay: clean ./src/selfplay.o ./src/fen_serializer.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -o capi_selfplay ./src/selfplay.o ./src/fen_serializer.o $(SRCS)
+selfplay: clean ./tools/datagen/selfplay.o ./tools/datagen/fen_serializer.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o capi_selfplay ./tools/datagen/selfplay.o ./tools/datagen/fen_serializer.o $(SRCS)
 	@ echo "================="
 	@ echo "capi_selfplay compilado com sucesso"
 
 # PV-resolver — Phase B. For each input position, runs a high-depth search,
 # walks the PV through the TT, and emits the leaf position with the original
 # game's WDL. Produces the final dataset for capi_tuner.
-resolve: clean ./src/resolve.o ./src/fen_serializer.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -o capi_resolve ./src/resolve.o ./src/fen_serializer.o $(SRCS)
+resolve: clean ./tools/datagen/resolve.o ./tools/datagen/fen_serializer.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o capi_resolve ./tools/datagen/resolve.o ./tools/datagen/fen_serializer.o $(SRCS)
 	@ echo "================="
 	@ echo "capi_resolve compilado com sucesso"
 
-magics: ./src/generate_magics.cpp
-	@ $(COMP) -c $(CXXFLAGS) ./src/generate_magics.cpp -o ./src/generate_magics.o
-	@ $(COMP) -o generate_magics ./src/generate_magics.o 
+magics: ./tools/magics/generate_magics.cpp
+	@ $(COMP) -c $(CXXFLAGS) ./tools/magics/generate_magics.cpp -o ./tools/magics/generate_magics.o
+	@ $(COMP) -o generate_magics ./tools/magics/generate_magics.o 
 	@ echo "================="
 	@ echo "generate_magics compilado com sucesso"
 
@@ -114,7 +121,7 @@ magics: ./src/generate_magics.cpp
 # -----------------------------------------------------
 # Outros comandos
 clean:
-	@ rm -rf ./src/*.o
+	@ rm -rf ./src/*.o ./tools/*/*.o ./tests/*/*.o
 	
 help:
 	@ echo "Para compilar o capizero, você deve usar:"
@@ -126,6 +133,11 @@ help:
 	@ echo "tests: compila um binário para testes unitários"
 	@ echo "debug: compila o capizero sem optimizações e com flags para debug"
 	@ echo "bench: compila um binário para testar a performance da engine no seu computador"
+	@ echo "tuner: compila o Texel tuner por coordinate descent (tools/tuning)"
+	@ echo "tuner_adam: compila o Texel tuner por gradiente/Adam (tools/tuning)"
+	@ echo "selfplay: compila o coletor de partidas de self-play (tools/datagen)"
+	@ echo "resolve: compila o resolvedor de PV do dataset (tools/datagen)"
+	@ echo "magics: compila o gerador de números mágicos (tools/magics)"
 	@ echo "======================"
 	@ echo "As opções: "
 	@ echo "NAME = string: define o nome do binário"
