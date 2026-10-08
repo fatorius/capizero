@@ -64,14 +64,21 @@ void Eval::init_eval_tables(){
         mobilidade_dama[i] = make_score(Values::mobilidade_dama_mg[i], Values::mobilidade_dama_eg[i]);
     }
 
-    for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
-        king_zone[x] = Gen::bit_moves_rei[x] | Bitboard::mask[x];
-    }
-
     ks_weight_c = make_score(KS_WEIGHT_C, 0);
     ks_weight_b = make_score(KS_WEIGHT_B, 0);
     ks_weight_t = make_score(KS_WEIGHT_T, 0);
     ks_weight_d = make_score(KS_WEIGHT_D, 0);
+}
+
+// Depends on Gen::bit_moves_rei, so it must run after Gen::init_lookup_tables().
+void Eval::init_king_zone(){
+    for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
+        king_zone[x] = Gen::bit_moves_rei[x] | Bitboard::mask[x];
+    }
+}
+
+uint64_t Eval::zona_do_rei(int casa){
+    return king_zone[casa];
 }
 
 int Eval::fase(){
@@ -151,6 +158,7 @@ int Eval::avaliar(){
 
     const int rei_branco_sq = Bitboard::bitscan(Bitboard::bit_pieces[BRANCAS][R]);
     const int rei_preto_sq  = Bitboard::bitscan(Bitboard::bit_pieces[PRETAS][R]);
+    const int rei_sq[LADOS] = { rei_branco_sq, rei_preto_sq };
     const Bitboard::u64 zona_inimiga[LADOS] = {
         king_zone[rei_preto_sq],
         king_zone[rei_branco_sq]
@@ -165,6 +173,8 @@ int Eval::avaliar(){
         const Bitboard::u64 nao_proprios = ~Bitboard::bit_lados[l];
         const Bitboard::u64 zona = zona_inimiga[l];
         int pressao_rei = 0;
+
+        score[l] += score_casas[l][R][rei_sq[l]];
 
         t1 = Bitboard::bit_pieces[l][P];
         while (t1){

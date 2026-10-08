@@ -17,7 +17,7 @@ using namespace std;
 void Tests::test1(){
     cout<<"Test 1 - Perft 5"<<endl;
     
-    unsigned long long test1_valor_obtido = perft_node(5);
+    unsigned long long test1_valor_obtido = Gen::perft_node(5);
 
     cout<<"Valor esperado: "<<TEST1_VALOR_ESPERADO<<endl;
     cout<<"Valor obtido: "<<test1_valor_obtido<<endl;
@@ -39,14 +39,14 @@ void Tests::test1(){
 void Tests::test2(){
     cout<<"Test 2 - Pesquisa de lance com 3 segundos"<<endl;
     
-    tempo_maximo = TEST2_VALOR_ESPERADO;
-    profundidade_maxima = MAX_PLY;
-    tempo_fixo = true;
-    profundidade_fixa = false;
-    
-    lance_computador(false);
+    Interface::tempo_maximo = TEST2_VALOR_ESPERADO;
+    Interface::profundidade_maxima = MAX_PLY;
+    Interface::tempo_fixo = true;
+    Interface::profundidade_fixa = false;
 
-    int test2_valor_obtido = tempo_gasto;
+    Interface::lance_computador(false);
+
+    int test2_valor_obtido = Interface::tempo_gasto;
 
     cout<<"Valor esperado: "<<TEST2_VALOR_ESPERADO<<"ms"<<endl;
     cout<<"Valor obtido: "<<test2_valor_obtido<<"ms"<<endl;
@@ -68,13 +68,13 @@ void Tests::test2(){
 // as funções de atualização do tabuleiro (fazer lance e
 // desfazer lance) estão funcionando corretamente
 void Tests::test3(){
-    novo_jogo();
-    fazer_lance(E2, E4);
-    desfaz_lance();
+    Game::novo_jogo();
+    Update::fazer_lance(E2, E4);
+    Update::desfaz_lance();
 
     cout<<"Test 3 - Perft 5 após fazer e desfazer lance"<<endl;
 
-    unsigned long long test3_valor_obtido = perft_node(5);
+    unsigned long long test3_valor_obtido = Gen::perft_node(5);
 
     cout<<"Valor esperado: "<<TEST3_VALOR_ESPERADO<<endl;
     cout<<"Valor obtido: "<<test3_valor_obtido<<endl;
@@ -95,21 +95,21 @@ void Tests::test3(){
 void Tests::test4(){
     cout<<"Test 4 - Perft 5 após calcular lance e chamar novo_jogo()"<<endl;
 
-    fazer_lance(E2, E4);
-    fazer_lance(E7, E5);
-    fazer_lance(G1, F3);
-    fazer_lance(B8, C6);
+    Update::fazer_lance(E2, E4);
+    Update::fazer_lance(E7, E5);
+    Update::fazer_lance(G1, F3);
+    Update::fazer_lance(B8, C6);
 
-    tempo_maximo = 1000;
-    profundidade_maxima = MAX_PLY;
-    tempo_fixo = true;
-    profundidade_fixa = false;
+    Interface::tempo_maximo = 1000;
+    Interface::profundidade_maxima = MAX_PLY;
+    Interface::tempo_fixo = true;
+    Interface::profundidade_fixa = false;
 
-    lance_computador(false);
+    Interface::lance_computador(false);
 
-    novo_jogo();
+    Game::novo_jogo();
 
-    unsigned long long test4_valor_obtido = perft_node(5);
+    unsigned long long test4_valor_obtido = Gen::perft_node(5);
 
     cout<<"Valor esperado: "<<TEST4_VALOR_ESPERADO<<endl;
     cout<<"Valor obtido: "<<test4_valor_obtido<<endl;
@@ -137,11 +137,11 @@ void Tests::test5(){
     char lado_a_jogar[1] = {'w'};
     char roques[4] = {'K','Q','k','q'}; 
     char casa_en_passant[2] = "-"; 
-    char hm[4] = "0"; 
+    char hm[4] = "0";
     char fm[4] = "1";
-    setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
+    Update::setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
 
-    unsigned long long test5_valor_obtido = perft_node(5);
+    unsigned long long test5_valor_obtido = Gen::perft_node(5);
 
     cout<<"Valor esperado: "<<TEST5_VALOR_ESPERADO<<endl;
     cout<<"Valor obtido: "<<test5_valor_obtido<<endl;
@@ -164,15 +164,15 @@ void Tests::test6(){
 
     cout<<"Test 6 - Perft 4 após setar o tabuleiro em na posição rnb1k2r/pppp3p/7b/4Pp2/2B5/5QPq/PPPP1P1P/RNB1K2R w KQkq f6 0 11"<<endl;
 
-    char posicao[80] = "rrnb1k2r/pppp3p/7b/4Pp2/2B5/5QPq/PPPP1P1P/RNB1K2R"; 
+    char posicao[80] = "rnb1k2r/pppp3p/7b/4Pp2/2B5/5QPq/PPPP1P1P/RNB1K2R";
     char lado_a_jogar[1] = {'w'};
     char roques[4] = {'K','Q','k','q'}; 
-    char casa_en_passant[2] = {'f', '6'}; 
-    char hm[4] = "0"; 
+    char casa_en_passant[3] = "f6";
+    char hm[4] = "0";
     char fm[4] = "11";
-    setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
+    Update::setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
 
-    unsigned long long test6_valor_obtido = perft_node(4);
+    unsigned long long test6_valor_obtido = Gen::perft_node(4);
 
     cout<<"Valor esperado: "<<TEST6_VALOR_ESPERADO<<endl;
     cout<<"Valor obtido: "<<test6_valor_obtido<<endl;

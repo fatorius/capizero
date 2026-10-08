@@ -36,7 +36,11 @@ namespace Eval{
 
     extern Score ks_weight_c, ks_weight_b, ks_weight_t, ks_weight_d;
 
+    // King-zone mask the evaluator uses for king-safety pressure (exposed for the tuner).
+    uint64_t zona_do_rei(int casa);
+
     void init_eval_tables();
+    void init_king_zone();      // call after Gen::init_lookup_tables()
     void atualizar_materiais();
 
     int fase();

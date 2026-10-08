@@ -12,6 +12,7 @@ void Init::init(){
     Bitboard::init_board();
     Eval::init_eval_tables();
     Gen::init_lookup_tables();
+    Eval::init_king_zone();
     Bitboard::init_vetores();
     Hash::iniciar_hash();
 
