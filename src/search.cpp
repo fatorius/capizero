@@ -22,6 +22,22 @@ Gen::lance Search::contraLance_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO
 Gen::lance Search::killers_primarios[MAX_PLY];
 Gen::lance Search::killers_secundarios[MAX_PLY];
 
+// Redução LMR pré-computada: lmr_tabela[profundidade][lances_legais]
+static int lmr_tabela[LMR_TABLE_DEPTH][LMR_TABLE_MOVES];
+
+void Search::init_lmr(){
+    for (int d = 0; d < LMR_TABLE_DEPTH; d++){
+        for (int m = 0; m < LMR_TABLE_MOVES; m++){
+            int r = 1;
+            if (d > 0 && m > 0){
+                r = (int)(log((double)d) * log((double)m) / LMR_DIVISOR);
+                if (r < 1) r = 1;
+            }
+            lmr_tabela[d][m] = r;
+        }
+    }
+}
+
 jmp_buf env;
 bool parar_pesquisa;
 
@@ -362,9 +378,9 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
             nova_profundidade = profundidade - 1; // primeira peça ou captura vantajosa: sem redução
         }
         else if (lances_legais_na_posicao >= 2 && profundidade >= 3){
-            // LMR: redução logarítmica para lances quietos tardios em nós não-PV.
-            // Exclui: TT, killers, contralances e capturas (via score >= SCORE_CONTRALANCE
-            // ou destino ocupado) e promoções.
+            // LMR: redução logarítmica a partir do 2º lance legal, em nós PV e não-PV.
+            // Não reduz: lance da TT e promoções (capturas vantajosas e 1º lance já saíram no ramo anterior).
+            // Killers, contralances, capturas perdedoras e lances de histórico SÃO reduzidos.
             const bool nao_reduzir =
                 Gen::lista_de_lances[candidato].score >= PONTUACAO_HASH
                 || Gen::lista_de_lances[candidato].promove != 0;
@@ -373,8 +389,36 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
                 nova_profundidade = profundidade - 1;
             }
             else{
-                int lmr_r = (int)(log((double)profundidade) * log((double)lances_legais_na_posicao) / 2.0);
+#if USE_LMR_TABLE
+                const int lmr_d = profundidade < LMR_TABLE_DEPTH ? profundidade : LMR_TABLE_DEPTH - 1;
+                const int lmr_m = lances_legais_na_posicao < LMR_TABLE_MOVES ? lances_legais_na_posicao : LMR_TABLE_MOVES - 1;
+                int lmr_r = lmr_tabela[lmr_d][lmr_m];
+#else
+                int lmr_r = (int)(log((double)profundidade) * log((double)lances_legais_na_posicao) / LMR_DIVISOR);
                 if (lmr_r < 1) lmr_r = 1;
+#endif
+#if USE_LMR_PV
+                // Nó PV de verdade (janela cheia): reduz 1 ply a menos. O parâmetro `pv` NÃO serve:
+                // é true para o 1º lance de qualquer nó, inclusive dentro de janelas nulas.
+                if (beta - alpha > 1 && lmr_r > 0) lmr_r--;
+#endif
+#if USE_LMR_CHECK_LESS
+                // Após fazer_lance, Game::lado é o adversário: rei atacado = o lance deu xeque.
+                if (lmr_r > 0
+                    && Attacks::casa_esta_sendo_atacada(Game::xlado, Bitboard::bitscan(Bitboard::bit_pieces[Game::lado][R]))){
+                    lmr_r--;
+                }
+#endif
+#if USE_LMR_HISTORY
+                // Lance quieto que já causou cortes com frequência: reduz 1 ply a menos.
+                // O bônus de histórico é 1 << profundidade, então o limiar escala com a profundidade.
+                if (lmr_r > 0
+                    && Game::lista_do_jogo[Game::hply].captura == VAZIO
+                    && historico_heuristica[Gen::lista_de_lances[candidato].inicio][Gen::lista_de_lances[candidato].destino]
+                       >= (LMR_HISTORY_K << (profundidade < 20 ? profundidade : 20))){
+                    lmr_r--;
+                }
+#endif
                 nova_profundidade = profundidade - 1 - lmr_r;
                 if (nova_profundidade < 1) nova_profundidade = 1;
             }
