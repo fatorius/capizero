@@ -402,6 +402,10 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
                 // é true para o 1º lance de qualquer nó, inclusive dentro de janelas nulas.
                 if (beta - alpha > 1 && lmr_r > 0) lmr_r--;
 #endif
+#if USE_LMR_NONPV_MORE
+                // Nó não-PV (janela nula): reduz 1 ply a mais. nova_profundidade é limitado a >= 1 abaixo.
+                if (beta - alpha == 1) lmr_r++;
+#endif
 #if USE_LMR_CHECK_LESS
                 // Após fazer_lance, Game::lado é o adversário: rei atacado = o lance deu xeque.
                 if (lmr_r > 0

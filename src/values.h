@@ -106,6 +106,7 @@ namespace Values{
 	#define USE_LMR_PV           0   // nós PV de verdade (janela beta-alpha > 1) reduzem 1 ply a menos
 	#define USE_LMR_HISTORY      0   // lances quietos com histórico alto sofrem 1 ply a menos de redução
 	#define LMR_HISTORY_K        8   // limiar = LMR_HISTORY_K << profundidade (o bônus de histórico é 1 << profundidade)
+	#define USE_LMR_NONPV_MORE   1   // nós de janela nula (beta-alpha == 1) reduzem 1 ply a mais
 	#define USE_LMR_CHECK_LESS   0   // lances que dão xeque sofrem 1 ply a menos de redução (não são isentos)
 
 	#define R_NULL_LOW          2
