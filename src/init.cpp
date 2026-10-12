@@ -6,6 +6,7 @@
 #include "game.h"
 #include "hash.h"
 #include "interface.h"
+#include "search.h"
 
 void Init::init(){
     Bitboard::init_bits();
@@ -15,6 +16,7 @@ void Init::init(){
     Eval::init_king_zone();
     Bitboard::init_vetores();
     Hash::iniciar_hash();
+    Search::init_lmr();
 
     Game::lado_do_computador = VAZIO;
     Game::jogador[BRANCAS] = 0;

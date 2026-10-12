@@ -13,6 +13,9 @@ namespace Search{
     extern Gen::lance killers_primarios[MAX_PLY];
     extern Gen::lance killers_secundarios[MAX_PLY];
 
+    // Preenche a tabela de redução LMR; chamar uma vez em Init::init().
+    void init_lmr();
+
     void pensar(bool verbose);
     // null_permitido = false on the immediate child of a null-move so we don't
     // recurse two null-moves in a row (which would just compound the depth
