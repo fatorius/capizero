@@ -102,7 +102,7 @@ namespace Values{
 	#define USE_LMR_TABLE        1   // 1 = tabela pré-computada, 0 = log() inline (A/B)
 	#define LMR_TABLE_DEPTH      128
 	#define LMR_TABLE_MOVES      256
-	#define LMR_DIVISOR          2.0
+	#define LMR_DIVISOR          1.75
 	#define USE_LMR_PV           0   // nós PV de verdade (janela beta-alpha > 1) reduzem 1 ply a menos
 	#define USE_LMR_HISTORY      0   // lances quietos com histórico alto sofrem 1 ply a menos de redução
 	#define LMR_HISTORY_K        8   // limiar = LMR_HISTORY_K << profundidade (o bônus de histórico é 1 << profundidade)
