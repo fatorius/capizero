@@ -104,7 +104,7 @@ namespace Values{
 	#define LMR_DIVISOR          1.75
 
 	#define USE_EXT_PAWN7        0   // +1 ply para peão que chega à 7ª fileira relativa
-	#define USE_EXT_PASSED       0   // +1 ply para avanço de peão passado
+	#define USE_EXT_PASSED 1   // +1 ply para avanço de peão passado
 	#define EXT_PASSED_MIN_FILEIRA 5 // fileira relativa mínima (0-based) para a extensão de passado
 
 	#define R_NULL_LOW          2
