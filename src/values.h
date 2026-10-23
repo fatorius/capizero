@@ -103,9 +103,7 @@ namespace Values{
 	#define LMR_TABLE_MOVES      256
 	#define LMR_DIVISOR          1.75
 
-	#define USE_EXT_PAWN7 1   // +1 ply para peão que chega à 7ª fileira relativa
-	#define USE_EXT_PASSED       0   // +1 ply para avanço de peão passado
-	#define EXT_PASSED_MIN_FILEIRA 5 // fileira relativa mínima (0-based) para a extensão de passado
+	#define EXT_PEAO_FILEIRA     6   // fileira relativa (0-based) que dispara +1 ply de extensão de peão (7ª)
 
 	#define R_NULL_LOW          2
 	#define R_NULL_HIGH         3

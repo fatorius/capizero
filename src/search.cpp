@@ -400,29 +400,17 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
             nova_profundidade = profundidade - 1;
         }
 
-#if USE_EXT_PAWN7 || USE_EXT_PASSED
-        // EXTENSÃO DE PEÃO: +1 ply para peão que chega à 7ª fileira (relativa) ou avança como passado
-        // além da 5ª. Em xeque o nó já mantém a profundidade, então não empilha.
+        // EXTENSÃO DE PEÃO: +1 ply para peão que chega à 7ª fileira (relativa).
+        // Em xeque o nó já mantém a profundidade, então não empilha.
         int ext = 0;
-        if (check == 0){
-            const int dest = Gen::lista_de_lances[candidato].destino;
-            if (Gen::lista_de_lances[candidato].promove == 0 && Bitboard::tabuleiro[dest] == P){
-                // Após fazer_lance, o lado que moveu é Game::xlado.
-                const int fil = Bitboard::fileiras[Game::xlado][dest];
-#if USE_EXT_PAWN7
-                if (fil == 6) ext = 1;
-#endif
-#if USE_EXT_PASSED
-                if (!ext && fil >= EXT_PASSED_MIN_FILEIRA
-                    && !(Bitboard::mask_passados[Game::xlado][dest] & Bitboard::bit_pieces[Game::lado][P])
-                    && !(Bitboard::mask_path[Game::xlado][dest] & Bitboard::bit_pieces[Game::xlado][P])) ext = 1;
-#endif
-            }
+        if (check == 0
+            && Gen::lista_de_lances[candidato].promove == 0
+            && Bitboard::tabuleiro[Gen::lista_de_lances[candidato].destino] == P
+            // Após fazer_lance, o lado que moveu é Game::xlado.
+            && Bitboard::fileiras[Game::xlado][Gen::lista_de_lances[candidato].destino] == EXT_PEAO_FILEIRA){
+            ext = 1;
         }
         nova_profundidade += ext;
-#else
-        const int ext = 0;
-#endif
 
         // pesquisa da variante principal (pvs)
         if (pesquisandoPV){
