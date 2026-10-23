@@ -99,14 +99,11 @@ namespace Values{
 	#define SCORE_PROMO_N_CAP  18000000
 	#define SCORE_PROMO_N      17000000
 
-	#define USE_LMR_TABLE        1   // 1 = tabela pré-computada, 0 = log() inline (A/B)
 	#define LMR_TABLE_DEPTH      128
 	#define LMR_TABLE_MOVES      256
 	#define LMR_DIVISOR          1.75
-	#define USE_LMR_PV           0   // nós PV de verdade (janela beta-alpha > 1) reduzem 1 ply a menos
-	#define USE_LMR_HISTORY      0   // lances quietos com histórico alto sofrem 1 ply a menos de redução
-	#define LMR_HISTORY_K        8   // limiar = LMR_HISTORY_K << profundidade (o bônus de histórico é 1 << profundidade)
-	#define USE_LMR_CHECK_LESS   0   // lances que dão xeque sofrem 1 ply a menos de redução (não são isentos)
+
+	#define EXT_PEAO_FILEIRA     6   // fileira relativa (0-based) que dispara +1 ply de extensão de peão (7ª)
 
 	#define R_NULL_LOW          2
 	#define R_NULL_HIGH         3

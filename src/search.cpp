@@ -389,36 +389,9 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
                 nova_profundidade = profundidade - 1;
             }
             else{
-#if USE_LMR_TABLE
                 const int lmr_d = profundidade < LMR_TABLE_DEPTH ? profundidade : LMR_TABLE_DEPTH - 1;
                 const int lmr_m = lances_legais_na_posicao < LMR_TABLE_MOVES ? lances_legais_na_posicao : LMR_TABLE_MOVES - 1;
-                int lmr_r = lmr_tabela[lmr_d][lmr_m];
-#else
-                int lmr_r = (int)(log((double)profundidade) * log((double)lances_legais_na_posicao) / LMR_DIVISOR);
-                if (lmr_r < 1) lmr_r = 1;
-#endif
-#if USE_LMR_PV
-                // Nó PV de verdade (janela cheia): reduz 1 ply a menos. O parâmetro `pv` NÃO serve:
-                // é true para o 1º lance de qualquer nó, inclusive dentro de janelas nulas.
-                if (beta - alpha > 1 && lmr_r > 0) lmr_r--;
-#endif
-#if USE_LMR_CHECK_LESS
-                // Após fazer_lance, Game::lado é o adversário: rei atacado = o lance deu xeque.
-                if (lmr_r > 0
-                    && Attacks::casa_esta_sendo_atacada(Game::xlado, Bitboard::bitscan(Bitboard::bit_pieces[Game::lado][R]))){
-                    lmr_r--;
-                }
-#endif
-#if USE_LMR_HISTORY
-                // Lance quieto que já causou cortes com frequência: reduz 1 ply a menos.
-                // O bônus de histórico é 1 << profundidade, então o limiar escala com a profundidade.
-                if (lmr_r > 0
-                    && Game::lista_do_jogo[Game::hply].captura == VAZIO
-                    && historico_heuristica[Gen::lista_de_lances[candidato].inicio][Gen::lista_de_lances[candidato].destino]
-                       >= (LMR_HISTORY_K << (profundidade < 20 ? profundidade : 20))){
-                    lmr_r--;
-                }
-#endif
+                const int lmr_r = lmr_tabela[lmr_d][lmr_m];
                 nova_profundidade = profundidade - 1 - lmr_r;
                 if (nova_profundidade < 1) nova_profundidade = 1;
             }
@@ -427,13 +400,25 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
             nova_profundidade = profundidade - 1;
         }
 
+        // EXTENSÃO DE PEÃO: +1 ply para peão que chega à 7ª fileira (relativa).
+        // Em xeque o nó já mantém a profundidade, então não empilha.
+        int ext = 0;
+        if (check == 0
+            && Gen::lista_de_lances[candidato].promove == 0
+            && Bitboard::tabuleiro[Gen::lista_de_lances[candidato].destino] == P
+            // Após fazer_lance, o lado que moveu é Game::xlado.
+            && Bitboard::fileiras[Game::xlado][Gen::lista_de_lances[candidato].destino] == EXT_PEAO_FILEIRA){
+            ext = 1;
+        }
+        nova_profundidade += ext;
+
         // pesquisa da variante principal (pvs)
         if (pesquisandoPV){
             score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true);
         }
         else{
             if (-pesquisa(-alpha - 1, -alpha, nova_profundidade, false) > alpha){
-                score_candidato = -pesquisa(-beta, -alpha, profundidade - 1, true);
+                score_candidato = -pesquisa(-beta, -alpha, profundidade - 1 + ext, true);
             }
             else{
                 Update::desfaz_lance();
