@@ -43,6 +43,9 @@ namespace Eval{
     void init_king_zone();      // call after Gen::init_lookup_tables()
     void atualizar_materiais();
 
+    // Zera a hash de peões. Obrigatório após alterar qualquer tabela de avaliação em tempo de execução (tuners).
+    void limpar_hash_peoes();
+
     int fase();
 
     int avaliar();

@@ -175,6 +175,7 @@ static void write_theta_to_engine(const std::vector<double>& theta) {
         if (feature_mirror[f]) *feature_mirror[f] = *feature_slot[f];
     }
     for (int i = 0; i < 4; i++) *ks_slot[i] = Eval::make_score(round_i16(theta[KS_BASE + i]), 0);
+    Eval::limpar_hash_peoes();
 }
 
 static std::vector<double> rounded(const std::vector<double>& theta) {
@@ -223,6 +224,7 @@ static void restore_params(const SavedParams& s) {
     memcpy(Eval::mobilidade_torre,  s.mt, sizeof(s.mt));
     memcpy(Eval::mobilidade_dama,   s.md, sizeof(s.md));
     for (int i = 0; i < 4; i++) *ks_slot[i] = s.ks[i];
+    Eval::limpar_hash_peoes();
 }
 
 static void zero_params() {
@@ -232,6 +234,7 @@ static void zero_params() {
     memset(Eval::mobilidade_torre,  0, sizeof(Eval::Score) * 15);
     memset(Eval::mobilidade_dama,   0, sizeof(Eval::Score) * 28);
     for (int i = 0; i < 4; i++) *ks_slot[i] = 0;
+    Eval::limpar_hash_peoes();
 }
 
 // Use the evaluator's own zone so the extracted counts always match whatever

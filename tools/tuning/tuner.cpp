@@ -264,6 +264,7 @@ static inline void tweak(const Param& p, int delta) {
     else         eg += delta;
     *p.slot = Eval::make_score(mg, eg);
     if (p.mirror) *p.mirror = *p.slot;
+    Eval::limpar_hash_peoes();
 }
 
 // Snapshot/restore the live tunable state. Two Param entries (mg, eg) can

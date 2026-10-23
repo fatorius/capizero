@@ -20,6 +20,10 @@ namespace Params{
     #define PILHA_DO_JOGO 2000
 
     #define MAGIC_HASHTABLE_SIZE 4096
+
+    // Hash de estruturas de peões (entradas de ~40 bytes, ~2,5 MB)
+    #define PAWN_HASH_BITS 16
+    #define PAWN_HASH_SIZE (1 << PAWN_HASH_BITS)
 };
 
 #endif
