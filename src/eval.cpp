@@ -41,6 +41,9 @@ struct EntradaPeoes{
 };
 
 static EntradaPeoes hash_peoes[PAWN_HASH_SIZE];
+static EntradaPeoes entrada_avulsa;
+
+bool Eval::usar_hash_peoes = true;
 
 void Eval::init_eval_tables(){
     for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
@@ -154,10 +157,10 @@ static EntradaPeoes& estrutura_de_peoes(){
     const Bitboard::u64 pp = Bitboard::bit_pieces[PRETAS][P];
 
     const Bitboard::u64 chave = (pb * 0x9E3779B97F4A7C15ULL + pp) * 0xC2B2AE3D27D4EB4FULL;
-    EntradaPeoes &e = hash_peoes[chave >> (64 - PAWN_HASH_BITS)];
+    EntradaPeoes &e = Eval::usar_hash_peoes ? hash_peoes[chave >> (64 - PAWN_HASH_BITS)] : entrada_avulsa;
 
     // Entrada zerada equivale a "sem peões": score 0 e escudo 0, que é o valor correto.
-    if (e.peoes[BRANCAS] == pb && e.peoes[PRETAS] == pp){
+    if (Eval::usar_hash_peoes && e.peoes[BRANCAS] == pb && e.peoes[PRETAS] == pp){
         return e;
     }
 

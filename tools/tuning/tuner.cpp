@@ -264,7 +264,6 @@ static inline void tweak(const Param& p, int delta) {
     else         eg += delta;
     *p.slot = Eval::make_score(mg, eg);
     if (p.mirror) *p.mirror = *p.slot;
-    Eval::limpar_hash_peoes();
 }
 
 // Snapshot/restore the live tunable state. Two Param entries (mg, eg) can
@@ -508,6 +507,7 @@ int main(int argc, char **argv) {
 
     fprintf(stderr, "tuner: initializing engine...\n");
     Init::init();
+    Eval::usar_hash_peoes = false;   // as tabelas do eval mudam durante o tuning
 
     fprintf(stderr, "tuner: loading dataset from %s ...\n", argv[1]);
     load_dataset(argv[1]);
