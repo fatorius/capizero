@@ -1,9 +1,12 @@
 #include "eval.h"
 
+#include <cstring>
+
 #include "bitboard.h"
 #include "consts.h"
 #include "game.h"
 #include "gen.h"
+#include "params.h"
 
 
 Eval::Score Eval::score_casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
@@ -25,9 +28,22 @@ Eval::Score Eval::mobilidade_dama[28];
 
 Eval::Score Eval::ks_weight_c, Eval::ks_weight_b, Eval::ks_weight_t, Eval::ks_weight_d;
 
-int peao_ala_da_dama[LADOS],peao_ala_do_rei[LADOS];
-
 static Bitboard::u64 king_zone[CASAS_DO_TABULEIRO];
+
+// Tudo que depende só da posição dos peões (PST, passados, isolados e
+// escudo do rei) vive na hash de peões. A chave é o par de bitboards de
+// peões, comparado por inteiro: não há colisão possível.
+struct EntradaPeoes{
+    Bitboard::u64 peoes[LADOS];
+    Eval::Score score[LADOS];
+    int16_t ala_do_rei[LADOS];
+    int16_t ala_da_dama[LADOS];
+};
+
+static EntradaPeoes hash_peoes[PAWN_HASH_SIZE];
+static EntradaPeoes entrada_avulsa;
+
+bool Eval::usar_hash_peoes = true;
 
 void Eval::init_eval_tables(){
     for (int x = 0; x < CASAS_DO_TABULEIRO; x++){
@@ -68,6 +84,8 @@ void Eval::init_eval_tables(){
     ks_weight_b = make_score(KS_WEIGHT_B, 0);
     ks_weight_t = make_score(KS_WEIGHT_T, 0);
     ks_weight_d = make_score(KS_WEIGHT_D, 0);
+
+    limpar_hash_peoes();
 }
 
 // Depends on Gen::bit_moves_rei, so it must run after Gen::init_lookup_tables().
@@ -113,11 +131,10 @@ void Eval::atualizar_materiais(){
     }
 }
 
-int avaliar_peao(const int l, const int casa){
+static int avaliar_peao(const int l, const int casa, int &ala_do_rei, int &ala_da_dama){
     int score = 0;
-    int xl = l^1;
 
-    if (!(Bitboard::mask_passados[l][casa] & Bitboard::bit_pieces[xl][P]) && !(Bitboard::mask_path[l][casa] & Bitboard::bit_pieces[l][P])){
+    if (!(Bitboard::mask_passados[l][casa] & Bitboard::bit_pieces[l^1][P]) && !(Bitboard::mask_path[l][casa] & Bitboard::bit_pieces[l][P])){
         score += Eval::passados[l][casa];
     }
 
@@ -125,10 +142,52 @@ int avaliar_peao(const int l, const int casa){
         score -= ISOLADO_SCORE;
     }
 
-    peao_ala_do_rei[l] = Values::defesa_ala_do_rei[l][casa];
-    peao_ala_da_dama[l] = Values::defesa_ala_da_dama[l][casa];
+    ala_do_rei = Values::defesa_ala_do_rei[l][casa];
+    ala_da_dama = Values::defesa_ala_da_dama[l][casa];
 
     return score;
+}
+
+void Eval::limpar_hash_peoes(){
+    memset(hash_peoes, 0, sizeof(hash_peoes));
+}
+
+static EntradaPeoes& estrutura_de_peoes(){
+    const Bitboard::u64 pb = Bitboard::bit_pieces[BRANCAS][P];
+    const Bitboard::u64 pp = Bitboard::bit_pieces[PRETAS][P];
+
+    const Bitboard::u64 chave = (pb * 0x9E3779B97F4A7C15ULL + pp) * 0xC2B2AE3D27D4EB4FULL;
+    EntradaPeoes &e = Eval::usar_hash_peoes ? hash_peoes[chave >> (64 - PAWN_HASH_BITS)] : entrada_avulsa;
+
+    // Entrada zerada equivale a "sem peões": score 0 e escudo 0, que é o valor correto.
+    if (Eval::usar_hash_peoes && e.peoes[BRANCAS] == pb && e.peoes[PRETAS] == pp){
+        return e;
+    }
+
+    e.peoes[BRANCAS] = pb;
+    e.peoes[PRETAS] = pp;
+
+    for (int l = 0; l < LADOS; l++){
+        Eval::Score score = 0;
+        int ala_do_rei = 0;
+        int ala_da_dama = 0;
+
+        Bitboard::u64 t1 = Bitboard::bit_pieces[l][P];
+        while (t1){
+            const int casa = Bitboard::bitscan(t1);
+            t1 &= Bitboard::not_mask[casa];
+
+            score += Eval::score_casas[l][P][casa];
+            const int peao_b = avaliar_peao(l, casa, ala_do_rei, ala_da_dama);
+            score += Eval::make_score(peao_b, peao_b);
+        }
+
+        e.score[l] = score;
+        e.ala_do_rei[l] = (int16_t)ala_do_rei;
+        e.ala_da_dama[l] = (int16_t)ala_da_dama;
+    }
+
+    return e;
 }
 
 int avaliar_torre(const int l, const int casa){
@@ -148,10 +207,7 @@ int avaliar_torre(const int l, const int casa){
 int Eval::avaliar(){
     Score score[LADOS] = {0, 0};
 
-    peao_ala_da_dama[BRANCAS] = 0;
-    peao_ala_do_rei[BRANCAS] = 0;
-    peao_ala_da_dama[PRETAS] = 0;
-    peao_ala_do_rei[PRETAS] = 0;
+    const EntradaPeoes &peoes = estrutura_de_peoes();
 
     Bitboard::u64 t1;
     int casa;
@@ -176,15 +232,7 @@ int Eval::avaliar(){
 
         score[l] += score_casas[l][R][rei_sq[l]];
 
-        t1 = Bitboard::bit_pieces[l][P];
-        while (t1){
-            casa = Bitboard::bitscan(t1);
-            t1 &= Bitboard::not_mask[casa];
-
-            score[l] += score_casas[l][P][casa];
-            const int peao_b = avaliar_peao(l, casa);
-            score[l] += make_score(peao_b, peao_b);
-        }
+        score[l] += peoes.score[l];
 
         t1 = Bitboard::bit_pieces[l][C];
         while (t1){
@@ -241,19 +289,19 @@ int Eval::avaliar(){
 
     int shield_w = 0;
     if (Bitboard::bit_pieces[BRANCAS][R] & Bitboard::mask_ala_do_rei){
-        shield_w = peao_ala_do_rei[BRANCAS];
+        shield_w = peoes.ala_do_rei[BRANCAS];
     }
     else if (Bitboard::bit_pieces[BRANCAS][R] & Bitboard::mask_ala_da_dama){
-        shield_w = peao_ala_da_dama[BRANCAS];
+        shield_w = peoes.ala_da_dama[BRANCAS];
     }
     score[BRANCAS] += make_score(shield_w, 0);
 
     int shield_b = 0;
     if (Bitboard::bit_pieces[PRETAS][R] & Bitboard::mask_ala_do_rei){
-        shield_b = peao_ala_do_rei[PRETAS];
+        shield_b = peoes.ala_do_rei[PRETAS];
     }
     else if (Bitboard::bit_pieces[PRETAS][R] & Bitboard::mask_ala_da_dama){
-        shield_b = peao_ala_da_dama[PRETAS];
+        shield_b = peoes.ala_da_dama[PRETAS];
     }
     score[PRETAS] += make_score(shield_b, 0);
 

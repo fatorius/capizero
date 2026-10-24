@@ -735,6 +735,7 @@ int main(int argc, char **argv) {
 
     fprintf(stderr, "tuner: initializing engine...\n");
     Init::init();
+    Eval::usar_hash_peoes = false;   // as tabelas do eval mudam durante o tuning
     bind_slots();
 
     std::vector<TuningPos> all = load_dataset(argv[1]);

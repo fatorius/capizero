@@ -507,6 +507,7 @@ int main(int argc, char **argv) {
 
     fprintf(stderr, "tuner: initializing engine...\n");
     Init::init();
+    Eval::usar_hash_peoes = false;   // as tabelas do eval mudam durante o tuning
 
     fprintf(stderr, "tuner: loading dataset from %s ...\n", argv[1]);
     load_dataset(argv[1]);
