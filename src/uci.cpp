@@ -75,7 +75,6 @@ static void handle_position(char *args){
 
     if (!strcmp(tok, "startpos")){
         Game::novo_jogo();
-        Game::lado_do_computador = VAZIO;
 
         tok = strtok(NULL, " \t\r\n");
         if (tok != NULL && !strcmp(tok, "moves")){
@@ -108,7 +107,6 @@ static void handle_position(char *args){
         }
 
         Update::setar_posicao(posicao, lado_a_jogar, roques, casa_ep, hm, fm);
-        Game::lado_do_computador = VAZIO;
 
         tok = strtok(NULL, " \t\r\n");
         if (tok != NULL && !strcmp(tok, "moves")){
@@ -263,10 +261,7 @@ static void handle_setoption(char *args){
 }
 
 void Uci::loop(){
-    Interface::protocolo_ativo = Interface::PROTO_UCI;
-
     Game::novo_jogo();
-    Game::lado_do_computador = VAZIO;
     Interface::tempo_fixo = false;
     Interface::profundidade_fixa = false;
     Interface::tempo_maximo = 1 << 25;
@@ -308,7 +303,6 @@ void Uci::loop(){
         }
         else if (!strcmp(cmd, "ucinewgame")){
             Game::novo_jogo();
-            Game::lado_do_computador = VAZIO;
             Hash::limpar_tt();
         }
         else if (!strcmp(cmd, "position")){

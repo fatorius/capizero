@@ -1,14 +1,9 @@
 #include "game.h"
 
 #include "gen.h"
-#include "interface.h"
 #include "eval.h"
 #include "update.h"
 #include "hash.h"
-
-int Game::lado_do_computador;
-
-int Game::jogador[2];
 
 int Game::lado;
 int Game::xlado;
@@ -32,8 +27,6 @@ void Game::novo_jogo(){
     qntt_lances_totais[0] = 0;
     jogada = 0;
 
-    Interface::no_lances = 0;
-    
     Bitboard::init_board();
     
     Gen::gerar_lances(lado, xlado);

@@ -44,7 +44,7 @@ void Tests::test2(){
     Interface::tempo_fixo = true;
     Interface::profundidade_fixa = false;
 
-    Interface::lance_computador(false);
+    Interface::lance_computador();
 
     int test2_valor_obtido = Interface::tempo_gasto;
 
@@ -105,7 +105,7 @@ void Tests::test4(){
     Interface::tempo_fixo = true;
     Interface::profundidade_fixa = false;
 
-    Interface::lance_computador(false);
+    Interface::lance_computador();
 
     Game::novo_jogo();
 

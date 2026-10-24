@@ -73,8 +73,6 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 ### 6. Interface
 
-* Modo interativo via terminal (comandos em português)
-* Compatibilidade com [Xboard](https://www.chessprogramming.org/Chess_Engine_Communication_Protocol)
 * Compatibilidade com [UCI](https://www.chessprogramming.org/UCI) — permite usar cutechess-cli, Fastchess, Arena, etc.
 
 ## Para compilar
@@ -94,9 +92,7 @@ make build
 depois de compilar o binário `capizero_<versao>` fica na raiz do repositório. modos disponíveis:
 
 ```
-./capizero_<versao>                # modo interativo (português)
-./capizero_<versao> uci            # protocolo UCI
-./capizero_<versao> xboard         # protocolo XBoard
+./capizero_<versao>                # protocolo UCI (também aceita o argumento `uci`)
 ./capizero_<versao> bench [prof]   # executa o bench padrão (default prof=13)
                                    # imprime Nodes: N / NPS: M no final
 ```

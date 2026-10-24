@@ -510,10 +510,6 @@ void Search::pensar(bool verbose){
     memset(historico_heuristica, 0, sizeof(historico_heuristica));
     memset(contraLance_heuristica, 0, sizeof(contraLance_heuristica));
 
-    if (verbose && Interface::protocolo_ativo != Interface::PROTO_UCI){
-        printf("ply score time nodes pv\n");
-    }
-
     for (int profundidade = 1; profundidade <= Interface::profundidade_maxima; ++profundidade){
         if (!Interface::profundidade_fixa && Interface::profundidade_maxima > 1){
             if (Interface::tempo_fixo){
@@ -566,39 +562,31 @@ void Search::pensar(bool verbose){
 
         if (Hash::hash_lookup(Game::lado)){
             if (verbose){
-                if (Interface::protocolo_ativo == Interface::PROTO_UCI){
-                    int elapsed_ms = Interface::obter_tempo() - tempo_do_inicio;
-                    if (elapsed_ms < 1){
-                        elapsed_ms = 1;
-                    }
-                    int nps_uci = (int)((double)lances_avaliados * 1000.0 / (double)elapsed_ms);
+                int elapsed_ms = Interface::obter_tempo() - tempo_do_inicio;
+                if (elapsed_ms < 1){
+                    elapsed_ms = 1;
+                }
+                int nps_uci = (int)((double)lances_avaliados * 1000.0 / (double)elapsed_ms);
 
-                    printf("info depth %d seldepth %d time %d nodes %d nps %d ",
-                        profundidade, profundidade, elapsed_ms, lances_avaliados, nps_uci);
+                printf("info depth %d seldepth %d time %d nodes %d nps %d ",
+                    profundidade, profundidade, elapsed_ms, lances_avaliados, nps_uci);
 
-                    if (melhor_linha >= VALOR_XEQUE_MATE_BRANCAS - MAX_PLY){
-                        int mate_in = (VALOR_XEQUE_MATE_BRANCAS - melhor_linha + 1) / 2;
-                        printf("score mate %d ", mate_in);
-                    }
-                    else if (melhor_linha <= VALOR_XEQUE_MATE_PRETAS + MAX_PLY){
-                        int mate_in = (melhor_linha - VALOR_XEQUE_MATE_PRETAS) / 2;
-                        printf("score mate %d ", mate_in);
-                    }
-                    else{
-                        printf("score cp %d ", melhor_linha);
-                    }
-
-                    static char pv_buf[512];
-                    Interface::obter_pv_uci(pv_buf, sizeof(pv_buf), profundidade);
-                    printf("pv %s\n", pv_buf);
-                    fflush(stdout);
+                if (melhor_linha >= VALOR_XEQUE_MATE_BRANCAS - MAX_PLY){
+                    int mate_in = (VALOR_XEQUE_MATE_BRANCAS - melhor_linha + 1) / 2;
+                    printf("score mate %d ", mate_in);
+                }
+                else if (melhor_linha <= VALOR_XEQUE_MATE_PRETAS + MAX_PLY){
+                    int mate_in = (melhor_linha - VALOR_XEQUE_MATE_PRETAS) / 2;
+                    printf("score mate %d ", mate_in);
                 }
                 else{
-                    printf("%d %d %d %d ", profundidade, melhor_linha, (Interface::obter_tempo() - tempo_do_inicio) / 10, lances_avaliados);
-                    Interface::exibir_melhor_linha(profundidade);
-                    printf("\n");
-                    fflush(stdout);
+                    printf("score cp %d ", melhor_linha);
                 }
+
+                static char pv_buf[512];
+                Interface::obter_pv_uci(pv_buf, sizeof(pv_buf), profundidade);
+                printf("pv %s\n", pv_buf);
+                fflush(stdout);
             }
         }
         else{

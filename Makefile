@@ -40,8 +40,8 @@ SRCS = ./src/bitboard.o ./src/init.o \
 		./src/eval.o ./src/hash.o \
 		./src/game.o ./src/search.o \
 		./src/interface.o ./src/attacks.o \
-		./src/xboard.o ./src/uci.o \
-		./src/bench.o ./src/help.o \
+		./src/uci.o \
+		./src/bench.o \
 		./src/debug.o
 
 # Headers
@@ -50,8 +50,8 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/eval.h ./src/hash.h \
 		./src/game.h ./src/search.h \
 		./src/interface.h ./src/attacks.h \
-		./src/xboard.h ./src/uci.h \
-		./src/help.h ./src/consts.h \
+		./src/uci.h \
+		./src/consts.h \
 		./src/params.h \
 		./src/values.h ./src/bench.h \
 		./src/bench_fens.h ./src/debug.h \

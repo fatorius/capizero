@@ -17,9 +17,6 @@ namespace Game{
 
     extern jogo lista_do_jogo[PILHA_DO_JOGO];
 
-    extern int lado_do_computador;
-
-    extern int jogador[2];
 
     extern int lado;
     extern int xlado;

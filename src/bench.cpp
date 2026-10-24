@@ -36,7 +36,7 @@ void Bench::search_performance_test(){
 
     int tempoInicial = Interface::obter_tempo();
 
-    Interface::lance_computador(false);
+    Interface::lance_computador();
 
     int delta = Interface::obter_tempo() - tempoInicial;
 

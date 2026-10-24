@@ -18,9 +18,6 @@ void Init::init(){
     Hash::iniciar_hash();
     Search::init_lmr();
 
-    Game::lado_do_computador = VAZIO;
-    Game::jogador[BRANCAS] = 0;
-    Game::jogador[PRETAS] = 0;
     
     Interface::tempo_maximo = 1 << 25;
     Interface::profundidade_maxima = 4;
