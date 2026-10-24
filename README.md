@@ -4,7 +4,7 @@ uma engine de xadrez em c++
 
 capizero é uma engine de xadrez que estou desenvolvendo para aprender sobre xadrez computacional.
 
-no momento ela se encontra incompleta pois existem diversos recursos a serem implementados a fim de melhorar sua performance, velocidade e entendimento das posições, porém, já é possível jogar contra ela através do terminal de comandos, basta você baixar e compilar o código fonte, ou baixar uma das builds disponíveis nos releases.
+no momento ela se encontra incompleta pois existem diversos recursos a serem implementados a fim de melhorar sua performance, velocidade e entendimento das posições, porém, ela fala o protocolo UCI, então é usada através de uma interface gráfica (Arena, Cute Chess, etc.) ou de ferramentas como o Fastchess. basta você baixar e compilar o código fonte, ou baixar uma das builds disponíveis nos releases.
 
 caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
@@ -27,6 +27,8 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 * [Pesquisa da variante principal](https://www.chessprogramming.org/Principal_Variation_Search)
 
+* [Aprofundamento iterativo com aspiration windows](https://www.chessprogramming.org/Aspiration_Windows)
+
 * [Internal Interative Deeping](https://www.chessprogramming.org/Internal_Iterative_Deepening)
  
 **2.1 Poda de lances**
@@ -41,9 +43,15 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 * [Extensões de xeque](https://www.chessprogramming.org/Check_Extensions)
 
+* Extensão de peão que chega à 7ª fileira
+
 **2.3 Reduções de pesquisa**
 
 * [Late move reductions](https://www.chessprogramming.org/Late_Move_Reductions)
+
+* [Null move pruning](https://www.chessprogramming.org/Null_Move_Pruning)
+
+* [Futility pruning e reverse futility pruning](https://www.chessprogramming.org/Futility_Pruning)
 
 ### 3. Ordenação de lances
 
@@ -63,7 +71,7 @@ caso queira contribuir com o projeto, fique a vontade, toda ajuda é bem vinda!
 
 ### 5. Avaliação de posições
 
-* Estrutura de peões
+* Estrutura de peões (passados e isolados), com [tabela hash de peões](https://www.chessprogramming.org/Pawn_Hash_Table)
 
 * Posicionamento das peças
 
