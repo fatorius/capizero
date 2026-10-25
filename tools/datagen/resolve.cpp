@@ -31,6 +31,7 @@
 #include "gen.h"
 #include "bitboard.h"
 #include "fen_serializer.h"
+#include "estado.h"
 
 // ---------------------------------------------------------------------------
 // CLI.
@@ -130,7 +131,7 @@ static void resolve_one(const ParsedLine& p, FILE* out) {
     memcpy(hm,        p.hm,        sizeof(hm));
     memcpy(fm,        p.fm,        sizeof(fm));
 
-    Update::setar_posicao(placement, side, castle, ep, hm, fm);
+    Update::setar_posicao(estado_principal, placement, side, castle, ep, hm, fm);
 
     // Fresh TT per position keeps PV walks unambiguous (no stale entries from
     // earlier resolves polluting the bucket). limpar_tt is a single memset of
@@ -142,7 +143,7 @@ static void resolve_one(const ParsedLine& p, FILE* out) {
     Interface::tempo_fixo          = false;
     Interface::tempo_maximo        = 1 << 25;
 
-    Search::pensar(false);
+    Search::pensar(estado_principal, false);
 
     // Walk the PV from the TT. Each step: lookup current side's TT, take the
     // recorded best move, apply, advance to the new side. Stop conservatively
@@ -150,13 +151,13 @@ static void resolve_one(const ParsedLine& p, FILE* out) {
     // leaf), over-walking on a corrupted TT entry could write garbage.
     int walked = 0;
     while (walked < opt_max_pv) {
-        if (!Hash::hash_lookup(Game::lado)) break;
-        if (Hash::hash_depth < 1) break;
-        const int from  = Hash::hash_inicio;
-        const int to    = Hash::hash_destino;
-        const int promo = Hash::hash_promove;
+        if (!Hash::hash_lookup(estado_principal, estado_principal.lado)) break;
+        if (estado_principal.hash_depth < 1) break;
+        const int from  = estado_principal.hash_inicio;
+        const int to    = estado_principal.hash_destino;
+        const int promo = estado_principal.hash_promove;
         if (from == to) break;  // null-move sentinel or empty entry
-        if (!Update::fazer_lance(from, to, promo)) break;
+        if (!Update::fazer_lance(estado_principal, from, to, promo)) break;
         walked++;
     }
 

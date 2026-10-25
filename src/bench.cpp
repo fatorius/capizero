@@ -11,11 +11,12 @@
 #include "search.h"
 #include "hash.h"
 #include "bench_fens.h"
+#include "estado.h"
 
 void Bench::movegen_performance_test(){
     int tempoInicial = Interface::obter_tempo();
 
-    unsigned long long lances_gerados = Gen::perft_node(5);
+    unsigned long long lances_gerados = Gen::perft_node(estado_principal, 5);
 
     int delta = Interface::obter_tempo() - tempoInicial;
 
@@ -27,7 +28,7 @@ void Bench::movegen_performance_test(){
 }
 
 void Bench::search_performance_test(){
-    Game::novo_jogo();
+    Game::novo_jogo(estado_principal);
 
     Interface::profundidade_maxima = 11;
     Interface::tempo_maximo = 1 << 25;
@@ -36,18 +37,18 @@ void Bench::search_performance_test(){
 
     int tempoInicial = Interface::obter_tempo();
 
-    Interface::lance_computador();
+    Interface::lance_computador(estado_principal);
 
     int delta = Interface::obter_tempo() - tempoInicial;
 
     int nps_search;
 
-    nps_search = (double) Search::lances_avaliados / (double) delta;
+    nps_search = (double) estado_principal.lances_avaliados / (double) delta;
 
     printf("Pesquisa de lances: %dK posições por segundo\n", nps_search);
     printf("Tempo para chegar pesquisar na profundidade 11: %f segundos\n", (float) delta / 1000.0);
-    printf("Lances avaliados: %dK\n", Search::lances_avaliados / 1000);
-    printf("Lance do computador: %s \n", Interface::lance_para_string(Game::lista_do_jogo[0].inicio, Game::lista_do_jogo[0].destino, 0));
+    printf("Lances avaliados: %dK\n", estado_principal.lances_avaliados / 1000);
+    printf("Lance do computador: %s \n", Interface::lance_para_string(estado_principal.lista_do_jogo[0].inicio, estado_principal.lista_do_jogo[0].destino, 0));
 }
 
 void Bench::eval_performance_test(){
@@ -58,7 +59,7 @@ void Bench::eval_performance_test(){
     while ((Interface::obter_tempo() - tempoInicial) < 5000){
 
         for (int i = 0; i < 4000; i++){
-            Eval::avaliar();
+            Eval::avaliar(estado_principal);
         }
         
         avals += 4000;
@@ -90,17 +91,17 @@ void Bench::run_standard_bench(int depth){
             continue;
         }
 
-        Update::setar_posicao(posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
+        Update::setar_posicao(estado_principal, posicao, lado_a_jogar, roques, casa_en_passant, hm, fm);
 
         int t0 = Interface::obter_tempo();
-        Search::pensar(false);
+        Search::pensar(estado_principal, false);
         int delta = Interface::obter_tempo() - t0;
 
-        total_nodes += (unsigned long long) Search::lances_avaliados;
+        total_nodes += (unsigned long long) estado_principal.lances_avaliados;
         total_ms += delta;
 
         printf("position %2d/%d: depth=%d nodes=%d time=%dms\n",
-            i + 1, Bench::bench_fens_count, depth, Search::lances_avaliados, delta);
+            i + 1, Bench::bench_fens_count, depth, estado_principal.lances_avaliados, delta);
     }
 
     int nps_total = 0;

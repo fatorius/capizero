@@ -24,8 +24,9 @@
 #include "bitboard.h"
 #include "eval.h"
 #include "fen_serializer.h"
+#include "estado.h"
 
-extern int pesquisa_rapida(int alpha, int beta);
+extern int pesquisa_rapida(Estado &est, int alpha, int beta);
 
 // ---------------------------------------------------------------------------
 // CLI options.
@@ -147,7 +148,7 @@ static int smoke_test() {
         strncpy(ep,        c.ep,        2);  ep[2]    = '\0';
         strncpy(hm,        c.hm,        5);  hm[5]    = '\0';
         strncpy(fm,        c.fm,        5);  fm[5]    = '\0';
-        Update::setar_posicao(placement, side, castle, ep, hm, fm);
+        Update::setar_posicao(estado_principal, placement, side, castle, ep, hm, fm);
 
         Fen::serialize(buf);
 
@@ -165,9 +166,9 @@ static int smoke_test() {
     {
         char placement[80] = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
         char side[2] = "w", castle[5] = "KQkq", ep[3] = "-", hm[6] = "0", fm[6] = "1";
-        Update::setar_posicao(placement, side, castle, ep, hm, fm);
+        Update::setar_posicao(estado_principal, placement, side, castle, ep, hm, fm);
         // e2-e4 (sq 12 → sq 28)
-        if (!Update::fazer_lance(12, 28)) {
+        if (!Update::fazer_lance(estado_principal, 12, 28)) {
             fprintf(stderr, "smoke FAIL: e2e4 illegal?\n");
             failed++;
         } else {
@@ -262,12 +263,12 @@ static void load_book(const char* path) {
 // Counts legal moves for the current side. Side effects: regenerates
 // Gen::lista_de_lances at Game::ply (caller must ensure ply is sane).
 static int count_legal_moves() {
-    Gen::gerar_lances(Game::lado, Game::xlado);
+    Gen::gerar_lances(estado_principal, estado_principal.lado, estado_principal.xlado);
     int count = 0;
-    for (int i = Game::qntt_lances_totais[Game::ply]; i < Game::qntt_lances_totais[Game::ply + 1]; i++) {
-        const Gen::lance& m = Gen::lista_de_lances[i];
-        if (Update::fazer_lance(m.inicio, m.destino, m.promove)) {
-            Update::desfaz_lance();
+    for (int i = estado_principal.qntt_lances_totais[estado_principal.ply]; i < estado_principal.qntt_lances_totais[estado_principal.ply + 1]; i++) {
+        const Gen::lance& m = estado_principal.lista_de_lances[i];
+        if (Update::fazer_lance(estado_principal, m.inicio, m.destino, m.promove)) {
+            Update::desfaz_lance(estado_principal);
             count++;
         }
     }
@@ -276,39 +277,39 @@ static int count_legal_moves() {
 
 // Picks and applies a random legal move. Returns false if no legal moves.
 static bool apply_random_legal_move(std::mt19937& rng) {
-    Gen::gerar_lances(Game::lado, Game::xlado);
+    Gen::gerar_lances(estado_principal, estado_principal.lado, estado_principal.xlado);
     std::vector<int> legal_indices;
-    for (int i = Game::qntt_lances_totais[Game::ply]; i < Game::qntt_lances_totais[Game::ply + 1]; i++) {
-        const Gen::lance& m = Gen::lista_de_lances[i];
-        if (Update::fazer_lance(m.inicio, m.destino, m.promove)) {
-            Update::desfaz_lance();
+    for (int i = estado_principal.qntt_lances_totais[estado_principal.ply]; i < estado_principal.qntt_lances_totais[estado_principal.ply + 1]; i++) {
+        const Gen::lance& m = estado_principal.lista_de_lances[i];
+        if (Update::fazer_lance(estado_principal, m.inicio, m.destino, m.promove)) {
+            Update::desfaz_lance(estado_principal);
             legal_indices.push_back(i);
         }
     }
     if (legal_indices.empty()) return false;
     const int pick = legal_indices[rng() % legal_indices.size()];
-    const Gen::lance& m = Gen::lista_de_lances[pick];
-    return Update::fazer_lance(m.inicio, m.destino, m.promove);
+    const Gen::lance& m = estado_principal.lista_de_lances[pick];
+    return Update::fazer_lance(estado_principal, m.inicio, m.destino, m.promove);
 }
 
 // ---------------------------------------------------------------------------
 // Game-state helpers.
 
 static bool side_to_move_in_check() {
-    const int king_sq = Bitboard::bitscan(Bitboard::bit_pieces[Game::lado][R]);
-    return Attacks::casa_esta_sendo_atacada(Game::xlado, king_sq);
+    const int king_sq = Bitboard::bitscan(estado_principal.bit_pieces[estado_principal.lado][R]);
+    return Attacks::casa_esta_sendo_atacada(estado_principal, estado_principal.xlado, king_sq);
 }
 
 // Insufficient material: both sides have 0 pawns + 0 rooks + 0 queens, and
 // at most one minor piece each.
 static bool insufficient_material() {
-    if (Bitboard::bit_pieces[BRANCAS][P] | Bitboard::bit_pieces[PRETAS][P]) return false;
-    if (Bitboard::bit_pieces[BRANCAS][T] | Bitboard::bit_pieces[PRETAS][T]) return false;
-    if (Bitboard::bit_pieces[BRANCAS][D] | Bitboard::bit_pieces[PRETAS][D]) return false;
-    const int white_minors = Bitboard::popcount(Bitboard::bit_pieces[BRANCAS][C])
-                           + Bitboard::popcount(Bitboard::bit_pieces[BRANCAS][B]);
-    const int black_minors = Bitboard::popcount(Bitboard::bit_pieces[PRETAS][C])
-                           + Bitboard::popcount(Bitboard::bit_pieces[PRETAS][B]);
+    if (estado_principal.bit_pieces[BRANCAS][P] | estado_principal.bit_pieces[PRETAS][P]) return false;
+    if (estado_principal.bit_pieces[BRANCAS][T] | estado_principal.bit_pieces[PRETAS][T]) return false;
+    if (estado_principal.bit_pieces[BRANCAS][D] | estado_principal.bit_pieces[PRETAS][D]) return false;
+    const int white_minors = Bitboard::popcount(estado_principal.bit_pieces[BRANCAS][C])
+                           + Bitboard::popcount(estado_principal.bit_pieces[BRANCAS][B]);
+    const int black_minors = Bitboard::popcount(estado_principal.bit_pieces[PRETAS][C])
+                           + Bitboard::popcount(estado_principal.bit_pieces[PRETAS][B]);
     return white_minors <= 1 && black_minors <= 1;
 }
 
@@ -322,12 +323,12 @@ static int score_white_pov(int score, int side_to_move) {
 // Per-game state reset.
 
 static void reset_for_new_game() {
-    Game::novo_jogo();
+    Game::novo_jogo(estado_principal);
     Hash::limpar_tt();
-    memset(Search::historico_heuristica,  0, sizeof(Search::historico_heuristica));
-    memset(Search::contraLance_heuristica,0, sizeof(Search::contraLance_heuristica));
-    memset(Search::killers_primarios,     0, sizeof(Search::killers_primarios));
-    memset(Search::killers_secundarios,   0, sizeof(Search::killers_secundarios));
+    memset(estado_principal.historico_heuristica,  0, sizeof(estado_principal.historico_heuristica));
+    memset(estado_principal.contraLance_heuristica,0, sizeof(estado_principal.contraLance_heuristica));
+    memset(estado_principal.killers_primarios,     0, sizeof(estado_principal.killers_primarios));
+    memset(estado_principal.killers_secundarios,   0, sizeof(estado_principal.killers_secundarios));
 }
 
 static void configure_search() {
@@ -393,7 +394,7 @@ static int play_one_game(FILE* out, std::mt19937& rng) {
         strncpy(ep,        e.ep,        2);  ep[2]    = '\0';
         strncpy(hm,        e.hm,        5);  hm[5]    = '\0';
         strncpy(fm,        e.fm,        5);  fm[5]    = '\0';
-        Update::setar_posicao(placement, side, castle, ep, hm, fm);
+        Update::setar_posicao(estado_principal, placement, side, castle, ep, hm, fm);
     }
     for (int p = 0; p < opt_random_open_plies; p++) {
         if (!apply_random_legal_move(rng)) break;
@@ -410,14 +411,14 @@ static int play_one_game(FILE* out, std::mt19937& rng) {
     float result = 0.5f;
     bool decided = false;
 
-    while (Game::hply < opt_max_plies) {
+    while (estado_principal.hply < opt_max_plies) {
         // Search this position.
-        Search::pensar(false);
+        Search::pensar(estado_principal, false);
 
-        const int side_at_root = Game::lado;
+        const int side_at_root = estado_principal.lado;
         int from, to, promo, score_stm;
-        if (!Hash::hash_lookup(side_at_root)) {
-            Game::ply = 0;
+        if (!Hash::hash_lookup(estado_principal, side_at_root)) {
+            estado_principal.ply = 0;
             const int legal = count_legal_moves();
             if (legal == 0) {
                 if (side_to_move_in_check()) {
@@ -429,13 +430,13 @@ static int play_one_game(FILE* out, std::mt19937& rng) {
                 break;
             }
             // Fallback: first legal move from gerar_lances.
-            Gen::gerar_lances(Game::lado, Game::xlado);
+            Gen::gerar_lances(estado_principal, estado_principal.lado, estado_principal.xlado);
             const Gen::lance* picked = NULL;
-            for (int i = Game::qntt_lances_totais[Game::ply]; i < Game::qntt_lances_totais[Game::ply + 1]; i++) {
-                const Gen::lance& m = Gen::lista_de_lances[i];
-                if (Update::fazer_lance(m.inicio, m.destino, m.promove)) {
-                    Update::desfaz_lance();
-                    picked = &Gen::lista_de_lances[i];
+            for (int i = estado_principal.qntt_lances_totais[estado_principal.ply]; i < estado_principal.qntt_lances_totais[estado_principal.ply + 1]; i++) {
+                const Gen::lance& m = estado_principal.lista_de_lances[i];
+                if (Update::fazer_lance(estado_principal, m.inicio, m.destino, m.promove)) {
+                    Update::desfaz_lance(estado_principal);
+                    picked = &estado_principal.lista_de_lances[i];
                     break;
                 }
             }
@@ -448,25 +449,25 @@ static int play_one_game(FILE* out, std::mt19937& rng) {
             from = picked->inicio; to = picked->destino; promo = picked->promove;
             score_stm = 0;
         } else {
-            from      = Hash::hash_inicio;
-            to        = Hash::hash_destino;
-            promo     = Hash::hash_promove;
-            score_stm = Hash::hash_score;
+            from      = estado_principal.hash_inicio;
+            to        = estado_principal.hash_destino;
+            promo     = estado_principal.hash_promove;
+            score_stm = estado_principal.hash_score;
         }
 
         // Quiet-position filters BEFORE applying the move.
-        bool dump_this = (Game::hply >= opt_skip_open_plies);
+        bool dump_this = (estado_principal.hply >= opt_skip_open_plies);
         if (dump_this) {
             if (side_to_move_in_check()) dump_this = false;
         }
         if (dump_this) {
-            if (Bitboard::tabuleiro[to] != VAZIO) dump_this = false;  // capture
+            if (estado_principal.tabuleiro[to] != VAZIO) dump_this = false;  // capture
             if (promo != 0)                       dump_this = false;  // promotion
         }
         if (dump_this) {
             // Static eval vs qsearch divergence (tactical positions).
-            const int eval_static = Eval::avaliar();
-            const int eval_qs     = pesquisa_rapida(ALPHA_INICIAL, BETA_INICIAL);
+            const int eval_static = Eval::avaliar(estado_principal);
+            const int eval_qs     = pesquisa_rapida(estado_principal, ALPHA_INICIAL, BETA_INICIAL);
             if (std::abs(eval_static - eval_qs) > opt_eval_qs_diff_cp) dump_this = false;
         }
 
@@ -476,17 +477,17 @@ static int play_one_game(FILE* out, std::mt19937& rng) {
         }
 
         // Apply the bestmove.
-        if (!Update::fazer_lance(from, to, promo)) {
+        if (!Update::fazer_lance(estado_principal, from, to, promo)) {
             fprintf(stderr, "selfplay: illegal bestmove (hply=%d from=%d to=%d promo=%d)\n",
-                    Game::hply, from, to, promo);
+                    estado_principal.hply, from, to, promo);
             break;
         }
 
         // Post-move filter: did the move give check? If so, the pre-move
         // position was tactical (forcing) — skip.
         if (dump_this) {
-            const int now_king_sq = Bitboard::bitscan(Bitboard::bit_pieces[Game::lado][R]);
-            if (Attacks::casa_esta_sendo_atacada(Game::xlado, now_king_sq)) {
+            const int now_king_sq = Bitboard::bitscan(estado_principal.bit_pieces[estado_principal.lado][R]);
+            if (Attacks::casa_esta_sendo_atacada(estado_principal, estado_principal.xlado, now_king_sq)) {
                 dump_this = false;
             }
         }
@@ -498,16 +499,16 @@ static int play_one_game(FILE* out, std::mt19937& rng) {
         sh.push(score_white_pov(score_stm, side_at_root));
 
         // Termination: rules first.
-        if (Game::cinquenta >= 100)    { result = 0.5f; decided = true; break; }
-        if (Game::checar_repeticoes()) { result = 0.5f; decided = true; break; }
+        if (estado_principal.cinquenta >= 100)    { result = 0.5f; decided = true; break; }
+        if (Game::checar_repeticoes(estado_principal)) { result = 0.5f; decided = true; break; }
         if (insufficient_material())   { result = 0.5f; decided = true; break; }
 
         // Termination: mate/stalemate via legal-move count for the new side.
-        Game::ply = 0;
+        estado_principal.ply = 0;
         const int legal = count_legal_moves();
         if (legal == 0) {
             if (side_to_move_in_check()) {
-                result = (Game::lado == BRANCAS) ? 0.0f : 1.0f;
+                result = (estado_principal.lado == BRANCAS) ? 0.0f : 1.0f;
             } else {
                 result = 0.5f;
             }

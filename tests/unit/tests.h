@@ -19,6 +19,12 @@
 
 #define TEST6_VALOR_ESPERADO 1267835
 
+// O gerador só emite promoções Q+N, então o perft do Kiwipete fica abaixo
+// do valor de referência com as quatro promoções (4085603).
+#define TEST7_PERFT_KIWIPETE 4078017
+#define TEST7_PERFT_POSICAO3 674624
+#define TEST7_PROFUNDIDADE_BUSCA 9
+
 namespace Tests{
     void test1();
     void test2();
@@ -26,6 +32,7 @@ namespace Tests{
     void test4();
     void test5();
     void test6();
+    void test7();
 }
 
 

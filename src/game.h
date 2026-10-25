@@ -3,6 +3,8 @@
 
 #include "bitboard.h"
 
+struct Estado;
+
 namespace Game{
     typedef struct{
         int inicio;
@@ -15,21 +17,9 @@ namespace Game{
         Bitboard::u64 lock;
     } jogo;
 
-    extern jogo lista_do_jogo[PILHA_DO_JOGO];
-
-
-    extern int lado;
-    extern int xlado;
-    extern int cinquenta;
-    extern int roque;
-    extern int ply;
-    extern int hply;
-    extern int qntt_lances_totais[MAX_PLY];
-    extern int jogada;
-
-    void novo_jogo();
-    void nova_posicao();
-    bool checar_repeticoes();
+    void novo_jogo(Estado &est);
+    void nova_posicao(Estado &est);
+    bool checar_repeticoes(const Estado &est);
 };
 
 #endif

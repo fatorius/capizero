@@ -10,13 +10,10 @@
 
 #include "gen.h"
 #include "game.h"
+#include "estado.h"
 
 Bitboard::u64 hash[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 Bitboard::u64 lock[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
-
-Bitboard::u64 Hash::chaveAtual, Hash::lockAtual;
-int Hash::hash_inicio, Hash::hash_destino;
-int Hash::hash_score, Hash::hash_depth, Hash::hash_bound, Hash::hash_promove;
 
 size_t Hash::tt_entries_per_side = 0;
 
@@ -101,95 +98,95 @@ static void ensure_tt_allocated(){
     }
 }
 
-void Hash::adicionar_chave(const int l, const int piece, const int casa){
-    chaveAtual ^= hash[l][piece][casa];
-    lockAtual ^= lock[l][piece][casa];
+void Hash::adicionar_chave(Estado &est, const int l, const int piece, const int casa){
+    est.chaveAtual ^= hash[l][piece][casa];
+    est.lockAtual ^= lock[l][piece][casa];
 }
 
-void Hash::adicionar_hash(const int ld, const Gen::lance lc,
+void Hash::adicionar_hash(const Estado &est, const int ld, const Gen::lance lc,
                           const int score, const int depth, const int bound,
                           const int promove){
     ensure_tt_allocated();
-    hashp* ptr = &hashpos[ld][chaveAtual % tt_entries_per_side];
+    hashp* ptr = &hashpos[ld][est.chaveAtual % tt_entries_per_side];
 
-    if (ptr->hashlock == lockAtual && depth < ptr->depth){
+    if (ptr->hashlock == est.lockAtual && depth < ptr->depth){
         return;
     }
 
-    ptr->hashlock = lockAtual;
+    ptr->hashlock = est.lockAtual;
     ptr->inicio   = (uint16_t) lc.inicio;
     ptr->dest     = (uint16_t) lc.destino;
-    ptr->score    = (int32_t)  score_to_tt(score, Game::ply);
+    ptr->score    = (int32_t)  score_to_tt(score, est.ply);
     ptr->depth    = (int8_t)   depth;
     ptr->bound    = (uint8_t)  bound;
     ptr->promove  = (uint8_t)  promove;
 }
 
-void Hash::adicionar_pontuacao_de_hash(){
-    for (int lance = Game::qntt_lances_totais[Game::ply]; lance < Game::qntt_lances_totais[Game::ply + 1]; lance++){
-        const Gen::lance &m = Gen::lista_de_lances[lance];
-        if (m.inicio != hash_inicio || m.destino != hash_destino){
+void Hash::adicionar_pontuacao_de_hash(Estado &est){
+    for (int lance = est.qntt_lances_totais[est.ply]; lance < est.qntt_lances_totais[est.ply + 1]; lance++){
+        const Gen::lance &m = est.lista_de_lances[lance];
+        if (m.inicio != est.hash_inicio || m.destino != est.hash_destino){
             continue;
         }
-        if (m.promove != hash_promove){
+        if (m.promove != est.hash_promove){
             continue;
         }
-        Gen::lista_de_lances[lance].score = PONTUACAO_HASH;
+        est.lista_de_lances[lance].score = PONTUACAO_HASH;
         return;
     }
 }
 
-Bitboard::u64 Hash::obter_lock(){
+Bitboard::u64 Hash::obter_lock(const Estado &est){
     Bitboard::u64 loc = 0;
     int l;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         l = 0;
-        if (Bitboard::tabuleiro[casa] != VAZIO){
-            if (Bitboard::bit_lados[PRETAS] & Bitboard::mask[casa]){
+        if (est.tabuleiro[casa] != VAZIO){
+            if (est.bit_lados[PRETAS] & Bitboard::mask[casa]){
                 l = 1;
             }
 
-            loc ^= lock[l][Bitboard::tabuleiro[casa]][casa];
+            loc ^= lock[l][est.tabuleiro[casa]][casa];
         }
     }
 
     return loc;
 }
 
-Bitboard::u64 Hash::obter_chave(){
+Bitboard::u64 Hash::obter_chave(const Estado &est){
     Bitboard::u64 chave = 0;
     int l;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         l = 0;
-        if (Bitboard::tabuleiro[casa] != VAZIO){
-            if (Bitboard::bit_lados[PRETAS] & Bitboard::mask[casa]){
+        if (est.tabuleiro[casa] != VAZIO){
+            if (est.bit_lados[PRETAS] & Bitboard::mask[casa]){
                 l = 1;
             }
 
-            chave ^= hash[l][Bitboard::tabuleiro[casa]][casa];
+            chave ^= hash[l][est.tabuleiro[casa]][casa];
         }
     }
 
     return chave;
 }
 
-bool Hash::hash_lookup(const int l){
+bool Hash::hash_lookup(Estado &est, const int l){
     ensure_tt_allocated();
-    const Bitboard::u64 idx = chaveAtual % tt_entries_per_side;
+    const Bitboard::u64 idx = est.chaveAtual % tt_entries_per_side;
     const hashp &e = hashpos[l][idx];
 
-    if (e.hashlock != lockAtual){
+    if (e.hashlock != est.lockAtual){
         return false;
     }
 
-    hash_inicio  = e.inicio;
-    hash_destino = e.dest;
-    hash_score   = score_from_tt(e.score, Game::ply);
-    hash_depth   = e.depth;
-    hash_bound   = e.bound;
-    hash_promove = e.promove;
+    est.hash_inicio  = e.inicio;
+    est.hash_destino = e.dest;
+    est.hash_score   = score_from_tt(e.score, est.ply);
+    est.hash_depth   = e.depth;
+    est.hash_bound   = e.bound;
+    est.hash_promove = e.promove;
 
     return true;
 }

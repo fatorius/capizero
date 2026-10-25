@@ -4,66 +4,57 @@
 #include "eval.h"
 #include "update.h"
 #include "hash.h"
+#include "estado.h"
 
-int Game::lado;
-int Game::xlado;
-int Game::cinquenta;
-int Game::roque;
-int Game::ply;
-int Game::hply;
-int Game::qntt_lances_totais[MAX_PLY];
-int Game::jogada;
+Estado estado_principal;
 
+void Game::novo_jogo(Estado &est){
+    est.lado = 0;
+    est.xlado = 1;
+    est.cinquenta = 0;
+    est.roque = 15;
+    est.ply = 0;
+    est.hply = 1;
+    est.qntt_lances_totais[0] = 0;
+    est.jogada = 0;
 
-Game::jogo Game::lista_do_jogo[PILHA_DO_JOGO];
-
-void Game::novo_jogo(){
-    lado = 0;
-    xlado = 1;
-    cinquenta = 0;
-    roque = 15;
-    ply = 0;
-    hply = 1;
-    qntt_lances_totais[0] = 0;
-    jogada = 0;
-
-    Bitboard::init_board();
+    Bitboard::init_board(est);
     
-    Gen::gerar_lances(lado, xlado);
+    Gen::gerar_lances(est, est.lado, est.xlado);
 }
 
-bool Game::checar_repeticoes(){
-    for (int i = hply-4; i >= hply - cinquenta && i >= 0; i -=2){
-        if (lista_do_jogo[i].hash == Hash::chaveAtual && lista_do_jogo[i].lock == Hash::lockAtual){
+bool Game::checar_repeticoes(const Estado &est){
+    for (int i = est.hply-4; i >= est.hply - est.cinquenta && i >= 0; i -=2){
+        if (est.lista_do_jogo[i].hash == est.chaveAtual && est.lista_do_jogo[i].lock == est.lockAtual){
             return true;
         }
     }
     return false;
 }
 
-void Game::nova_posicao(){
+void Game::nova_posicao(Estado &est){
     int c = 0;
 
-    Eval::piece_mat[BRANCAS] = Eval::peao_mat[BRANCAS] = 0;
-    Eval::piece_mat[PRETAS] = Eval::peao_mat[PRETAS] = 0;
+    est.piece_mat[BRANCAS] = est.peao_mat[BRANCAS] = 0;
+    est.piece_mat[PRETAS] = est.peao_mat[PRETAS] = 0;
 
     // Reset the incremental phase counter so the adicionar_piece loop
     // below rebuilds it from scratch (just like the material counters above).
-    Eval::fase_valor = 0;
+    est.fase_valor = 0;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
-        if (Bitboard::tabuleiro[casa] < VAZIO){
-            if (Bitboard::bit_lados[BRANCAS] & Bitboard::mask[casa]){
+        if (est.tabuleiro[casa] < VAZIO){
+            if (est.bit_lados[BRANCAS] & Bitboard::mask[casa]){
                 c = BRANCAS;
             }
             else{
                 c = PRETAS;
             }
 
-            Update::adicionar_piece(c, Bitboard::tabuleiro[casa], casa);
+            Update::adicionar_piece(est, c, est.tabuleiro[casa], casa);
         }
     }
 
-    Hash::chaveAtual = Hash::obter_chave();
-    Hash::lockAtual = Hash::obter_lock();
+    est.chaveAtual = Hash::obter_chave(est);
+    est.lockAtual = Hash::obter_lock(est);
 }

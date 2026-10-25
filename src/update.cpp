@@ -14,102 +14,101 @@
 #include "game.h"
 #include "attacks.h"
 #include "eval.h"
+#include "estado.h"
 
 int casa_reversa[LADOS] = {-8,8};
 
-Game::jogo* j;
+void mover_piece(Estado &est, const int l, const int p, const int inicio, const int destino){
+    est.bit_pieces[l][p] &= Bitboard::not_mask[inicio];
+    est.bit_pieces[l][p] |= Bitboard::mask[destino];
 
-void mover_piece(const int l, const int p, const int inicio, const int destino){
-    Bitboard::bit_pieces[l][p] &= Bitboard::not_mask[inicio];
-    Bitboard::bit_pieces[l][p] |= Bitboard::mask[destino];
+    est.bit_lados[l] &= Bitboard::not_mask[inicio];
+    est.bit_lados[l] |= Bitboard::mask[destino];
 
-    Bitboard::bit_lados[l] &= Bitboard::not_mask[inicio];
-    Bitboard::bit_lados[l] |= Bitboard::mask[destino];
+    est.bit_total = est.bit_lados[BRANCAS] | est.bit_lados[PRETAS];
 
-    Bitboard::bit_total = Bitboard::bit_lados[BRANCAS] | Bitboard::bit_lados[PRETAS];
+    est.tabuleiro[destino] = p;
+    est.tabuleiro[inicio] = VAZIO;
 
-    Bitboard::tabuleiro[destino] = p;
-    Bitboard::tabuleiro[inicio] = VAZIO;
-
-    Hash::adicionar_chave(l, p, inicio);
-    Hash::adicionar_chave(l, p, destino);
+    Hash::adicionar_chave(est, l, p, inicio);
+    Hash::adicionar_chave(est, l, p, destino);
 }
 
-void Update::remover_piece(const int l, const int p, const int casa){
-    Hash::adicionar_chave(l, p, casa);
+void Update::remover_piece(Estado &est, const int l, const int p, const int casa){
+    Hash::adicionar_chave(est, l, p, casa);
 
-    Bitboard::tabuleiro[casa] = VAZIO;
+    est.tabuleiro[casa] = VAZIO;
 
-    Bitboard::bit_lados[l] &= Bitboard::not_mask[casa];
-    Bitboard::bit_pieces[l][p] &= Bitboard::not_mask[casa];
-    Bitboard::bit_total = Bitboard::bit_lados[BRANCAS] | Bitboard::bit_lados[PRETAS];
+    est.bit_lados[l] &= Bitboard::not_mask[casa];
+    est.bit_pieces[l][p] &= Bitboard::not_mask[casa];
+    est.bit_total = est.bit_lados[BRANCAS] | est.bit_lados[PRETAS];
 
-    Eval::fase_valor -= Eval::phase_weights[p];
+    est.fase_valor -= Eval::phase_weights[p];
 }
 
-void Update::desfaz_lance(){
-    Game::lado ^= 1;
-    Game::xlado ^= 1;
-    Game::ply--;
-    Game::hply--;
+void Update::desfaz_lance(Estado &est){
+    est.lado ^= 1;
+    est.xlado ^= 1;
+    est.ply--;
+    est.hply--;
 
-    Game::jogo* ultimo_lance = &Game::lista_do_jogo[Game::hply];
+    Game::jogo* ultimo_lance = &est.lista_do_jogo[est.hply];
     int inicio = ultimo_lance->inicio;
     int destino = ultimo_lance->destino;
 
-    Game::roque = ultimo_lance->roque;
-    Game::cinquenta = ultimo_lance->cinquenta;
+    est.roque = ultimo_lance->roque;
+    est.cinquenta = ultimo_lance->cinquenta;
 
     // desfaz captura em passant
-    if (Bitboard::tabuleiro[destino] == P && ultimo_lance->captura == VAZIO && Consts::colunas[inicio] != Consts::colunas[destino]){
-        adicionar_piece(Game::xlado, P, destino + casa_reversa[Game::lado]);
+    if (est.tabuleiro[destino] == P && ultimo_lance->captura == VAZIO && Consts::colunas[inicio] != Consts::colunas[destino]){
+        adicionar_piece(est, est.xlado, P, destino + casa_reversa[est.lado]);
     }
 
     // desfaz promoção (any of C, B, T, D)
     if (ultimo_lance->promove >= C && ultimo_lance->promove <= D){
-        adicionar_piece(Game::lado, P, inicio);
-        remover_piece(Game::lado, Bitboard::tabuleiro[destino], destino);
+        adicionar_piece(est, est.lado, P, inicio);
+        remover_piece(est, est.lado, est.tabuleiro[destino], destino);
     }
     // outros lances
     else{
-        mover_piece(Game::lado, Bitboard::tabuleiro[destino], destino, inicio);
+        mover_piece(est, est.lado, est.tabuleiro[destino], destino, inicio);
     }
 
     // desfaz capturas
     if (ultimo_lance->captura != VAZIO){
-        adicionar_piece(Game::xlado, ultimo_lance->captura, destino);
+        adicionar_piece(est, est.xlado, ultimo_lance->captura, destino);
     }
 
     // desfaz roque movendo a torre
-    if (abs(inicio - destino) == ROQUE && Bitboard::tabuleiro[inicio] == R){
+    if (abs(inicio - destino) == ROQUE && est.tabuleiro[inicio] == R){
         // roque menor brancas
         if (destino == G1){
-            mover_piece(Game::lado, T, F1, H1);
+            mover_piece(est, est.lado, T, F1, H1);
         }
         // roque maior brancas
         else if (destino == C1){
-            mover_piece(Game::lado, T, D1, A1);
+            mover_piece(est, est.lado, T, D1, A1);
         }
         // roque menor pretas
         else if (destino == G8){
-            mover_piece(Game::lado, T, F8, H8);
+            mover_piece(est, est.lado, T, F8, H8);
         }
         // roque maior pretas
         else if (destino == C8){
-            mover_piece(Game::lado, T, D8, A8);
+            mover_piece(est, est.lado, T, D8, A8);
         }
     }
 }
 
-bool Update::fazer_lance(const int inicio, const int destino, const int promove){
-    if (!(Bitboard::bit_lados[Game::lado] & Bitboard::mask[inicio])) return false;
-    if (Bitboard::bit_lados[Game::lado] & Bitboard::mask[destino])  return false;
+bool Update::fazer_lance(Estado &est, const int inicio, const int destino, const int promove){
+    if (!(est.bit_lados[est.lado] & Bitboard::mask[inicio])) return false;
+    if (est.bit_lados[est.lado] & Bitboard::mask[destino])  return false;
     
     // 1. lida com o roque do rei, movendo também a torre
-    if (abs(inicio - destino) == ROQUE && Bitboard::tabuleiro[inicio] == R){
+    if (abs(inicio - destino) == ROQUE && est.tabuleiro[inicio] == R){
 
         // 1.1 verifica se o rei está em xeque
-        if (Attacks::casa_esta_sendo_atacada(Game::xlado, inicio)){
+        if (Attacks::casa_esta_sendo_atacada(est, est.xlado, inicio)){
             return false;
         }
 
@@ -117,142 +116,142 @@ bool Update::fazer_lance(const int inicio, const int destino, const int promove)
 
         // 1.2.1 roque menor brancas
         if (destino == G1){
-            if (Attacks::casa_esta_sendo_atacada(Game::xlado, F1)){
+            if (Attacks::casa_esta_sendo_atacada(est, est.xlado, F1)){
                 return false;
             }
-            mover_piece(Game::lado, T, H1, F1);
+            mover_piece(est, est.lado, T, H1, F1);
         }
         // 1.2.2 roque maior brancas
         else if (destino == C1){
-            if (Attacks::casa_esta_sendo_atacada(Game::xlado, D1)){
+            if (Attacks::casa_esta_sendo_atacada(est, est.xlado, D1)){
                 return false;
             }
-            mover_piece(Game::lado, T, A1, D1);
+            mover_piece(est, est.lado, T, A1, D1);
         }
         // 1.2.3 roque menor pretas
         else if (destino == G8){
-            if (Attacks::casa_esta_sendo_atacada(Game::xlado, F8)){
+            if (Attacks::casa_esta_sendo_atacada(est, est.xlado, F8)){
                 return false;
             }
-            mover_piece(Game::lado, T, H8, F8);
+            mover_piece(est, est.lado, T, H8, F8);
         }
         // 1.2.4 roque maior pretas
         else if (destino == C8){
-            if (Attacks::casa_esta_sendo_atacada(Game::xlado, D8)){
+            if (Attacks::casa_esta_sendo_atacada(est, est.xlado, D8)){
                 return false;
             }
-            mover_piece(Game::lado, T, A8, D8);
+            mover_piece(est, est.lado, T, A8, D8);
         }
     }
 
     // 2. atualiza variaveis e adiciona na lista do jogo
-    j = &Game::lista_do_jogo[Game::hply];
+    Game::jogo *j = &est.lista_do_jogo[est.hply];
 
     j->inicio = inicio;
     j->destino = destino;
-    j->captura = Bitboard::tabuleiro[destino];
-    j->roque = Game::roque;
-    j->cinquenta = Game::cinquenta;
-    j->hash = Hash::chaveAtual;
-    j->lock = Hash::lockAtual;
+    j->captura = est.tabuleiro[destino];
+    j->roque = est.roque;
+    j->cinquenta = est.cinquenta;
+    j->hash = est.chaveAtual;
+    j->lock = est.lockAtual;
     j->promove = P;
     
-    Game::roque &= Consts::roque_mask[inicio] & Consts::roque_mask[destino];
+    est.roque &= Consts::roque_mask[inicio] & Consts::roque_mask[destino];
 
-    Game::ply++;
-    Game::hply++;
-    Game::cinquenta++;
+    est.ply++;
+    est.hply++;
+    est.cinquenta++;
 
     // 3. realiza o lance 
-    if (Bitboard::tabuleiro[inicio] == P){
-        Game::cinquenta = 0;
+    if (est.tabuleiro[inicio] == P){
+        est.cinquenta = 0;
         // captura de peao en passant
-        if (Bitboard::tabuleiro[destino] == VAZIO && Consts::colunas[inicio] != Consts::colunas[destino]){
-            remover_piece(Game::xlado, P, destino + casa_reversa[Game::lado]);
-            mover_piece(Game::lado, Bitboard::tabuleiro[inicio], inicio, destino);
+        if (est.tabuleiro[destino] == VAZIO && Consts::colunas[inicio] != Consts::colunas[destino]){
+            remover_piece(est, est.xlado, P, destino + casa_reversa[est.lado]);
+            mover_piece(est, est.lado, est.tabuleiro[inicio], inicio, destino);
         }
         // lances com promoções
         else if ((Consts::linhas[destino] == FILEIRA_1 || Consts::linhas[destino] == FILEIRA_8)){
-            remover_piece(Game::lado, P, inicio);
+            remover_piece(est, est.lado, P, inicio);
 
-            if (Bitboard::tabuleiro[destino] < VAZIO){
-                remover_piece(Game::xlado, Bitboard::tabuleiro[destino], destino);
+            if (est.tabuleiro[destino] < VAZIO){
+                remover_piece(est, est.xlado, est.tabuleiro[destino], destino);
             }
 
             const int promo_piece = (promove >= C && promove <= D) ? promove : D;
-            adicionar_piece(Game::lado, promo_piece, destino);
+            adicionar_piece(est, est.lado, promo_piece, destino);
             j->promove = promo_piece;
         }
         // capturas
-        else if (Bitboard::tabuleiro[destino] < VAZIO){
-            remover_piece(Game::xlado, Bitboard::tabuleiro[destino], destino);
-            mover_piece(Game::lado, Bitboard::tabuleiro[inicio], inicio, destino);
+        else if (est.tabuleiro[destino] < VAZIO){
+            remover_piece(est, est.xlado, est.tabuleiro[destino], destino);
+            mover_piece(est, est.lado, est.tabuleiro[inicio], inicio, destino);
         }
         // lances sem promoções
         else{
-            mover_piece(Game::lado, Bitboard::tabuleiro[inicio], inicio, destino);
+            mover_piece(est, est.lado, est.tabuleiro[inicio], inicio, destino);
         }
     }
     else{
         // capturas (reseta a contagem de 50 lances)
-        if (Bitboard::tabuleiro[destino] < VAZIO){
-            Game::cinquenta = 0;
-            remover_piece(Game::xlado, Bitboard::tabuleiro[destino], destino);
+        if (est.tabuleiro[destino] < VAZIO){
+            est.cinquenta = 0;
+            remover_piece(est, est.xlado, est.tabuleiro[destino], destino);
         }
 
-        mover_piece(Game::lado, Bitboard::tabuleiro[inicio], inicio, destino);
+        mover_piece(est, est.lado, est.tabuleiro[inicio], inicio, destino);
     }
 
-    Game::lado ^= 1;
-    Game::xlado ^= 1;
+    est.lado ^= 1;
+    est.xlado ^= 1;
 
     // 4. verifica se o lance deixou o rei em xeque
 
-    if (Attacks::casa_esta_sendo_atacada(Game::lado, Bitboard::bitscan(Bitboard::bit_pieces[Game::xlado][R]))){
-        desfaz_lance();
+    if (Attacks::casa_esta_sendo_atacada(est, est.lado, Bitboard::bitscan(est.bit_pieces[est.xlado][R]))){
+        desfaz_lance(est);
         return false;
     }
 
     return true;
 }
 
-void Update::adicionar_piece(const int l, const int piece, const int casa){
-    Bitboard::tabuleiro[casa] = piece;
+void Update::adicionar_piece(Estado &est, const int l, const int piece, const int casa){
+    est.tabuleiro[casa] = piece;
 
-    Hash::adicionar_chave(l, piece, casa);
+    Hash::adicionar_chave(est, l, piece, casa);
 
-    Bitboard::bit_lados[l] |= Bitboard::mask[casa];
-    Bitboard::bit_pieces[l][piece] |= Bitboard::mask[casa];
-    Bitboard::bit_total = Bitboard::bit_lados[BRANCAS] | Bitboard::bit_lados[PRETAS];
+    est.bit_lados[l] |= Bitboard::mask[casa];
+    est.bit_pieces[l][piece] |= Bitboard::mask[casa];
+    est.bit_total = est.bit_lados[BRANCAS] | est.bit_lados[PRETAS];
 
-    Eval::fase_valor += Eval::phase_weights[piece];
+    est.fase_valor += Eval::phase_weights[piece];
 }
 
-void Update::desfaz_captura(){
-    Game::lado ^= 1;
-    Game::xlado ^= 1;
+void Update::desfaz_captura(Estado &est){
+    est.lado ^= 1;
+    est.xlado ^= 1;
 
-    --Game::ply;
-    --Game::hply;
+    --est.ply;
+    --est.hply;
 
-    mover_piece(Game::lado, Bitboard::tabuleiro[Game::lista_do_jogo[Game::hply].destino], Game::lista_do_jogo[Game::hply].destino, Game::lista_do_jogo[Game::hply].inicio);
-    adicionar_piece(Game::xlado, Game::lista_do_jogo[Game::hply].captura, Game::lista_do_jogo[Game::hply].destino);
+    mover_piece(est, est.lado, est.tabuleiro[est.lista_do_jogo[est.hply].destino], est.lista_do_jogo[est.hply].destino, est.lista_do_jogo[est.hply].inicio);
+    adicionar_piece(est, est.xlado, est.lista_do_jogo[est.hply].captura, est.lista_do_jogo[est.hply].destino);
 }
 
-void Update::fazer_null_move(){
+void Update::fazer_null_move(Estado &est){
     // Push a sentinel history entry. EP availability in `gerar_en_passant`
     // is detected by reading the previous entry and checking for a double
     // pawn push — inicio == destino == 0 satisfies neither condition, so EP
     // gets correctly cleared for the side that gains the tempo.
-    Game::jogo *j = &Game::lista_do_jogo[Game::hply];
+    Game::jogo *j = &est.lista_do_jogo[est.hply];
     j->inicio    = 0;
     j->destino   = 0;
     j->promove   = P;
     j->captura   = VAZIO;
-    j->cinquenta = Game::cinquenta;
-    j->roque     = Game::roque;
-    j->hash      = Hash::chaveAtual;
-    j->lock      = Hash::lockAtual;
+    j->cinquenta = est.cinquenta;
+    j->roque     = est.roque;
+    j->hash      = est.chaveAtual;
+    j->lock      = est.lockAtual;
 
     // Seed the child ply's move-list start. Real moves go through
     // gerar_lances at the parent before any child enters, so qntt[ply+1] is
@@ -260,46 +259,46 @@ void Update::fazer_null_move(){
     // so without this seed the child reads a stale value left by a previous
     // iteration and writes its moves to a region that may overlap another
     // active ply's list — corrupting moves that are about to be applied.
-    Game::qntt_lances_totais[Game::ply + 1] = Game::qntt_lances_totais[Game::ply];
+    est.qntt_lances_totais[est.ply + 1] = est.qntt_lances_totais[est.ply];
 
-    Game::ply++;
-    Game::hply++;
-    Game::cinquenta++;
+    est.ply++;
+    est.hply++;
+    est.cinquenta++;
 
-    Game::lado  ^= 1;
-    Game::xlado ^= 1;
+    est.lado  ^= 1;
+    est.xlado ^= 1;
     // Zobrist key intentionally not updated: capizero stores side-to-move
     // implicitly via per-side TT tables (`hashpos[BRANCAS]` vs `hashpos[PRETAS]`),
     // and the key has no castling/EP component to clear.
 }
 
-void Update::desfaz_null_move(){
-    Game::lado  ^= 1;
-    Game::xlado ^= 1;
-    Game::ply--;
-    Game::hply--;
+void Update::desfaz_null_move(Estado &est){
+    est.lado  ^= 1;
+    est.xlado ^= 1;
+    est.ply--;
+    est.hply--;
 
-    Game::jogo *j = &Game::lista_do_jogo[Game::hply];
-    Game::cinquenta = j->cinquenta;
-    Game::roque     = j->roque;
+    Game::jogo *j = &est.lista_do_jogo[est.hply];
+    est.cinquenta = j->cinquenta;
+    est.roque     = j->roque;
 }
 
-int Update::fazer_captura(const int inicio, const int destino){
-    Game::lista_do_jogo[Game::hply].inicio = inicio;
-    Game::lista_do_jogo[Game::hply].destino = destino;
-    Game::lista_do_jogo[Game::hply].captura = Bitboard::tabuleiro[destino];
+int Update::fazer_captura(Estado &est, const int inicio, const int destino){
+    est.lista_do_jogo[est.hply].inicio = inicio;
+    est.lista_do_jogo[est.hply].destino = destino;
+    est.lista_do_jogo[est.hply].captura = est.tabuleiro[destino];
 
-    ++Game::ply;
-    ++Game::hply;
+    ++est.ply;
+    ++est.hply;
     
-    remover_piece(Game::xlado, Bitboard::tabuleiro[destino], destino);
-    mover_piece(Game::lado, Bitboard::tabuleiro[inicio], inicio, destino);
+    remover_piece(est, est.xlado, est.tabuleiro[destino], destino);
+    mover_piece(est, est.lado, est.tabuleiro[inicio], inicio, destino);
 
-    Game::lado ^= 1;
-    Game::xlado ^= 1;
+    est.lado ^= 1;
+    est.xlado ^= 1;
 
-    if (Attacks::casa_esta_sendo_atacada(Game::lado, Bitboard::bitscan(Bitboard::bit_pieces[Game::xlado][R]))){
-        desfaz_captura();
+    if (Attacks::casa_esta_sendo_atacada(est, est.lado, Bitboard::bitscan(est.bit_pieces[est.xlado][R]))){
+        desfaz_captura(est);
         return false;
     }
 
@@ -502,17 +501,17 @@ int obter_casa_destino_por_en_passant(char ep[2]){
     }
 }
 
-void Update::setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4], char casa_en_passant[2], char hm[4], char fm[4]){
+void Update::setar_posicao(Estado &est, char posicao[80], char lado_a_jogar[1], char roques[4], char casa_en_passant[2], char hm[4], char fm[4]){
     //1. LIMPA O TABULEIRO
-    Hash::chaveAtual = 0;
-    Hash::lockAtual  = 0;
-    memset(Bitboard::bit_pieces, 0, sizeof(Bitboard::bit_pieces));
-    memset(Bitboard::bit_lados, 0, sizeof(Bitboard::bit_lados));
-    Bitboard::bit_total = 0;
-    Eval::fase_valor = 0;
+    est.chaveAtual = 0;
+    est.lockAtual  = 0;
+    memset(est.bit_pieces, 0, sizeof(est.bit_pieces));
+    memset(est.bit_lados, 0, sizeof(est.bit_lados));
+    est.bit_total = 0;
+    est.fase_valor = 0;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
-        Bitboard::tabuleiro[casa] = VAZIO;
+        est.tabuleiro[casa] = VAZIO;
     }
 
 
@@ -534,7 +533,7 @@ void Update::setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4
             continue;
         }
 
-        adicionar_piece(obter_cor(posicao[i]), obter_peca(posicao[i]), ((linha * 8) + coluna));
+        adicionar_piece(est, obter_cor(posicao[i]), obter_peca(posicao[i]), ((linha * 8) + coluna));
         
         coluna++;
     }
@@ -542,17 +541,17 @@ void Update::setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4
 
     //3. DEFINE O LADO A JOGAR
     if (lado_a_jogar[0] == 'w'){
-        Game::lado = 0;
-        Game::xlado = 1;
+        est.lado = 0;
+        est.xlado = 1;
     }
     else{
-        Game::lado = 1;
-        Game::xlado = 0;
+        est.lado = 1;
+        est.xlado = 0;
     }
 
 
     //4. DEFINE OS DIREITOS DE ROQUE
-    Game::roque = 0;
+    est.roque = 0;
     for (int j = 0; j < 4; j++){
         if (roques[j] == '\0'){
             break;
@@ -560,16 +559,16 @@ void Update::setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4
 
         switch (roques[j]){
             case 'K':
-                Game::roque |= BRANCAS_ROQUE_MENOR;
+                est.roque |= BRANCAS_ROQUE_MENOR;
                 break;
             case 'Q':
-                Game::roque |= BRANCAS_ROQUE_MAIOR;
+                est.roque |= BRANCAS_ROQUE_MAIOR;
                 break;
             case 'k':
-                Game::roque |= PRETAS_ROQUE_MENOR;
+                est.roque |= PRETAS_ROQUE_MENOR;
                 break;
             case 'q':
-                Game::roque |= PRETAS_ROQUE_MAIOR;
+                est.roque |= PRETAS_ROQUE_MAIOR;
                 break;
             default:
                 break;
@@ -580,13 +579,13 @@ void Update::setar_posicao(char posicao[80], char lado_a_jogar[1], char roques[4
     char* hmptr = hm;
     std::string hmstr = hmptr;
 
-    Game::cinquenta = std::stoi(hmstr);
+    est.cinquenta = std::stoi(hmstr);
 
-    Game::ply = 1;
-    Game::hply = 1;
+    est.ply = 1;
+    est.hply = 1;
 
     // 6. DEFINE A CASA DE EN PASSANT
-    j = &Game::lista_do_jogo[Game::hply-1];
+    Game::jogo *j = &est.lista_do_jogo[est.hply-1];
     memset(j, 0, sizeof(Game::jogo));
     
     if (casa_en_passant[0] != '-'){

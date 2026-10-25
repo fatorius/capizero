@@ -5,6 +5,8 @@
 
 #include "consts.h"
 
+struct Estado;
+
 namespace Bitboard{
     typedef uint64_t u64;
 
@@ -21,10 +23,6 @@ namespace Bitboard{
     extern u64 vetor_bits[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
     extern u64 mask_vetores[CASAS_DO_TABULEIRO][8];
 
-    extern u64 bit_pieces[LADOS][TIPOS_DE_PIECES];
-    extern u64 bit_lados[LADOS];
-    extern u64 bit_total;
-
     extern u64 bit_casas_relevantes_bispo[CASAS_DO_TABULEIRO];
     extern u64 bit_casas_relevantes_torres[CASAS_DO_TABULEIRO];
 
@@ -39,10 +37,8 @@ namespace Bitboard{
 
     extern int fileiras[LADOS][CASAS_DO_TABULEIRO];
 
-    extern int tabuleiro[CASAS_DO_TABULEIRO];
-
     void init_bits();
-    void init_board();
+    void init_board(Estado &est);
     void init_vetores();
 
     void set_bit(u64 &bitboard, int bit);

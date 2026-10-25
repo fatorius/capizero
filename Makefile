@@ -4,8 +4,8 @@
 EPOCH = $(shell date +%s)
 VERSION = $(shell cat version.capizero)
 VERSION_WITHOUTQUOTES = $(patsubst '"%"',%, $(VERSION))
-CXXFLAGS = -Wall -std=c++11 -I./src -O3 -march=native -flto -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
-CXXDEBUGFLAGS = -Wall -std=c++11 -I./src -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero) -g -DDEBUG_BUILD
+CXXFLAGS = -Wall -std=c++11 -pthread -I./src -O3 -march=native -flto -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
+CXXDEBUGFLAGS = -Wall -std=c++11 -pthread -I./src -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero) -g -DDEBUG_BUILD
 EXE := $(NAME)
 COMP = g++
 
@@ -55,7 +55,7 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/params.h \
 		./src/values.h ./src/bench.h \
 		./src/bench_fens.h ./src/debug.h \
-		./src/magics.h
+		./src/magics.h ./src/estado.h
 
 
 # -----------------------------------------------------
@@ -91,7 +91,7 @@ tuner: clean ./tools/tuning/tuner.o $(SRCS)
 # Gradient-based Texel tuner (sparse features + Adam). See tools/tuning/tuner_adam.cpp.
 # Runs as: ./capi_tuner_adam <dataset.txt> [options]
 tuner_adam: clean ./tools/tuning/tuner_adam.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -pthread -o capi_tuner_adam ./tools/tuning/tuner_adam.o $(SRCS)
+	@ $(COMP) $(CXXFLAGS) -o capi_tuner_adam ./tools/tuning/tuner_adam.o $(SRCS)
 	@ echo "================="
 	@ echo "capi_tuner_adam compilado com sucesso"
 

@@ -14,13 +14,14 @@
 #include "interface.h"
 #include "hash.h"
 #include "eval.h"
+#include "estado.h"
 
 static void send_bestmove(){
-    Hash::chaveAtual = Hash::obter_chave();
-    Hash::lockAtual = Hash::obter_lock();
+    estado_principal.chaveAtual = Hash::obter_chave(estado_principal);
+    estado_principal.lockAtual = Hash::obter_lock(estado_principal);
 
-    int inicio = Hash::hash_inicio;
-    int destino = Hash::hash_destino;
+    int inicio = estado_principal.hash_inicio;
+    int destino = estado_principal.hash_destino;
 
     if (Interface::lance_inicio != 0 || Interface::lance_destino != 0){
         inicio = Interface::lance_inicio;
@@ -28,7 +29,7 @@ static void send_bestmove(){
     }
 
     int promove = Interface::lance_promove;
-    if (promove == 0 && Bitboard::tabuleiro[inicio] == P &&
+    if (promove == 0 && estado_principal.tabuleiro[inicio] == P &&
         (Consts::linhas[destino] == 0 || Consts::linhas[destino] == 7)){
         promove = D;   // safety fallback for moves that bypass the PV save path
     }
@@ -40,20 +41,20 @@ static void send_bestmove(){
 static void apply_moves_from_tokens(char *tok){
     // tok points at the first move string (or NULL). Consumes via strtok.
     while (tok != NULL){
-        Game::ply = 0;
-        Game::qntt_lances_totais[0] = 0;
-        Gen::gerar_lances(Game::lado, Game::xlado);
+        estado_principal.ply = 0;
+        estado_principal.qntt_lances_totais[0] = 0;
+        Gen::gerar_lances(estado_principal, estado_principal.lado, estado_principal.xlado);
 
-        int idx = Interface::converter_lance(tok);
+        int idx = Interface::converter_lance(estado_principal, tok);
         if (idx < 0){
             printf("info string illegal move in position command: %s\n", tok);
             fflush(stdout);
             return;
         }
 
-        if (!Update::fazer_lance(Gen::lista_de_lances[idx].inicio,
-                                 Gen::lista_de_lances[idx].destino,
-                                 Gen::lista_de_lances[idx].promove)){
+        if (!Update::fazer_lance(estado_principal, estado_principal.lista_de_lances[idx].inicio,
+                                 estado_principal.lista_de_lances[idx].destino,
+                                 estado_principal.lista_de_lances[idx].promove)){
             printf("info string illegal move in position command: %s\n", tok);
             fflush(stdout);
             return;
@@ -74,7 +75,7 @@ static void handle_position(char *args){
     }
 
     if (!strcmp(tok, "startpos")){
-        Game::novo_jogo();
+        Game::novo_jogo(estado_principal);
 
         tok = strtok(NULL, " \t\r\n");
         if (tok != NULL && !strcmp(tok, "moves")){
@@ -106,7 +107,7 @@ static void handle_position(char *args){
             fields[i][field_sizes[i]] = '\0';
         }
 
-        Update::setar_posicao(posicao, lado_a_jogar, roques, casa_ep, hm, fm);
+        Update::setar_posicao(estado_principal, posicao, lado_a_jogar, roques, casa_ep, hm, fm);
 
         tok = strtok(NULL, " \t\r\n");
         if (tok != NULL && !strcmp(tok, "moves")){
@@ -185,8 +186,8 @@ static void handle_go(char *args){
         Interface::profundidade_fixa = false;
     }
     else if (wtime >= 0 || btime >= 0){
-        int remaining = (Game::lado == BRANCAS) ? wtime : btime;
-        int inc       = (Game::lado == BRANCAS) ? winc  : binc;
+        int remaining = (estado_principal.lado == BRANCAS) ? wtime : btime;
+        int inc       = (estado_principal.lado == BRANCAS) ? winc  : binc;
         if (remaining < 0) remaining = 1000;
         Interface::tempo_maximo = Interface::computar_tempo_para_lance(remaining, inc);
         Interface::profundidade_maxima = MAX_PLY;
@@ -200,7 +201,7 @@ static void handle_go(char *args){
         Interface::profundidade_fixa = true;
     }
 
-    Search::pensar(true);
+    Search::pensar(estado_principal, true);
     send_bestmove();
 }
 
@@ -261,7 +262,7 @@ static void handle_setoption(char *args){
 }
 
 void Uci::loop(){
-    Game::novo_jogo();
+    Game::novo_jogo(estado_principal);
     Interface::tempo_fixo = false;
     Interface::profundidade_fixa = false;
     Interface::tempo_maximo = 1 << 25;
@@ -302,7 +303,7 @@ void Uci::loop(){
             fflush(stdout);
         }
         else if (!strcmp(cmd, "ucinewgame")){
-            Game::novo_jogo();
+            Game::novo_jogo(estado_principal);
             Hash::limpar_tt();
         }
         else if (!strcmp(cmd, "position")){
