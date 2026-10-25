@@ -284,18 +284,6 @@ void Update::desfaz_null_move(){
     Game::roque     = j->roque;
 }
 
-void Update::desfaz_lance_ou_null(){
-    const Game::jogo *last = &Game::lista_do_jogo[Game::hply - 1];
-    // Real moves never have inicio == destino (no chess move is to its own
-    // square), so (0, 0, captura == VAZIO) uniquely identifies our null-move
-    // sentinel.
-    if (last->inicio == 0 && last->destino == 0 && last->captura == VAZIO){
-        desfaz_null_move();
-    } else {
-        desfaz_lance();
-    }
-}
-
 int Update::fazer_captura(const int inicio, const int destino){
     Game::lista_do_jogo[Game::hply].inicio = inicio;
     Game::lista_do_jogo[Game::hply].destino = destino;

@@ -2,8 +2,9 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <setjmp.h>
 #include <math.h>
+#include <assert.h>
+#include <atomic>
 
 #include "update.h"
 #include "game.h"
@@ -38,15 +39,20 @@ void Search::init_lmr(){
     }
 }
 
-jmp_buf env;
-bool parar_pesquisa;
+// Pedido de parada da busca. Quando ligado, cada nó de pesquisa() desfaz o
+// próprio lance e retorna sem gravar na TT nem mexer em history/killers,
+// e pensar() descarta a iteração incompleta.
+std::atomic<bool> parar_pesquisa(false);
+
+static inline bool pesquisa_parada(){
+    return parar_pesquisa.load(std::memory_order_relaxed);
+}
 
 int Interface::lance_inicio, Interface::lance_destino, Interface::lance_promove;
 
 void verificar_tempo(){
     if ((Interface::obter_tempo() >= Search::tempo_do_fim || (Interface::tempo_maximo < 50 && Game::ply > 1)) && Interface::profundidade_fixa == 0 && Game::ply > 1){
-        parar_pesquisa = true;
-        longjmp(env, 0);
+        parar_pesquisa.store(true, std::memory_order_relaxed);
     }
 }
 
@@ -193,6 +199,9 @@ int pesquisa_rapida(int alpha, int beta){
 void adicionar_pontuacao_iid(int alpha, int beta, int profundidade){
     for (int candidato = Game::qntt_lances_totais[Game::ply]; candidato < Game::qntt_lances_totais[Game::ply + 1]; ++candidato){
         Gen::lista_de_lances[candidato].score = -Search::pesquisa(-beta, -alpha, profundidade REDUCAO_IID, false);
+        if (pesquisa_parada()){
+            return;
+        }
     }
 }
 
@@ -226,6 +235,10 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
 
     if ((lances_avaliados & VERIFICACAO_DE_LANCES) == 0){
         verificar_tempo();
+    }
+
+    if (pesquisa_parada()){
+        return 0;
     }
 
     if (Game::ply > MAX_PLY-2){
@@ -290,6 +303,10 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
         const int score_null = -pesquisa(-beta, -beta + 1, profundidade - 1 - reducao_null, false, false);
         Update::desfaz_null_move();
 
+        if (pesquisa_parada()){
+            return 0;
+        }
+
         if (score_null >= beta){
             return beta;
         }
@@ -303,6 +320,9 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
     if (iid_path){
         Gen::gerar_lances(Game::lado, Game::xlado);
         adicionar_pontuacao_iid(alpha, beta, profundidade);
+        if (pesquisa_parada()){
+            return 0;
+        }
         quiets_generated = true;
     } else if (tt_hit){
         const bool tt_dest_has_enemy = Bitboard::mask[tt_mv_destino] & Bitboard::bit_lados[Game::xlado];
@@ -417,16 +437,23 @@ int Search::pesquisa(int alpha, int beta, int profundidade, bool pv, bool null_p
             score_candidato = -pesquisa(-beta, -alpha, nova_profundidade, true);
         }
         else{
-            if (-pesquisa(-alpha - 1, -alpha, nova_profundidade, false) > alpha){
+            if (-pesquisa(-alpha - 1, -alpha, nova_profundidade, false) > alpha && !pesquisa_parada()){
                 score_candidato = -pesquisa(-beta, -alpha, profundidade - 1 + ext, true);
             }
             else{
                 Update::desfaz_lance();
+                if (pesquisa_parada()){
+                    return 0;
+                }
                 continue;
             }
         }
 
         Update::desfaz_lance();
+
+        if (pesquisa_parada()){
+            return 0;
+        }
 
         if (score_candidato > melhorscore){
             melhorscore = score_candidato;
@@ -478,20 +505,7 @@ void Search::pensar(bool verbose){
     int melhor_linha;
     int alpha, beta;
 
-    parar_pesquisa = false;
-
-    setjmp(env);
-    if (parar_pesquisa){
-        while (Game::ply){
-            // The unwinder must dispatch to desfaz_null_move for any
-            // null-move frame on the stack. Naively calling desfaz_lance
-            // on the (0, 0, captura=VAZIO) sentinel would corrupt the
-            // bitboards and Zobrist key (mover_piece(0, 0) clears tabuleiro[0]).
-            Update::desfaz_lance_ou_null();
-        }
-
-        return;
-    }
+    parar_pesquisa.store(false, std::memory_order_relaxed);
 
     if (!Interface::tempo_fixo){
         if (Attacks::casa_esta_sendo_atacada(Game::xlado, Bitboard::bitscan(Bitboard::bit_pieces[Game::lado][R]))){
@@ -514,12 +528,12 @@ void Search::pensar(bool verbose){
         if (!Interface::profundidade_fixa && Interface::profundidade_maxima > 1){
             if (Interface::tempo_fixo){
                 if (Interface::obter_tempo() >= tempo_do_inicio + Interface::tempo_maximo){
-                    parar_pesquisa = true;
+                    parar_pesquisa.store(true, std::memory_order_relaxed);
                     return;
                 }
             }
             else if (Interface::obter_tempo() >= tempo_do_inicio + Interface::tempo_maximo/4){
-                parar_pesquisa = true;
+                parar_pesquisa.store(true, std::memory_order_relaxed);
                 return;
             }
         }
@@ -537,6 +551,16 @@ void Search::pensar(bool verbose){
         int fails = 0;
         while (true){
             melhor_linha = pesquisa(alpha, beta, profundidade, true);
+
+            if (pesquisa_parada()){
+                // Cada frame já desfez o próprio lance; a iteração incompleta
+                // é descartada e o bestmove continua sendo o da anterior.
+#ifdef DEBUG_BUILD
+                assert(Game::ply == 0);
+                assert(Hash::chaveAtual == Hash::obter_chave() && Hash::lockAtual == Hash::obter_lock());
+#endif
+                return;
+            }
 
             if (melhor_linha > alpha && melhor_linha < beta) break;
             if (++fails > MAX_ASPIRATION_FAILS) break;

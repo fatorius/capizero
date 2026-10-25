@@ -15,7 +15,6 @@ namespace Update{
     void desfaz_lance();
     void fazer_null_move();
     void desfaz_null_move();
-    void desfaz_lance_ou_null();
 };
 
 #endif
