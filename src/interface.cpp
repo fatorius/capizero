@@ -16,8 +16,6 @@
 
 using namespace std;
 
-extern int Interface::lance_inicio, Interface::lance_destino, Interface::lance_promove;
-
 int Interface::tempo_gasto;
 
 int Interface::tempo_maximo, Interface::profundidade_maxima;
@@ -46,19 +44,35 @@ int Interface::computar_tempo_para_lance(int remaining_ms, int inc_ms){
 }
 
 void Interface::obter_pv_uci(Estado &est, char *buf, int max_len, int profundidade){
-    Interface::lance_inicio  = est.hash_inicio;
-    Interface::lance_destino = est.hash_destino;
-    Interface::lance_promove = est.hash_promove;
-
     int pos = 0;
     buf[0] = '\0';
 
     for (int x = 0; x < profundidade; x++){
-        if (Hash::hash_lookup(est, est.lado) == false){
+        int inicio, destino, promove;
+
+        if (x == 0){
+            inicio  = est.lance_escolhido.inicio;
+            destino = est.lance_escolhido.destino;
+            promove = est.lance_escolhido.promove;
+        }
+        else{
+            if (!Hash::hash_lookup(est, est.lado)){
+                break;
+            }
+            inicio  = est.hash_inicio;
+            destino = est.hash_destino;
+            promove = est.hash_promove;
+        }
+
+        if (inicio == destino || !Gen::lance_pseudo_legal(est, inicio, destino, promove)){
             break;
         }
 
-        char *mv = Interface::lance_para_string(est.hash_inicio, est.hash_destino, est.hash_promove);
+        if (!Update::fazer_lance(est, inicio, destino, promove)){
+            break;
+        }
+
+        char *mv = Interface::lance_para_string(inicio, destino, promove);
         int len = strlen(mv);
         if (pos + len + 2 >= max_len){
             break;
@@ -69,8 +83,6 @@ void Interface::obter_pv_uci(Estado &est, char *buf, int max_len, int profundida
         memcpy(buf + pos, mv, len);
         pos += len;
         buf[pos] = '\0';
-
-        Update::fazer_lance(est, est.hash_inicio, est.hash_destino, est.hash_promove);
 
         // Search returns VALOR_EMPATE on repetition without storing TT, but the
         // TT may hold a move from an earlier path to the same position. Stop
@@ -136,7 +148,7 @@ void Interface::lance_computador(Estado &est){
 
     Interface::tempo_gasto = Interface::obter_tempo() - Search::tempo_do_inicio;
 
-    Update::fazer_lance(est, est.hash_inicio, est.hash_destino, est.hash_promove);
+    Update::fazer_lance(est, est.lance_escolhido.inicio, est.lance_escolhido.destino, est.lance_escolhido.promove);
 
     Eval::atualizar_materiais(est);
 

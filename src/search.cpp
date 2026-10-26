@@ -43,8 +43,6 @@ static inline bool pesquisa_parada(){
     return parar_pesquisa.load(std::memory_order_relaxed);
 }
 
-int Interface::lance_inicio, Interface::lance_destino, Interface::lance_promove;
-
 void verificar_tempo(const Estado &est){
     if ((Interface::obter_tempo() >= Search::tempo_do_fim || (Interface::tempo_maximo < 50 && est.ply > 1)) && Interface::profundidade_fixa == 0 && est.ply > 1){
         parar_pesquisa.store(true, std::memory_order_relaxed);
@@ -470,6 +468,10 @@ int Search::pesquisa(Estado &est, int alpha, int beta, int profundidade, bool pv
                                      score_candidato, profundidade, TT_BOUND_LOWER,
                                      est.lista_de_lances[candidato].promove);
 
+                if (est.ply == 0){
+                    est.melhor_lance_raiz = est.lista_de_lances[candidato];
+                }
+
                 return beta;
             }
             alpha = score_candidato;
@@ -493,6 +495,10 @@ int Search::pesquisa(Estado &est, int alpha, int beta, int profundidade, bool pv
     const int tt_store_bound = (melhorscore > alpha_original) ? TT_BOUND_EXACT : TT_BOUND_UPPER;
     Hash::adicionar_hash(est, est.lado, melhorlance, melhorscore, profundidade, tt_store_bound, melhorlance.promove);
 
+    if (est.ply == 0){
+        est.melhor_lance_raiz = melhorlance;
+    }
+
     return alpha;
 }
 
@@ -513,6 +519,10 @@ void Search::pensar(Estado &est, bool verbose){
 
     est.ply = 0;
     est.lances_avaliados = 0;
+
+    memset(&est.melhor_lance_raiz, 0, sizeof(est.melhor_lance_raiz));
+    memset(&est.lance_escolhido, 0, sizeof(est.lance_escolhido));
+    est.score_escolhido = 0;
 
     Game::nova_posicao(est);
 
@@ -579,7 +589,11 @@ void Search::pensar(Estado &est, bool verbose){
             }
         }
 
-        if (Hash::hash_lookup(est, est.lado)){
+        // Iteração completa: o lance da raiz vira o bestmove.
+        est.lance_escolhido = est.melhor_lance_raiz;
+        est.score_escolhido = melhor_linha;
+
+        if (est.lance_escolhido.inicio != est.lance_escolhido.destino){
             if (verbose){
                 int elapsed_ms = Interface::obter_tempo() - tempo_do_inicio;
                 if (elapsed_ms < 1){
@@ -607,11 +621,6 @@ void Search::pensar(Estado &est, bool verbose){
                 printf("pv %s\n", pv_buf);
                 fflush(stdout);
             }
-        }
-        else{
-            Interface::lance_inicio  = 0;
-            Interface::lance_destino = 0;
-            Interface::lance_promove = 0;
         }
 
 

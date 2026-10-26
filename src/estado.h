@@ -45,6 +45,10 @@ struct Estado{
     int historico_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
     Gen::lance contraLance_heuristica[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
 
+    Gen::lance melhor_lance_raiz;
+    Gen::lance lance_escolhido;
+    int score_escolhido;
+
     Game::jogo lista_do_jogo[PILHA_DO_JOGO];
     Gen::lance lista_de_lances[PILHA_DE_LANCES];
 

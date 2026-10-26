@@ -417,7 +417,7 @@ static int play_one_game(FILE* out, std::mt19937& rng) {
 
         const int side_at_root = estado_principal.lado;
         int from, to, promo, score_stm;
-        if (!Hash::hash_lookup(estado_principal, side_at_root)) {
+        if (estado_principal.lance_escolhido.inicio == estado_principal.lance_escolhido.destino) {
             estado_principal.ply = 0;
             const int legal = count_legal_moves();
             if (legal == 0) {
@@ -449,10 +449,10 @@ static int play_one_game(FILE* out, std::mt19937& rng) {
             from = picked->inicio; to = picked->destino; promo = picked->promove;
             score_stm = 0;
         } else {
-            from      = estado_principal.hash_inicio;
-            to        = estado_principal.hash_destino;
-            promo     = estado_principal.hash_promove;
-            score_stm = estado_principal.hash_score;
+            from      = estado_principal.lance_escolhido.inicio;
+            to        = estado_principal.lance_escolhido.destino;
+            promo     = estado_principal.lance_escolhido.promove;
+            score_stm = estado_principal.score_escolhido;
         }
 
         // Quiet-position filters BEFORE applying the move.

@@ -12,8 +12,6 @@ namespace Interface{
 
     extern int tempo_gasto;
 
-    extern int lance_inicio, lance_destino, lance_promove;
-
     char *lance_para_string(int inicio, int destino, int promove);
     void lance_computador(Estado &est);
     int obter_tempo();

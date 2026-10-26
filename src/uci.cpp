@@ -17,24 +17,15 @@
 #include "estado.h"
 
 static void send_bestmove(){
-    estado_principal.chaveAtual = Hash::obter_chave(estado_principal);
-    estado_principal.lockAtual = Hash::obter_lock(estado_principal);
+    const Gen::lance &m = estado_principal.lance_escolhido;
 
-    int inicio = estado_principal.hash_inicio;
-    int destino = estado_principal.hash_destino;
-
-    if (Interface::lance_inicio != 0 || Interface::lance_destino != 0){
-        inicio = Interface::lance_inicio;
-        destino = Interface::lance_destino;
+    // Sem lance (mate ou afogamento na raiz): UCI usa o lance nulo "0000".
+    if (m.inicio == m.destino){
+        printf("bestmove 0000\n");
     }
-
-    int promove = Interface::lance_promove;
-    if (promove == 0 && estado_principal.tabuleiro[inicio] == P &&
-        (Consts::linhas[destino] == 0 || Consts::linhas[destino] == 7)){
-        promove = D;   // safety fallback for moves that bypass the PV save path
+    else{
+        printf("bestmove %s\n", Interface::lance_para_string(m.inicio, m.destino, m.promove));
     }
-
-    printf("bestmove %s\n", Interface::lance_para_string(inicio, destino, promove));
     fflush(stdout);
 }
 

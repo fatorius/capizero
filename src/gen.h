@@ -64,6 +64,7 @@ namespace Gen{
     void gerar_capturas_busca(Estado &est, const int lado_a_mover, const int contraLado);
     void gerar_silenciosos(Estado &est, const int lado_a_mover, const int contraLado);
     void gerar_capturas(Estado &est, const int lado_a_mover, const int contraLado);
+    bool lance_pseudo_legal(Estado &est, const int inicio, const int destino, const int promove);
     unsigned long long perft_node(Estado &est, int profunidade);
     unsigned long long perft(Estado &est, int profunidade);
 };

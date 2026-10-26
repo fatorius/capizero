@@ -260,3 +260,92 @@ void Tests::test7(){
     }
     cout<<"-----------------"<<endl;
 }
+
+static bool entrada_igual(const Hash::EntradaTT &a, const Hash::EntradaTT &b){
+    return a.inicio == b.inicio && a.destino == b.destino && a.score == b.score
+        && a.depth == b.depth && a.bound == b.bound && a.promove == b.promove;
+}
+
+// Teste 8
+// Entrada da TT de 16 bytes:
+// 8.1 empacotar/desempacotar preserva todos os campos nos extremos;
+// 8.2 uma entrada cuja metade foi trocada por outra escrita (leitura
+//     "rasgada" entre threads) não passa na verificação do lock.
+void Tests::test8(){
+    cout<<"Test 8 - Entrada da TT (empacotamento e leitura rasgada)"<<endl;
+
+    const int scores[] = {0, 1, -1, 37, -37, VALOR_XEQUE_MATE_BRANCAS, VALOR_XEQUE_MATE_PRETAS,
+                          ALPHA_INICIAL, BETA_INICIAL, 2147483647, (-2147483647 - 1)};
+    const int depths[] = {-128, -1, 0, 1, MAX_PLY, 127};
+    const int casas[]  = {0, 27, 63};
+
+    int falhas = 0;
+    int casos = 0;
+    for (unsigned si = 0; si < sizeof(scores) / sizeof(scores[0]); si++){
+        for (unsigned di = 0; di < sizeof(depths) / sizeof(depths[0]); di++){
+            for (unsigned ci = 0; ci < 3; ci++){
+                for (int bound = 0; bound <= 3; bound++){
+                    for (int promove = 0; promove <= 7; promove++){
+                        Hash::EntradaTT e;
+                        e.inicio  = casas[ci];
+                        e.destino = casas[2 - ci];
+                        e.score   = scores[si];
+                        e.depth   = depths[di];
+                        e.bound   = bound;
+                        e.promove = promove;
+                        if (!entrada_igual(e, Hash::desempacotar(Hash::empacotar(e)))){
+                            falhas++;
+                        }
+                        casos++;
+                    }
+                }
+            }
+        }
+    }
+    cout<<"Empacotamento: "<<casos - falhas<<"/"<<casos<<" casos preservados"<<endl;
+
+    Estado *est = new Estado();
+    setar_fen(*est, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+    est->ply = 0;
+    Hash::limpar_tt();
+
+    Gen::lance lc;
+    lc.inicio = E2; lc.destino = A6; lc.promove = 0; lc._pad = 0; lc.score = 0;
+    Hash::adicionar_hash(*est, est->lado, lc, -321, 9, TT_BOUND_EXACT, 0);
+
+    const bool achou = Hash::hash_lookup(*est, est->lado)
+        && est->hash_inicio == E2 && est->hash_destino == A6 && est->hash_score == -321
+        && est->hash_depth == 9 && est->hash_bound == TT_BOUND_EXACT && est->hash_promove == 0;
+
+    Hash::hashp *h = Hash::entrada(*est, est->lado);
+    const Bitboard::u64 dados = h->dados.load();
+    const Bitboard::u64 chave = h->chave_xor.load();
+
+    // Metade "dados" de outra escrita, metade "chave" desta.
+    h->dados.store(dados ^ (1ULL << 40));
+    const bool dados_trocados = Hash::hash_lookup(*est, est->lado);
+    h->dados.store(dados);
+
+    // Metade "chave" de outra escrita, metade "dados" desta.
+    h->chave_xor.store(chave ^ 0x9E3779B97F4A7C15ULL);
+    const bool chave_trocada = Hash::hash_lookup(*est, est->lado);
+    h->chave_xor.store(chave);
+
+    const bool restaurada = Hash::hash_lookup(*est, est->lado);
+
+    cout<<"Gravar e ler: "<<(achou ? "ok" : "FALHOU")
+        <<" | dados trocados detectados: "<<(!dados_trocados ? "ok" : "FALHOU")
+        <<" | chave trocada detectada: "<<(!chave_trocada ? "ok" : "FALHOU")
+        <<" | entrada restaurada: "<<(restaurada ? "ok" : "FALHOU")<<endl;
+
+    delete est;
+    Hash::limpar_tt();
+
+    if (falhas == 0 && achou && !dados_trocados && !chave_trocada && restaurada){
+        TESTE_SUCESSO;
+    }
+    else{
+        TESTE_FALHO;
+    }
+    cout<<"-----------------"<<endl;
+}

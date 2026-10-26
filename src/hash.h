@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <atomic>
 
 #include "bitboard.h"
 #include "gen.h"
@@ -16,15 +17,23 @@ struct Estado;
 
 namespace Hash{
     struct hashp{
-        Bitboard::u64 hashlock;
-        uint16_t      inicio;
-        uint16_t      dest;
-        int32_t       score;
-        int8_t        depth;
-        uint8_t       bound;
-        uint8_t       promove;
-        uint8_t       _pad;
+        std::atomic<Bitboard::u64> chave_xor;
+        std::atomic<Bitboard::u64> dados;
     };
+
+    struct EntradaTT{
+        int inicio;
+        int destino;
+        int score;
+        int depth;
+        int bound;
+        int promove;
+    };
+
+    Bitboard::u64 empacotar(const EntradaTT &e);
+    EntradaTT desempacotar(Bitboard::u64 dados);
+
+    hashp *entrada(const Estado &est, const int l);
 
     // Number of TT entries per side. Set by iniciar_hash()/realocar_tt().
     extern size_t tt_entries_per_side;

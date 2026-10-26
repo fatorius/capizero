@@ -118,9 +118,6 @@ static bool parse_line(char* line, ParsedLine& out) {
 }
 
 // ---------------------------------------------------------------------------
-// Resolve one position: search, walk PV via TT, write leaf with the source
-// result. PV walk stops early on: missing TT entry, qsearch-only entry
-// (hash_depth < 1), illegal move (broken TT), or max-pv cap.
 
 static void resolve_one(const ParsedLine& p, FILE* out) {
     char placement[80], side[2], castle[5], ep[3], hm[6], fm[6];
@@ -151,12 +148,20 @@ static void resolve_one(const ParsedLine& p, FILE* out) {
     // leaf), over-walking on a corrupted TT entry could write garbage.
     int walked = 0;
     while (walked < opt_max_pv) {
-        if (!Hash::hash_lookup(estado_principal, estado_principal.lado)) break;
-        if (estado_principal.hash_depth < 1) break;
-        const int from  = estado_principal.hash_inicio;
-        const int to    = estado_principal.hash_destino;
-        const int promo = estado_principal.hash_promove;
-        if (from == to) break;  // null-move sentinel or empty entry
+        int from, to, promo;
+        if (walked == 0) {
+            from  = estado_principal.lance_escolhido.inicio;
+            to    = estado_principal.lance_escolhido.destino;
+            promo = estado_principal.lance_escolhido.promove;
+        } else {
+            if (!Hash::hash_lookup(estado_principal, estado_principal.lado)) break;
+            if (estado_principal.hash_depth < 1) break;
+            from  = estado_principal.hash_inicio;
+            to    = estado_principal.hash_destino;
+            promo = estado_principal.hash_promove;
+        }
+        if (from == to) break;  // no move, null-move sentinel or empty entry
+        if (!Gen::lance_pseudo_legal(estado_principal, from, to, promo)) break;
         if (!Update::fazer_lance(estado_principal, from, to, promo)) break;
         walked++;
     }

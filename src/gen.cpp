@@ -858,6 +858,19 @@ void Gen::gerar_capturas(Estado &est, const int lado_a_mover, const int contraLa
     est.qntt_lances_totais[est.ply + 1] = est.mc;
 }
 
+bool Gen::lance_pseudo_legal(Estado &est, const int inicio, const int destino, const int promove){
+    gerar_lances(est, est.lado, est.xlado);
+
+    for (int i = est.qntt_lances_totais[est.ply]; i < est.qntt_lances_totais[est.ply + 1]; i++){
+        const lance &m = est.lista_de_lances[i];
+        if (m.inicio == inicio && m.destino == destino && m.promove == promove){
+            return true;
+        }
+    }
+
+    return false;
+}
+
 unsigned long long Gen::perft_node(Estado &est, int profunidade){
     if (profunidade == 0){
         return 1ULL;
