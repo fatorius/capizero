@@ -10,24 +10,11 @@
 #include "game.h"
 #include "gen.h"
 #include "update.h"
-#include "search.h"
 #include "interface.h"
 #include "hash.h"
 #include "eval.h"
 #include "estado.h"
-
-static void send_bestmove(){
-    const Gen::lance &m = estado_principal.lance_escolhido;
-
-    // Sem lance (mate ou afogamento na raiz): UCI usa o lance nulo "0000".
-    if (m.inicio == m.destino){
-        printf("bestmove 0000\n");
-    }
-    else{
-        printf("bestmove %s\n", Interface::lance_para_string(m.inicio, m.destino, m.promove));
-    }
-    fflush(stdout);
-}
+#include "threads.h"
 
 static void apply_moves_from_tokens(char *tok){
     // tok points at the first move string (or NULL). Consumes via strtok.
@@ -158,6 +145,9 @@ static void handle_go(char *args){
         }
     }
 
+    // Os parâmetros de tempo são lidos pela thread de busca.
+    Threads::esperar();
+
     if (infinite){
         Interface::tempo_maximo = 1 << 25;
         Interface::profundidade_maxima = MAX_PLY;
@@ -192,8 +182,7 @@ static void handle_go(char *args){
         Interface::profundidade_fixa = true;
     }
 
-    Search::pensar(estado_principal, true);
-    send_bestmove();
+    Threads::iniciar_busca(estado_principal, infinite);
 }
 
 static void handle_setoption(char *args){
@@ -202,6 +191,9 @@ static void handle_setoption(char *args){
     if (args == NULL){
         return;
     }
+
+    // Hash::realocar_tt não pode rodar com uma busca usando a TT.
+    Threads::esperar();
 
     char *name_tok = strtok(args, " \t\r\n");
     if (name_tok == NULL || strcmp(name_tok, "name") != 0){
@@ -253,6 +245,8 @@ static void handle_setoption(char *args){
 }
 
 void Uci::loop(){
+    Threads::iniciar();
+
     Game::novo_jogo(estado_principal);
     Interface::tempo_fixo = false;
     Interface::profundidade_fixa = false;
@@ -294,6 +288,7 @@ void Uci::loop(){
             fflush(stdout);
         }
         else if (!strcmp(cmd, "ucinewgame")){
+            Threads::esperar();
             Game::novo_jogo(estado_principal);
             Hash::limpar_tt();
         }
@@ -306,10 +301,10 @@ void Uci::loop(){
             handle_go(rest);
         }
         else if (!strcmp(cmd, "stop")){
-            // No-op: engine is single-threaded and does not poll stdin mid-search.
+            Threads::parar();
         }
         else if (!strcmp(cmd, "quit")){
-            return;
+            break;
         }
         else if (!strcmp(cmd, "setoption")){
             char *rest = strtok(NULL, "");
@@ -325,4 +320,7 @@ void Uci::loop(){
             fflush(stdout);
         }
     }
+
+    // quit ou fim da entrada: para a busca em andamento (o bestmove ainda sai).
+    Threads::encerrar();
 }

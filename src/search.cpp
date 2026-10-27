@@ -37,15 +37,15 @@ void Search::init_lmr(){
 // Pedido de parada da busca. Quando ligado, cada nó de pesquisa() desfaz o
 // próprio lance e retorna sem gravar na TT nem mexer em history/killers,
 // e pensar() descarta a iteração incompleta.
-std::atomic<bool> parar_pesquisa(false);
+std::atomic<bool> Search::parar_pesquisa(false);
 
 static inline bool pesquisa_parada(){
-    return parar_pesquisa.load(std::memory_order_relaxed);
+    return Search::parar_pesquisa.load(std::memory_order_relaxed);
 }
 
 void verificar_tempo(const Estado &est){
     if ((Interface::obter_tempo() >= Search::tempo_do_fim || (Interface::tempo_maximo < 50 && est.ply > 1)) && Interface::profundidade_fixa == 0 && est.ply > 1){
-        parar_pesquisa.store(true, std::memory_order_relaxed);
+        Search::parar_pesquisa.store(true, std::memory_order_relaxed);
     }
 }
 
@@ -502,11 +502,50 @@ int Search::pesquisa(Estado &est, int alpha, int beta, int profundidade, bool pv
     return alpha;
 }
 
-void Search::pensar(Estado &est, bool verbose){
+// Busca parada antes de completar a profundidade 1 (stop logo depois do go):
+// devolve o lance legal mais bem ordenado, para nunca responder sem lance
+// quando há lances legais.
+static void garantir_lance(Estado &est){
+    if (est.lance_escolhido.inicio != est.lance_escolhido.destino){
+        return;
+    }
+
+    est.ply = 0;
+    est.qntt_lances_totais[0] = 0;
+    Gen::gerar_lances(est, est.lado, est.xlado);
+
+    int melhor_score = 0;
+    for (int i = 0; i < est.qntt_lances_totais[1]; i++){
+        const Gen::lance l = est.lista_de_lances[i];
+        if (!Update::fazer_lance(est, l.inicio, l.destino, l.promove)){
+            continue;
+        }
+        Update::desfaz_lance(est);
+
+        if (est.lance_escolhido.inicio == est.lance_escolhido.destino || l.score > melhor_score){
+            est.lance_escolhido = l;
+            melhor_score = l.score;
+        }
+    }
+}
+
+static void aprofundar(Estado &est, bool verbose);
+
+void Search::pensar(Estado &est, bool verbose, bool zerar_parada){
+    if (zerar_parada){
+        parar_pesquisa.store(false, std::memory_order_relaxed);
+    }
+
+    aprofundar(est, verbose);
+    garantir_lance(est);
+}
+
+// Iterative deepening com janelas de aspiração.
+static void aprofundar(Estado &est, bool verbose){
+    using namespace Search;
+
     int melhor_linha;
     int alpha, beta;
-
-    parar_pesquisa.store(false, std::memory_order_relaxed);
 
     if (!Interface::tempo_fixo){
         if (Attacks::casa_esta_sendo_atacada(est, est.xlado, Bitboard::bitscan(est.bit_pieces[est.lado][R]))){
@@ -601,24 +640,26 @@ void Search::pensar(Estado &est, bool verbose){
                 }
                 int nps_uci = (int)((double)est.lances_avaliados * 1000.0 / (double)elapsed_ms);
 
-                printf("info depth %d seldepth %d time %d nodes %d nps %d ",
-                    profundidade, profundidade, elapsed_ms, est.lances_avaliados, nps_uci);
-
+                char score_buf[32];
                 if (melhor_linha >= VALOR_XEQUE_MATE_BRANCAS - MAX_PLY){
                     int mate_in = (VALOR_XEQUE_MATE_BRANCAS - melhor_linha + 1) / 2;
-                    printf("score mate %d ", mate_in);
+                    snprintf(score_buf, sizeof(score_buf), "mate %d", mate_in);
                 }
                 else if (melhor_linha <= VALOR_XEQUE_MATE_PRETAS + MAX_PLY){
                     int mate_in = (melhor_linha - VALOR_XEQUE_MATE_PRETAS) / 2;
-                    printf("score mate %d ", mate_in);
+                    snprintf(score_buf, sizeof(score_buf), "mate %d", mate_in);
                 }
                 else{
-                    printf("score cp %d ", melhor_linha);
+                    snprintf(score_buf, sizeof(score_buf), "cp %d", melhor_linha);
                 }
 
                 static char pv_buf[512];
                 Interface::obter_pv_uci(est, pv_buf, sizeof(pv_buf), profundidade);
-                printf("pv %s\n", pv_buf);
+
+                // Uma linha num único printf: a thread do UCI pode imprimir
+                // "readyok" ao mesmo tempo e não pode cair no meio da linha.
+                printf("info depth %d seldepth %d time %d nodes %d nps %d score %s pv %s\n",
+                    profundidade, profundidade, elapsed_ms, est.lances_avaliados, nps_uci, score_buf, pv_buf);
                 fflush(stdout);
             }
         }

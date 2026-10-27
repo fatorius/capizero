@@ -6,6 +6,7 @@ VERSION = $(shell cat version.capizero)
 VERSION_WITHOUTQUOTES = $(patsubst '"%"',%, $(VERSION))
 CXXFLAGS = -Wall -std=c++11 -pthread -I./src -O3 -march=native -flto -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero)
 CXXDEBUGFLAGS = -Wall -std=c++11 -pthread -I./src -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero) -g -DDEBUG_BUILD
+CXXTSANFLAGS = -Wall -std=c++11 -pthread -I./src -DBUILDNO=$(EPOCH) -DCAPIZERO_VERSION=$(shell cat version.capizero) -g -O1 -fsanitize=thread
 EXE := $(NAME)
 COMP = g++
 
@@ -40,7 +41,7 @@ SRCS = ./src/bitboard.o ./src/init.o \
 		./src/eval.o ./src/hash.o \
 		./src/game.o ./src/search.o \
 		./src/interface.o ./src/attacks.o \
-		./src/uci.o \
+		./src/uci.o ./src/threads.o \
 		./src/bench.o \
 		./src/debug.o
 
@@ -50,7 +51,7 @@ HEADER_FILES = ./src/bitboard.h ./src/init.h \
 		./src/eval.h ./src/hash.h \
 		./src/game.h ./src/search.h \
 		./src/interface.h ./src/attacks.h \
-		./src/uci.h \
+		./src/uci.h ./src/threads.h \
 		./src/consts.h \
 		./src/params.h \
 		./src/values.h ./src/bench.h \
@@ -69,6 +70,12 @@ debug: clean add_debug_variables ./src/main.o $(SRCS) $(HEADER_FILES)
 	@ $(COMP) $(CXXFLAGS) -o capi_debug ./src/main.o $(SRCS)
 	@ echo "================="
 	@ echo "capi_debug compilado com sucesso"
+
+# ThreadSanitizer: para rodar tests/uci/smoke.sh contra a busca assíncrona.
+tsan: clean add_tsan_variables ./src/main.o $(SRCS) $(HEADER_FILES)
+	@ $(COMP) $(CXXFLAGS) -o capi_tsan ./src/main.o $(SRCS)
+	@ echo "================="
+	@ echo "capi_tsan compilado com sucesso"
 
 tests: clean ./tests/unit/unit_tests.o ./tests/unit/tests.o $(SRCS)
 	@ $(COMP) $(CXXFLAGS) -o capi_tests ./tests/unit/unit_tests.o ./tests/unit/tests.o $(SRCS)
@@ -132,6 +139,7 @@ help:
 	@ echo "build: compila o capizero com todas as optimizações recomendadas para o uso em jogos"
 	@ echo "tests: compila um binário para testes unitários"
 	@ echo "debug: compila o capizero sem optimizações e com flags para debug"
+	@ echo "tsan: compila o capizero com ThreadSanitizer (capi_tsan)"
 	@ echo "bench: compila um binário para testar a performance da engine no seu computador"
 	@ echo "tuner: compila o Texel tuner por coordinate descent (tools/tuning)"
 	@ echo "tuner_adam: compila o Texel tuner por gradiente/Adam (tools/tuning)"
@@ -164,6 +172,9 @@ default: help credits
 # Outras receitas
 add_debug_variables:
 	@ $(eval CXXFLAGS = $(CXXDEBUGFLAGS))
+
+add_tsan_variables:
+	@ $(eval CXXFLAGS = $(CXXTSANFLAGS))
 
 %.o : %.cpp
 	@ echo building $@
