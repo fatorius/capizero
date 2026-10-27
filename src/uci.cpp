@@ -235,11 +235,15 @@ static void handle_setoption(char *args){
         fflush(stdout);
     }
     else if (!strcmp(option_name, "Threads")){
-        // Engine is single-threaded; silently accept 1, reject anything else.
-        if (value_tok != NULL && atoi(value_tok) != 1){
-            printf("info string Threads > 1 not supported; ignoring\n");
-            fflush(stdout);
+        if (value_tok == NULL){
+            return;
         }
+        int n = atoi(value_tok);
+        if (n < 1) n = 1;
+        if (n > MAX_THREADS) n = MAX_THREADS;
+        Threads::redimensionar(n);
+        printf("info string Threads set to %d\n", n);
+        fflush(stdout);
     }
     // Unknown options: silently accept (UCI requires tolerance of unknown names).
 }
@@ -279,7 +283,7 @@ void Uci::loop(){
             printf("id name Capizero %s\n", CAPIZERO_VERSION);
             printf("id author Hugo Souza\n");
             printf("option name Hash type spin default 128 min 1 max 4096\n");
-            printf("option name Threads type spin default 1 min 1 max 1\n");
+            printf("option name Threads type spin default 1 min 1 max %d\n", MAX_THREADS);
             printf("uciok\n");
             fflush(stdout);
         }

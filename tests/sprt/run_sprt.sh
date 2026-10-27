@@ -19,6 +19,11 @@
 #   FASTCHESS    path to fastchess binary (default: fastchess on PATH)
 #   BOOK         path to opening book (default: UHO if present, else starter)
 #   HASH         TT hash MB per engine (default: 256)
+#   THREADS_CAND THREADS_BASE  search threads per engine (default: 1 / 1).
+#                Keep concurrency x max(threads) within the performance cores
+#                (M3 Pro: e.g. concurrency 2 with Threads=2), otherwise games
+#                land on efficiency cores and the TC is no longer comparable.
+#                2T vs 1T on the same binary measures the Lazy SMP gain.
 #   ALPHA BETA   SPRT type-I / type-II error rates (default: 0.05 / 0.05)
 #   ROUNDS       max rounds cap (default: 40000)
 #
@@ -52,7 +57,7 @@ if [ -z "$BASELINE" ] || [ -z "$CANDIDATE" ]; then
 Usage: $0 <baseline_binary> <candidate_binary> [tc] [elo0] [elo1] [concurrency]
 
 Defaults: tc=10+0.1 elo0=0 elo1=5 concurrency=4
-Environment: FASTCHESS BOOK HASH ALPHA BETA ROUNDS
+Environment: FASTCHESS BOOK HASH THREADS_CAND THREADS_BASE ALPHA BETA ROUNDS
 USAGE
     exit 64
 fi
@@ -104,6 +109,8 @@ if [ -z "$CONCURRENCY" ]; then
 fi
 
 HASH="${HASH:-256}"
+THREADS_CAND="${THREADS_CAND:-1}"
+THREADS_BASE="${THREADS_BASE:-1}"
 ALPHA="${ALPHA:-0.05}"
 BETA="${BETA:-0.05}"
 ROUNDS="${ROUNDS:-40000}"
@@ -118,14 +125,15 @@ echo "   time control: $TC"
 echo "   elo bounds  : [$ELO0, $ELO1]  (alpha=$ALPHA beta=$BETA)"
 echo "   concurrency : $CONCURRENCY"
 echo "   hash / side : ${HASH}MB"
+echo "   threads     : candidate $THREADS_CAND, baseline $THREADS_BASE"
 echo "   book        : $BOOK"
 echo "   rounds cap  : $ROUNDS"
 echo "   pgn output  : $PGN_OUT"
 echo
 
 "$FASTCHESS" \
-    -engine cmd="$CANDIDATE" args="uci" name=candidate proto=uci \
-    -engine cmd="$BASELINE"  args="uci" name=baseline  proto=uci \
+    -engine cmd="$CANDIDATE" args="uci" name=candidate proto=uci option.Threads="$THREADS_CAND" \
+    -engine cmd="$BASELINE"  args="uci" name=baseline  proto=uci option.Threads="$THREADS_BASE" \
     -each tc="$TC" option.Hash="$HASH" \
     -rounds "$ROUNDS" -games 2 -repeat \
     -openings file="$BOOK" format=epd order=random \

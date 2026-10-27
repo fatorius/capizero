@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Smoke test do protocolo UCI com a busca assíncrona (stop, isready, quit).
 
-Uso: python3 tests/uci/smoke.py ./capizero_binario
+Uso: python3 tests/uci/smoke.py ./capizero_binario [threads]
+
+Com threads > 1, todos os casos rodam com "setoption name Threads value N".
 
 """
 
@@ -13,6 +15,8 @@ import threading
 import time
 
 LANCE_UCI = re.compile(r"^[a-h][1-8][a-h][1-8][nbrq]?$")
+
+THREADS = 1
 
 
 class Motor:
@@ -88,6 +92,8 @@ def iniciar(caminho):
     m = Motor(caminho)
     m.enviar("uci")
     m.esperar("uciok", 5)
+    if THREADS > 1:
+        m.enviar("setoption name Threads value %d" % THREADS)
     m.enviar("isready")
     m.esperar("readyok", 5)
     return m
@@ -163,6 +169,19 @@ def caso_comandos_durante_busca(m):
     m.esperar("readyok", 10)
 
 
+def caso_threads_entre_buscas(m):
+    """setoption Threads durante e entre buscas: espera a busca e o motor continua jogando."""
+    for n in (3, 1, 2, THREADS):
+        m.enviar("position startpos moves d2d4", "go depth 8", "setoption name Threads value %d" % n, "isready")
+        linha, lidas = m.esperar("readyok", 30)
+        bestmoves = [l for l in lidas if l.startswith("bestmove")]
+        assert len(bestmoves) == 1, "esperava um bestmove antes do readyok: %s" % bestmoves
+        conferir_legal(m, "position startpos moves d2d4", lance_do_bestmove(bestmoves[0]))
+    m.enviar("position startpos", "go depth 7")
+    linha, lidas = m.esperar("bestmove", 30)
+    assert any(l.startswith("info depth 7 ") for l in lidas), "sem info depth 7"
+
+
 def caso_partida_movetime(m):
     """Até 100 lances com go movetime 20/60, sempre aplicando o bestmove na posição seguinte.
 
@@ -217,6 +236,7 @@ CASOS_COMPARTILHADOS = [
     caso_infinite_termina_sozinho,
     caso_sem_lances,
     caso_comandos_durante_busca,
+    caso_threads_entre_buscas,
     caso_partida_movetime,
 ]
 
@@ -231,10 +251,13 @@ def relatorio_tsan(m):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("uso: %s <binário do capizero>" % sys.argv[0], file=sys.stderr)
+    global THREADS
+    if len(sys.argv) not in (2, 3):
+        print("uso: %s <binário do capizero> [threads]" % sys.argv[0], file=sys.stderr)
         return 2
     caminho = sys.argv[1]
+    if len(sys.argv) == 3:
+        THREADS = int(sys.argv[2])
     falhas = 0
 
     def rodar(nome, f):
