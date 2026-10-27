@@ -17,6 +17,7 @@
 #include "bitboard.h"
 #include "gen.h"
 #include "eval.h"
+#include "estado.h"
 
 struct TuningPos {
     char fen[96];
@@ -120,10 +121,10 @@ static double total_loss(double K, const std::vector<TuningPos>& set) {
     for (int i = 0; i < n; i++) {
         TuningPos p = set[i];  // setar_posicao wants non-const char* fields
 
-        Update::setar_posicao(p.fen, p.lado, p.roques, p.ep, p.hm, p.fm);
+        Update::setar_posicao(estado_principal, p.fen, p.lado, p.roques, p.ep, p.hm, p.fm);
 
-        int eval_cp = Eval::avaliar();
-        if (Game::lado == PRETAS) eval_cp = -eval_cp;
+        int eval_cp = Eval::avaliar(estado_principal);
+        if (estado_principal.lado == PRETAS) eval_cp = -eval_cp;
 
         double pred = sigmoid((double)eval_cp, K);
         double err  = (double)p.result - pred;
@@ -171,11 +172,11 @@ static void compute_support(const std::vector<TuningPos>& set) {
 
     for (size_t i = 0; i < set.size(); i++) {
         TuningPos p = set[i];  // setar_posicao wants non-const char* fields
-        Update::setar_posicao(p.fen, p.lado, p.roques, p.ep, p.hm, p.fm);
+        Update::setar_posicao(estado_principal, p.fen, p.lado, p.roques, p.ep, p.hm, p.fm);
 
         for (int piece = P; piece <= R; piece++) {
             for (int l = 0; l < LADOS; l++) {
-                Bitboard::u64 t = Bitboard::bit_pieces[l][piece];
+                Bitboard::u64 t = estado_principal.bit_pieces[l][piece];
                 while (t) {
                     int casa = Bitboard::bitscan(t);
                     t &= Bitboard::not_mask[casa];
@@ -186,27 +187,27 @@ static void compute_support(const std::vector<TuningPos>& set) {
         }
 
         for (int l = 0; l < LADOS; l++) {
-            const Bitboard::u64 nao_proprios = ~Bitboard::bit_lados[l];
+            const Bitboard::u64 nao_proprios = ~estado_principal.bit_lados[l];
 
-            Bitboard::u64 t = Bitboard::bit_pieces[l][C];
+            Bitboard::u64 t = estado_principal.bit_pieces[l][C];
             while (t) {
                 int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
                 mob_support_c[Bitboard::popcount(Gen::bit_moves_cavalo[casa] & nao_proprios)]++;
             }
-            t = Bitboard::bit_pieces[l][B];
+            t = estado_principal.bit_pieces[l][B];
             while (t) {
                 int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
-                mob_support_b[Bitboard::popcount(Gen::atacantes_bispo(casa) & nao_proprios)]++;
+                mob_support_b[Bitboard::popcount(Gen::atacantes_bispo(estado_principal, casa) & nao_proprios)]++;
             }
-            t = Bitboard::bit_pieces[l][T];
+            t = estado_principal.bit_pieces[l][T];
             while (t) {
                 int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
-                mob_support_t[Bitboard::popcount(Gen::atacantes_torre(casa) & nao_proprios)]++;
+                mob_support_t[Bitboard::popcount(Gen::atacantes_torre(estado_principal, casa) & nao_proprios)]++;
             }
-            t = Bitboard::bit_pieces[l][D];
+            t = estado_principal.bit_pieces[l][D];
             while (t) {
                 int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
-                Bitboard::u64 att = Gen::atacantes_bispo(casa) | Gen::atacantes_torre(casa);
+                Bitboard::u64 att = Gen::atacantes_bispo(estado_principal, casa) | Gen::atacantes_torre(estado_principal, casa);
                 mob_support_d[Bitboard::popcount(att & nao_proprios)]++;
             }
         }

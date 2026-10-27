@@ -16,6 +16,7 @@
 #include "update.h"
 #include "interface.h"
 #include "magics.h"
+#include "estado.h"
 
 Bitboard::u64 peao_uma_casa[LADOS][CASAS_DO_TABULEIRO];
 Bitboard::u64 peao_duas_casas[LADOS][CASAS_DO_TABULEIRO];
@@ -41,13 +42,9 @@ Bitboard::u64 Gen::bit_moves_rei[CASAS_DO_TABULEIRO];
 Bitboard::u64 Gen::bit_magicas_bispo[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
 Bitboard::u64 Gen::bit_magicas_torre[CASAS_DO_TABULEIRO][MAGIC_HASHTABLE_SIZE];
 
-Gen::lance Gen::lista_de_lances[PILHA_DE_LANCES];
-
 int dtb_moves[CASAS_DO_TABULEIRO][9];
 int cavalo_moves[CASAS_DO_TABULEIRO][9];
 int rei_moves[CASAS_DO_TABULEIRO][9];
-
-int mc;
 
 void init_peao_lookups(){
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
@@ -376,132 +373,132 @@ void Gen::init_lookup_tables(){
     init_magic_lookups();
 }
 
-int calcularBonusHeuristicas(const int origem, const int destino){
-    Gen::lance contraLance = Search::contraLance_heuristica[Game::lista_do_jogo[Game::hply].inicio][Game::lista_do_jogo[Game::hply].destino];
+int calcularBonusHeuristicas(const Estado &est, const int origem, const int destino){
+    Gen::lance contraLance = est.contraLance_heuristica[est.lista_do_jogo[est.hply].inicio][est.lista_do_jogo[est.hply].destino];
 
-    if (Search::killers_primarios[Game::ply].inicio == origem
-        && Search::killers_primarios[Game::ply].destino == destino
-        && Search::killers_primarios[Game::ply].promove == Gen::lista_de_lances[mc].promove){
+    if (est.killers_primarios[est.ply].inicio == origem
+        && est.killers_primarios[est.ply].destino == destino
+        && est.killers_primarios[est.ply].promove == est.lista_de_lances[est.mc].promove){
         return SCORE_KILLER_1;
     }
-    if (Search::killers_secundarios[Game::ply].inicio == origem
-        && Search::killers_secundarios[Game::ply].destino == destino
-        && Search::killers_secundarios[Game::ply].promove == Gen::lista_de_lances[mc].promove){
+    if (est.killers_secundarios[est.ply].inicio == origem
+        && est.killers_secundarios[est.ply].destino == destino
+        && est.killers_secundarios[est.ply].promove == est.lista_de_lances[est.mc].promove){
         return SCORE_KILLER_2;
     }
     if (contraLance.inicio == origem
         && contraLance.destino == destino
-        && contraLance.promove == Gen::lista_de_lances[mc].promove){
+        && contraLance.promove == est.lista_de_lances[est.mc].promove){
         return SCORE_CONTRALANCE;
     }
 
-    return Search::historico_heuristica[origem][destino];
+    return est.historico_heuristica[origem][destino];
 }
 
-void adicionar_captura(const int origem, const int destino, const int score){
-    Gen::lista_de_lances[mc].inicio = origem;
-    Gen::lista_de_lances[mc].destino = destino;
-    Gen::lista_de_lances[mc].promove = 0;
-    Gen::lista_de_lances[mc].score = score; // ordena por capturas
-    mc++;
+void adicionar_captura(Estado &est, const int origem, const int destino, const int score){
+    est.lista_de_lances[est.mc].inicio = origem;
+    est.lista_de_lances[est.mc].destino = destino;
+    est.lista_de_lances[est.mc].promove = 0;
+    est.lista_de_lances[est.mc].score = score; // ordena por capturas
+    est.mc++;
 }
 
-void adicionar_roque(const int origem, const int destino){
-    Gen::lista_de_lances[mc].inicio = origem;
-    Gen::lista_de_lances[mc].destino = destino;
-    Gen::lista_de_lances[mc].promove = 0;
-    Gen::lista_de_lances[mc].score = SCORE_ROQUE; // ordena por roque TODO TESTAR SE ESSA ORDENAÇÃO REALMENTE RESULTA EM MELHORAS ????????
-    mc++;
+void adicionar_roque(Estado &est, const int origem, const int destino){
+    est.lista_de_lances[est.mc].inicio = origem;
+    est.lista_de_lances[est.mc].destino = destino;
+    est.lista_de_lances[est.mc].promove = 0;
+    est.lista_de_lances[est.mc].score = SCORE_ROQUE; // ordena por roque TODO TESTAR SE ESSA ORDENAÇÃO REALMENTE RESULTA EM MELHORAS ????????
+    est.mc++;
 }
 
-void adicionar_lance(const int origem, const int destino){
-    Gen::lista_de_lances[mc].inicio = origem;
-    Gen::lista_de_lances[mc].destino = destino;
-    Gen::lista_de_lances[mc].promove = 0;
-    Gen::lista_de_lances[mc].score = calcularBonusHeuristicas(origem, destino);
-    mc++;
+void adicionar_lance(Estado &est, const int origem, const int destino){
+    est.lista_de_lances[est.mc].inicio = origem;
+    est.lista_de_lances[est.mc].destino = destino;
+    est.lista_de_lances[est.mc].promove = 0;
+    est.lista_de_lances[est.mc].score = calcularBonusHeuristicas(est, origem, destino);
+    est.mc++;
 }
 
-void adicionar_promocao_variantes(const int origem, const int destino, const int piece_capturado){
+void adicionar_promocao_variantes(Estado &est, const int origem, const int destino, const int piece_capturado){
     const int cap_bonus = (piece_capturado < VAZIO) ? Values::pieces_valor[piece_capturado] : 0;
     const bool is_capture = (piece_capturado < VAZIO);
 
     // Queen
-    Gen::lista_de_lances[mc].inicio = origem;
-    Gen::lista_de_lances[mc].destino = destino;
-    Gen::lista_de_lances[mc].promove = D;
-    Gen::lista_de_lances[mc].score = (is_capture ? SCORE_PROMO_Q_CAP : SCORE_PROMO_Q) + cap_bonus;
-    mc++;
+    est.lista_de_lances[est.mc].inicio = origem;
+    est.lista_de_lances[est.mc].destino = destino;
+    est.lista_de_lances[est.mc].promove = D;
+    est.lista_de_lances[est.mc].score = (is_capture ? SCORE_PROMO_Q_CAP : SCORE_PROMO_Q) + cap_bonus;
+    est.mc++;
 
     // Knight
-    Gen::lista_de_lances[mc].inicio = origem;
-    Gen::lista_de_lances[mc].destino = destino;
-    Gen::lista_de_lances[mc].promove = C;
-    Gen::lista_de_lances[mc].score = (is_capture ? SCORE_PROMO_N_CAP : SCORE_PROMO_N) + cap_bonus;
-    mc++;
+    est.lista_de_lances[est.mc].inicio = origem;
+    est.lista_de_lances[est.mc].destino = destino;
+    est.lista_de_lances[est.mc].promove = C;
+    est.lista_de_lances[est.mc].score = (is_capture ? SCORE_PROMO_N_CAP : SCORE_PROMO_N) + cap_bonus;
+    est.mc++;
 }
 
 // Queen-only capture-promotion for qsearch. Quiescence scores captures via
 // pesquisa_quiescence(inicio, destino) and makes them with Update::fazer_captura,
 // neither of which knows about the promote piece — so emitting N/R/B here just
 // forces SEE to run 4× with identical inputs and identical results. Emit Q only.
-void adicionar_promocao_captura_dama(const int origem, const int destino, const int piece_capturado){
-    Gen::lista_de_lances[mc].inicio = origem;
-    Gen::lista_de_lances[mc].destino = destino;
-    Gen::lista_de_lances[mc].promove = D;
-    Gen::lista_de_lances[mc].score = Values::px[piece_capturado];
-    mc++;
+void adicionar_promocao_captura_dama(Estado &est, const int origem, const int destino, const int piece_capturado){
+    est.lista_de_lances[est.mc].inicio = origem;
+    est.lista_de_lances[est.mc].destino = destino;
+    est.lista_de_lances[est.mc].promove = D;
+    est.lista_de_lances[est.mc].score = Values::px[piece_capturado];
+    est.mc++;
 }
 
-void gerar_en_passant(){
-    int ep = Game::lista_do_jogo[Game::hply - 1].destino;
+void gerar_en_passant(Estado &est){
+    int ep = est.lista_do_jogo[est.hply - 1].destino;
 
-    if (Bitboard::tabuleiro[ep] == P && abs(Game::lista_do_jogo[Game::hply - 1].inicio - ep) == AVANCO_DUPLO){
-        if (Consts::colunas[ep] > COLUNA_A && Bitboard::mask[ep-1] & Bitboard::bit_pieces[Game::lado][P]){
-            adicionar_captura(ep-1, peao_uma_casa[Game::lado][ep], EN_PASSANT_SCORE);
+    if (est.tabuleiro[ep] == P && abs(est.lista_do_jogo[est.hply - 1].inicio - ep) == AVANCO_DUPLO){
+        if (Consts::colunas[ep] > COLUNA_A && Bitboard::mask[ep-1] & est.bit_pieces[est.lado][P]){
+            adicionar_captura(est, ep-1, peao_uma_casa[est.lado][ep], EN_PASSANT_SCORE);
         }
-        if (Consts::colunas[ep] < COLUNA_H && Bitboard::mask[ep+1] & Bitboard::bit_pieces[Game::lado][P]){
-            adicionar_captura(ep+1, peao_uma_casa[Game::lado][ep], EN_PASSANT_SCORE);
+        if (Consts::colunas[ep] < COLUNA_H && Bitboard::mask[ep+1] & est.bit_pieces[est.lado][P]){
+            adicionar_captura(est, ep+1, peao_uma_casa[est.lado][ep], EN_PASSANT_SCORE);
         }
     }
 }
 
-void gerar_roques(){
-    if (Game::lado == BRANCAS){
-        if (Game::roque & BRANCAS_ROQUE_MENOR && !(Bitboard::bit_entre[H1][E1] & Bitboard::bit_total)){
-            adicionar_roque(E1, G1);
+void gerar_roques(Estado &est){
+    if (est.lado == BRANCAS){
+        if (est.roque & BRANCAS_ROQUE_MENOR && !(Bitboard::bit_entre[H1][E1] & est.bit_total)){
+            adicionar_roque(est, E1, G1);
         }
-        if (Game::roque & BRANCAS_ROQUE_MAIOR && !(Bitboard::bit_entre[A1][E1] & Bitboard::bit_total)){
-            adicionar_roque(E1, C1);
+        if (est.roque & BRANCAS_ROQUE_MAIOR && !(Bitboard::bit_entre[A1][E1] & est.bit_total)){
+            adicionar_roque(est, E1, C1);
         }
     }
     else{
-        if (Game::roque & PRETAS_ROQUE_MENOR && !(Bitboard::bit_entre[H8][E8] & Bitboard::bit_total)){
-            adicionar_roque(E8, G8);
+        if (est.roque & PRETAS_ROQUE_MENOR && !(Bitboard::bit_entre[H8][E8] & est.bit_total)){
+            adicionar_roque(est, E8, G8);
         }
-        if (Game::roque & PRETAS_ROQUE_MAIOR && !(Bitboard::bit_entre[A8][E8] & Bitboard::bit_total)){
-            adicionar_roque(E8, C8);
+        if (est.roque & PRETAS_ROQUE_MAIOR && !(Bitboard::bit_entre[A8][E8] & est.bit_total)){
+            adicionar_roque(est, E8, C8);
         }
     }
 }
 
-void Gen::gerar_capturas_busca(const int lado_a_mover, const int contraLado){
+void Gen::gerar_capturas_busca(Estado &est, const int lado_a_mover, const int contraLado){
     int casa, casa_destino;
     Bitboard::u64 t1, t2;
     Bitboard::u64 ataques_deslizantes;
 
-    mc = Game::qntt_lances_totais[Game::ply];
+    est.mc = est.qntt_lances_totais[est.ply];
 
-    gerar_en_passant();
+    gerar_en_passant(est);
 
     // 1. capturas de peao (promoção emite Q+N via adicionar_promocao_variantes)
     if (lado_a_mover == BRANCAS){
-        t1 = Bitboard::bit_pieces[BRANCAS][P] & ((Bitboard::bit_lados[PRETAS] & Bitboard::not_coluna_h) >> 7);
-        t2 = Bitboard::bit_pieces[BRANCAS][P] & ((Bitboard::bit_lados[PRETAS] & Bitboard::not_coluna_a) >> 9);
+        t1 = est.bit_pieces[BRANCAS][P] & ((est.bit_lados[PRETAS] & Bitboard::not_coluna_h) >> 7);
+        t2 = est.bit_pieces[BRANCAS][P] & ((est.bit_lados[PRETAS] & Bitboard::not_coluna_a) >> 9);
     }
     else{
-        t1 = Bitboard::bit_pieces[PRETAS][P] & ((Bitboard::bit_lados[BRANCAS] & Bitboard::not_coluna_h) << 9);
-        t2 = Bitboard::bit_pieces[PRETAS][P] & ((Bitboard::bit_lados[BRANCAS] & Bitboard::not_coluna_a) << 7);
+        t1 = est.bit_pieces[PRETAS][P] & ((est.bit_lados[BRANCAS] & Bitboard::not_coluna_h) << 9);
+        t2 = est.bit_pieces[PRETAS][P] & ((est.bit_lados[BRANCAS] & Bitboard::not_coluna_a) << 7);
     }
 
     while (t1){
@@ -509,12 +506,12 @@ void Gen::gerar_capturas_busca(const int lado_a_mover, const int contraLado){
         t1 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_esquerda[lado_a_mover][casa];
         if (Consts::linhas[casa_destino] == FILEIRA_1 || Consts::linhas[casa_destino] == FILEIRA_8){
-            adicionar_promocao_variantes(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
+            adicionar_promocao_variantes(est, casa, casa_destino, est.tabuleiro[casa_destino]);
         }
         else{
-            int captured = Bitboard::tabuleiro[casa_destino];
-            int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
-            adicionar_captura(casa, casa_destino,
+            int captured = est.tabuleiro[casa_destino];
+            int sv = Attacks::see(est, casa, casa_destino, captured, lado_a_mover);
+            adicionar_captura(est, casa, casa_destino,
                 sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
         }
     }
@@ -523,235 +520,235 @@ void Gen::gerar_capturas_busca(const int lado_a_mover, const int contraLado){
         t2 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_direita[lado_a_mover][casa];
         if (Consts::linhas[casa_destino] == FILEIRA_1 || Consts::linhas[casa_destino] == FILEIRA_8){
-            adicionar_promocao_variantes(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
+            adicionar_promocao_variantes(est, casa, casa_destino, est.tabuleiro[casa_destino]);
         }
         else{
-            int captured = Bitboard::tabuleiro[casa_destino];
-            int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
-            adicionar_captura(casa, casa_destino,
+            int captured = est.tabuleiro[casa_destino];
+            int sv = Attacks::see(est, casa, casa_destino, captured, lado_a_mover);
+            adicionar_captura(est, casa, casa_destino,
                 sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
         }
     }
 
     // 2. capturas de cavalo
-    t1 = Bitboard::bit_pieces[lado_a_mover][C];
+    t1 = est.bit_pieces[lado_a_mover][C];
     while (t1){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
-        t2 = Gen::bit_moves_cavalo[casa] & Bitboard::bit_lados[contraLado];
+        t2 = Gen::bit_moves_cavalo[casa] & est.bit_lados[contraLado];
         while (t2){
             casa_destino = Bitboard::bitscan(t2);
             t2 &= Bitboard::not_mask[casa_destino];
-            int captured = Bitboard::tabuleiro[casa_destino];
-            int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
-            adicionar_captura(casa, casa_destino,
+            int captured = est.tabuleiro[casa_destino];
+            int sv = Attacks::see(est, casa, casa_destino, captured, lado_a_mover);
+            adicionar_captura(est, casa, casa_destino,
                 sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
         }
     }
 
     // 3. capturas de bispo (magics → apenas alvos inimigos)
-    t1 = Bitboard::bit_pieces[lado_a_mover][B];
+    t1 = est.bit_pieces[lado_a_mover][B];
     while (t1){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
         #ifdef USE_PEXT
-            ataques_deslizantes = Gen::bit_magicas_bispo[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_bispo[casa])] & Bitboard::bit_lados[contraLado];
+            ataques_deslizantes = Gen::bit_magicas_bispo[casa][_pext_u64(est.bit_total, bit_casas_relevantes_bispo[casa])] & est.bit_lados[contraLado];
         #else
-            ataques_deslizantes = Gen::bit_magicas_bispo[casa][((Bitboard::bit_total & bit_casas_relevantes_bispo[casa]) * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa])] & Bitboard::bit_lados[contraLado];
+            ataques_deslizantes = Gen::bit_magicas_bispo[casa][((est.bit_total & bit_casas_relevantes_bispo[casa]) * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa])] & est.bit_lados[contraLado];
         #endif
         while (ataques_deslizantes){
             casa_destino = Bitboard::bitscan(ataques_deslizantes);
             ataques_deslizantes &= Bitboard::not_mask[casa_destino];
-            int captured = Bitboard::tabuleiro[casa_destino];
-            int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
-            adicionar_captura(casa, casa_destino,
+            int captured = est.tabuleiro[casa_destino];
+            int sv = Attacks::see(est, casa, casa_destino, captured, lado_a_mover);
+            adicionar_captura(est, casa, casa_destino,
                 sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
         }
     }
 
     // 4. capturas de torre
-    t1 = Bitboard::bit_pieces[lado_a_mover][T];
+    t1 = est.bit_pieces[lado_a_mover][T];
     while (t1){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
         #ifdef USE_PEXT
-            ataques_deslizantes = Gen::bit_magicas_torre[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_torres[casa])] & Bitboard::bit_lados[contraLado];
+            ataques_deslizantes = Gen::bit_magicas_torre[casa][_pext_u64(est.bit_total, bit_casas_relevantes_torres[casa])] & est.bit_lados[contraLado];
         #else
-            ataques_deslizantes = Gen::bit_magicas_torre[casa][((Bitboard::bit_total & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])] & Bitboard::bit_lados[contraLado];
+            ataques_deslizantes = Gen::bit_magicas_torre[casa][((est.bit_total & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])] & est.bit_lados[contraLado];
         #endif
         while (ataques_deslizantes){
             casa_destino = Bitboard::bitscan(ataques_deslizantes);
             ataques_deslizantes &= Bitboard::not_mask[casa_destino];
-            int captured = Bitboard::tabuleiro[casa_destino];
-            int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
-            adicionar_captura(casa, casa_destino,
+            int captured = est.tabuleiro[casa_destino];
+            int sv = Attacks::see(est, casa, casa_destino, captured, lado_a_mover);
+            adicionar_captura(est, casa, casa_destino,
                 sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
         }
     }
 
     // 5. capturas de dama
-    t1 = Bitboard::bit_pieces[lado_a_mover][D];
+    t1 = est.bit_pieces[lado_a_mover][D];
     while (t1){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
         #ifdef USE_PEXT
-            ataques_deslizantes = (bit_magicas_bispo[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_bispo[casa])] | bit_magicas_torre[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_torres[casa])]) & Bitboard::bit_lados[contraLado];
+            ataques_deslizantes = (bit_magicas_bispo[casa][_pext_u64(est.bit_total, bit_casas_relevantes_bispo[casa])] | bit_magicas_torre[casa][_pext_u64(est.bit_total, bit_casas_relevantes_torres[casa])]) & est.bit_lados[contraLado];
         #else
-            ataques_deslizantes = (Gen::bit_magicas_bispo[casa][((Bitboard::bit_total & bit_casas_relevantes_bispo[casa]) * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa])] | Gen::bit_magicas_torre[casa][((Bitboard::bit_total & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])]) & Bitboard::bit_lados[contraLado];
+            ataques_deslizantes = (Gen::bit_magicas_bispo[casa][((est.bit_total & bit_casas_relevantes_bispo[casa]) * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa])] | Gen::bit_magicas_torre[casa][((est.bit_total & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])]) & est.bit_lados[contraLado];
         #endif
         while (ataques_deslizantes){
             casa_destino = Bitboard::bitscan(ataques_deslizantes);
             ataques_deslizantes &= Bitboard::not_mask[casa_destino];
-            int captured = Bitboard::tabuleiro[casa_destino];
-            int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
-            adicionar_captura(casa, casa_destino,
+            int captured = est.tabuleiro[casa_destino];
+            int sv = Attacks::see(est, casa, casa_destino, captured, lado_a_mover);
+            adicionar_captura(est, casa, casa_destino,
                 sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
         }
     }
 
     // 6. capturas de rei
-    casa = Bitboard::bitscan(Bitboard::bit_pieces[lado_a_mover][R]);
-    t1 = Gen::bit_moves_rei[casa] & Bitboard::bit_lados[contraLado];
+    casa = Bitboard::bitscan(est.bit_pieces[lado_a_mover][R]);
+    t1 = Gen::bit_moves_rei[casa] & est.bit_lados[contraLado];
     while (t1){
         casa_destino = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa_destino];
-        int captured = Bitboard::tabuleiro[casa_destino];
-        int sv = Attacks::see(casa, casa_destino, captured, lado_a_mover);
-        adicionar_captura(casa, casa_destino,
+        int captured = est.tabuleiro[casa_destino];
+        int sv = Attacks::see(est, casa, casa_destino, captured, lado_a_mover);
+        adicionar_captura(est, casa, casa_destino,
             sv >= 0 ? SCORE_DE_CAPTURA_VANTAJOSAS + sv : SCORE_CAPTURAS_DESVANTAJOSAS + sv);
     }
 
-    Game::qntt_lances_totais[Game::ply + 1] = mc;
+    est.qntt_lances_totais[est.ply + 1] = est.mc;
 }
 
-void Gen::gerar_silenciosos(const int lado_a_mover, const int contraLado){
+void Gen::gerar_silenciosos(Estado &est, const int lado_a_mover, const int contraLado){
     int casa, casa_destino;
     Bitboard::u64 t1, t2, t3;
     Bitboard::u64 ataques_deslizantes;
 
     // Anexa ao final do bloco de capturas já gerado.
-    mc = Game::qntt_lances_totais[Game::ply + 1];
+    est.mc = est.qntt_lances_totais[est.ply + 1];
 
-    gerar_roques();
+    gerar_roques(est);
 
     // 1. avanços de peão (incluindo promoções silenciosas Q+N)
     if (lado_a_mover == BRANCAS){
-        t3 = Bitboard::bit_pieces[BRANCAS][P] & ~(Bitboard::bit_total>>8);
+        t3 = est.bit_pieces[BRANCAS][P] & ~(est.bit_total>>8);
     }
     else{
-        t3 = Bitboard::bit_pieces[PRETAS][P] & ~(Bitboard::bit_total<<8);
+        t3 = est.bit_pieces[PRETAS][P] & ~(est.bit_total<<8);
     }
     while (t3){
         casa = Bitboard::bitscan(t3);
         t3 &= Bitboard::not_mask[casa];
         casa_destino = peao_uma_casa[lado_a_mover][casa];
         if (Consts::linhas[casa_destino] == FILEIRA_1 || Consts::linhas[casa_destino] == FILEIRA_8){
-            adicionar_promocao_variantes(casa, casa_destino, VAZIO);
+            adicionar_promocao_variantes(est, casa, casa_destino, VAZIO);
         }
         else{
-            adicionar_lance(casa, casa_destino);
-            if (Bitboard::fileiras[lado_a_mover][casa] == 1 && Bitboard::tabuleiro[peao_duas_casas[lado_a_mover][casa]] == VAZIO){
-                adicionar_lance(casa, peao_duas_casas[lado_a_mover][casa]);
+            adicionar_lance(est, casa, casa_destino);
+            if (Bitboard::fileiras[lado_a_mover][casa] == 1 && est.tabuleiro[peao_duas_casas[lado_a_mover][casa]] == VAZIO){
+                adicionar_lance(est, casa, peao_duas_casas[lado_a_mover][casa]);
             }
         }
     }
 
     // 2. lances silenciosos de cavalo
-    t1 = Bitboard::bit_pieces[lado_a_mover][C];
+    t1 = est.bit_pieces[lado_a_mover][C];
     while (t1){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
-        t2 = Gen::bit_moves_cavalo[casa] & ~Bitboard::bit_total;
+        t2 = Gen::bit_moves_cavalo[casa] & ~est.bit_total;
         while(t2){
             casa_destino = Bitboard::bitscan(t2);
             t2 &= Bitboard::not_mask[casa_destino];
-            adicionar_lance(casa, casa_destino);
+            adicionar_lance(est, casa, casa_destino);
         }
     }
 
     // 3. lances silenciosos de bispo
-    t1 = Bitboard::bit_pieces[lado_a_mover][B];
+    t1 = est.bit_pieces[lado_a_mover][B];
     while (t1){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
         #ifdef USE_PEXT
-            ataques_deslizantes = Gen::bit_magicas_bispo[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_bispo[casa])] & ~Bitboard::bit_total;
+            ataques_deslizantes = Gen::bit_magicas_bispo[casa][_pext_u64(est.bit_total, bit_casas_relevantes_bispo[casa])] & ~est.bit_total;
         #else
-            ataques_deslizantes = Gen::bit_magicas_bispo[casa][((Bitboard::bit_total & bit_casas_relevantes_bispo[casa]) * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa])] & ~Bitboard::bit_total;
+            ataques_deslizantes = Gen::bit_magicas_bispo[casa][((est.bit_total & bit_casas_relevantes_bispo[casa]) * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa])] & ~est.bit_total;
         #endif
         while (ataques_deslizantes){
             casa_destino = Bitboard::bitscan(ataques_deslizantes);
             ataques_deslizantes &= Bitboard::not_mask[casa_destino];
-            adicionar_lance(casa, casa_destino);
+            adicionar_lance(est, casa, casa_destino);
         }
     }
 
     // 4. lances silenciosos de torre
-    t1 = Bitboard::bit_pieces[lado_a_mover][T];
+    t1 = est.bit_pieces[lado_a_mover][T];
     while (t1){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
         #ifdef USE_PEXT
-            ataques_deslizantes = Gen::bit_magicas_torre[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_torres[casa])] & ~Bitboard::bit_total;
+            ataques_deslizantes = Gen::bit_magicas_torre[casa][_pext_u64(est.bit_total, bit_casas_relevantes_torres[casa])] & ~est.bit_total;
         #else
-            ataques_deslizantes = Gen::bit_magicas_torre[casa][((Bitboard::bit_total & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])] & ~Bitboard::bit_total;
+            ataques_deslizantes = Gen::bit_magicas_torre[casa][((est.bit_total & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])] & ~est.bit_total;
         #endif
         while (ataques_deslizantes){
             casa_destino = Bitboard::bitscan(ataques_deslizantes);
             ataques_deslizantes &= Bitboard::not_mask[casa_destino];
-            adicionar_lance(casa, casa_destino);
+            adicionar_lance(est, casa, casa_destino);
         }
     }
 
     // 5. lances silenciosos de dama
-    t1 = Bitboard::bit_pieces[lado_a_mover][D];
+    t1 = est.bit_pieces[lado_a_mover][D];
     while (t1){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
         #ifdef USE_PEXT
-            ataques_deslizantes = (bit_magicas_bispo[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_bispo[casa])] | bit_magicas_torre[casa][_pext_u64(Bitboard::bit_total, bit_casas_relevantes_torres[casa])]) & ~Bitboard::bit_total;
+            ataques_deslizantes = (bit_magicas_bispo[casa][_pext_u64(est.bit_total, bit_casas_relevantes_bispo[casa])] | bit_magicas_torre[casa][_pext_u64(est.bit_total, bit_casas_relevantes_torres[casa])]) & ~est.bit_total;
         #else
-            ataques_deslizantes = (Gen::bit_magicas_bispo[casa][((Bitboard::bit_total & bit_casas_relevantes_bispo[casa]) * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa])] | Gen::bit_magicas_torre[casa][((Bitboard::bit_total & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])]) & ~Bitboard::bit_total;
+            ataques_deslizantes = (Gen::bit_magicas_bispo[casa][((est.bit_total & bit_casas_relevantes_bispo[casa]) * Magics::magicas_bispos[casa]) >> (Magics::bits_indices_bispos[casa])] | Gen::bit_magicas_torre[casa][((est.bit_total & bit_casas_relevantes_torres[casa]) * Magics::magicas_torres[casa]) >> (Magics::bits_indices_torres[casa])]) & ~est.bit_total;
         #endif
         while (ataques_deslizantes){
             casa_destino = Bitboard::bitscan(ataques_deslizantes);
             ataques_deslizantes &= Bitboard::not_mask[casa_destino];
-            adicionar_lance(casa, casa_destino);
+            adicionar_lance(est, casa, casa_destino);
         }
     }
 
     // 6. lances silenciosos de rei
-    casa = Bitboard::bitscan(Bitboard::bit_pieces[lado_a_mover][R]);
-    t1 = Gen::bit_moves_rei[casa] & ~Bitboard::bit_total;
+    casa = Bitboard::bitscan(est.bit_pieces[lado_a_mover][R]);
+    t1 = Gen::bit_moves_rei[casa] & ~est.bit_total;
     while (t1){
         casa_destino = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa_destino];
-        adicionar_lance(casa, casa_destino);
+        adicionar_lance(est, casa, casa_destino);
     }
 
-    Game::qntt_lances_totais[Game::ply + 1] = mc;
+    est.qntt_lances_totais[est.ply + 1] = est.mc;
 }
 
-void Gen::gerar_lances(const int lado_a_mover, const int contraLado){
-    gerar_capturas_busca(lado_a_mover, contraLado);
-    gerar_silenciosos(lado_a_mover, contraLado);
+void Gen::gerar_lances(Estado &est, const int lado_a_mover, const int contraLado){
+    gerar_capturas_busca(est, lado_a_mover, contraLado);
+    gerar_silenciosos(est, lado_a_mover, contraLado);
 }
 
-void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
+void Gen::gerar_capturas(Estado &est, const int lado_a_mover, const int contraLado){
     int casa, casa_destino;
     Bitboard::u64 t1, t2;
-    mc = Game::qntt_lances_totais[Game::ply];
+    est.mc = est.qntt_lances_totais[est.ply];
 
 
     // 1. gera capturas de peao. 
     // 1.1 verifica quais casas estao disponiveis
     if (lado_a_mover == BRANCAS){
-        t1 = Bitboard::bit_pieces[BRANCAS][P] & ((Bitboard::bit_lados[PRETAS] & Bitboard::not_coluna_h) >> 7);
-        t2 = Bitboard::bit_pieces[BRANCAS][P] & ((Bitboard::bit_lados[PRETAS] & Bitboard::not_coluna_a) >> 9);
+        t1 = est.bit_pieces[BRANCAS][P] & ((est.bit_lados[PRETAS] & Bitboard::not_coluna_h) >> 7);
+        t2 = est.bit_pieces[BRANCAS][P] & ((est.bit_lados[PRETAS] & Bitboard::not_coluna_a) >> 9);
     }
     else{
-        t1 = Bitboard::bit_pieces[PRETAS][P] & ((Bitboard::bit_lados[BRANCAS] & Bitboard::not_coluna_h) << 9);
-        t2 = Bitboard::bit_pieces[PRETAS][P] & ((Bitboard::bit_lados[BRANCAS] & Bitboard::not_coluna_a) << 7);
+        t1 = est.bit_pieces[PRETAS][P] & ((est.bit_lados[BRANCAS] & Bitboard::not_coluna_h) << 9);
+        t2 = est.bit_pieces[PRETAS][P] & ((est.bit_lados[BRANCAS] & Bitboard::not_coluna_a) << 7);
     }
 
     // 1.2 adiciona capturas de peao para a esquerda
@@ -760,10 +757,10 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
         t1 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_esquerda[lado_a_mover][casa];
         if (Consts::linhas[casa_destino] == FILEIRA_1 || Consts::linhas[casa_destino] == FILEIRA_8){
-            adicionar_promocao_captura_dama(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
+            adicionar_promocao_captura_dama(est, casa, casa_destino, est.tabuleiro[casa_destino]);
         }
         else{
-            adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
+            adicionar_captura(est, casa, casa_destino, Values::px[est.tabuleiro[casa_destino]]);
         }
     }
 
@@ -773,132 +770,145 @@ void Gen::gerar_capturas(const int lado_a_mover, const int contraLado){
         t2 &= Bitboard::not_mask[casa];
         casa_destino = Gen::peao_direita[lado_a_mover][casa];
         if (Consts::linhas[casa_destino] == FILEIRA_1 || Consts::linhas[casa_destino] == FILEIRA_8){
-            adicionar_promocao_captura_dama(casa, casa_destino, Bitboard::tabuleiro[casa_destino]);
+            adicionar_promocao_captura_dama(est, casa, casa_destino, est.tabuleiro[casa_destino]);
         }
         else{
-            adicionar_captura(casa, casa_destino, Values::px[Bitboard::tabuleiro[casa_destino]]);
+            adicionar_captura(est, casa, casa_destino, Values::px[est.tabuleiro[casa_destino]]);
         }
     }
 
     // 2. gera capturas de cavalo
-    t1 = Bitboard::bit_pieces[lado_a_mover][C];
+    t1 = est.bit_pieces[lado_a_mover][C];
     while (t1){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
 
         // 2.1 gera capturas do cavalo
-        t2 = Gen::bit_moves_cavalo[casa] & Bitboard::bit_lados[contraLado];
+        t2 = Gen::bit_moves_cavalo[casa] & est.bit_lados[contraLado];
         while (t2){
             casa_destino = Bitboard::bitscan(t2);
             t2 &= Bitboard::not_mask[casa_destino];
 
-            adicionar_captura(casa, casa_destino, Values::cx[Bitboard::tabuleiro[casa_destino]]);
+            adicionar_captura(est, casa, casa_destino, Values::cx[est.tabuleiro[casa_destino]]);
         }
     }
 
     // 3. gera capturas de bispo
-    t1 = Bitboard::bit_pieces[lado_a_mover][B];
+    t1 = est.bit_pieces[lado_a_mover][B];
     while (t1){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
 
-        t2 = Gen::bit_moves_bispo[casa] & Bitboard::bit_lados[contraLado];
+        t2 = Gen::bit_moves_bispo[casa] & est.bit_lados[contraLado];
         while (t2){
             casa_destino = Bitboard::bitscan(t2);
             t2 &= Bitboard::not_mask[casa_destino];
 
-            if (!(Bitboard::bit_entre[casa][casa_destino] & Bitboard::bit_total)){
-                adicionar_captura(casa, casa_destino, Values::bx[Bitboard::tabuleiro[casa_destino]]);
+            if (!(Bitboard::bit_entre[casa][casa_destino] & est.bit_total)){
+                adicionar_captura(est, casa, casa_destino, Values::bx[est.tabuleiro[casa_destino]]);
             }
         }
     }
 
     // 4. gera capturas de torre
-    t1 = Bitboard::bit_pieces[lado_a_mover][T];
+    t1 = est.bit_pieces[lado_a_mover][T];
     while (t1){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
 
-        t2 = Gen::bit_moves_torre[casa] & Bitboard::bit_lados[contraLado];
+        t2 = Gen::bit_moves_torre[casa] & est.bit_lados[contraLado];
         while (t2){
             casa_destino = Bitboard::bitscan(t2);
             t2 &= Bitboard::not_mask[casa_destino];
 
-            if (!(Bitboard::bit_entre[casa][casa_destino] & Bitboard::bit_total)){
-                adicionar_captura(casa, casa_destino, Values::tx[Bitboard::tabuleiro[casa_destino]]);
+            if (!(Bitboard::bit_entre[casa][casa_destino] & est.bit_total)){
+                adicionar_captura(est, casa, casa_destino, Values::tx[est.tabuleiro[casa_destino]]);
             }
         }
     }
 
     // 5. gera capturas de dama
-    t1 = Bitboard::bit_pieces[lado_a_mover][D];
+    t1 = est.bit_pieces[lado_a_mover][D];
     while (t1){
         casa = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa];
 
-        t2 = Gen::bit_moves_dama[casa] & Bitboard::bit_lados[contraLado];
+        t2 = Gen::bit_moves_dama[casa] & est.bit_lados[contraLado];
         while (t2){
             casa_destino = Bitboard::bitscan(t2);
             t2 &= Bitboard::not_mask[casa_destino];
 
-            if (!(Bitboard::bit_entre[casa][casa_destino] & Bitboard::bit_total)){
-                adicionar_captura(casa, casa_destino, Values::dx[Bitboard::tabuleiro[casa_destino]]);
+            if (!(Bitboard::bit_entre[casa][casa_destino] & est.bit_total)){
+                adicionar_captura(est, casa, casa_destino, Values::dx[est.tabuleiro[casa_destino]]);
             }
         }
     }
 
     // 6. gera capturas de rei
-    casa = Bitboard::bitscan(Bitboard::bit_pieces[lado_a_mover][R]);
-    t1 = Gen::bit_moves_rei[casa] & Bitboard::bit_lados[contraLado];
+    casa = Bitboard::bitscan(est.bit_pieces[lado_a_mover][R]);
+    t1 = Gen::bit_moves_rei[casa] & est.bit_lados[contraLado];
     while (t1){
         casa_destino = Bitboard::bitscan(t1);
         t1 &= Bitboard::not_mask[casa_destino];
 
-        adicionar_captura(casa, casa_destino, Values::rx[Bitboard::tabuleiro[casa_destino]]);
+        adicionar_captura(est, casa, casa_destino, Values::rx[est.tabuleiro[casa_destino]]);
     }
 
 
-    Game::qntt_lances_totais[Game::ply + 1] = mc;
+    est.qntt_lances_totais[est.ply + 1] = est.mc;
 }
 
-unsigned long long Gen::perft_node(int profunidade){
+bool Gen::lance_pseudo_legal(Estado &est, const int inicio, const int destino, const int promove){
+    gerar_lances(est, est.lado, est.xlado);
+
+    for (int i = est.qntt_lances_totais[est.ply]; i < est.qntt_lances_totais[est.ply + 1]; i++){
+        const lance &m = est.lista_de_lances[i];
+        if (m.inicio == inicio && m.destino == destino && m.promove == promove){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+unsigned long long Gen::perft_node(Estado &est, int profunidade){
     if (profunidade == 0){
         return 1ULL;
     }
 
     unsigned long long total = 0;
 
-    gerar_lances(Game::lado, Game::xlado);
+    gerar_lances(est, est.lado, est.xlado);
 
-    for (int i = Game::qntt_lances_totais[Game::ply]; i < Game::qntt_lances_totais[Game::ply+1]; i++){
-        if (!Update::fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino, Gen::lista_de_lances[i].promove)){
+    for (int i = est.qntt_lances_totais[est.ply]; i < est.qntt_lances_totais[est.ply+1]; i++){
+        if (!Update::fazer_lance(est, est.lista_de_lances[i].inicio, est.lista_de_lances[i].destino, est.lista_de_lances[i].promove)){
             continue;
         }
-        total += perft_node(profunidade - 1);
-        Update::desfaz_lance();
+        total += perft_node(est, profunidade - 1);
+        Update::desfaz_lance(est);
     }
 
     return total;
 }
 
-unsigned long long Gen::perft(int profunidade){
+unsigned long long Gen::perft(Estado &est, int profunidade){
     if (profunidade == 0){
         return 1ULL;
     }
 
     unsigned long long total = 0;
 
-    gerar_lances(Game::lado, Game::xlado);
+    gerar_lances(est, est.lado, est.xlado);
 
-    for (int i = Game::qntt_lances_totais[Game::ply]; i < Game::qntt_lances_totais[Game::ply+1]; i++){
-        if (!Update::fazer_lance(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino, Gen::lista_de_lances[i].promove)){
+    for (int i = est.qntt_lances_totais[est.ply]; i < est.qntt_lances_totais[est.ply+1]; i++){
+        if (!Update::fazer_lance(est, est.lista_de_lances[i].inicio, est.lista_de_lances[i].destino, est.lista_de_lances[i].promove)){
             continue;
         }
 
-        unsigned long long no_lances = perft_node(profunidade - 1);
-        Update::desfaz_lance();
+        unsigned long long no_lances = perft_node(est, profunidade - 1);
+        Update::desfaz_lance(est);
 
-        printf("%s: %llu \n", Interface::lance_para_string(Gen::lista_de_lances[i].inicio, Gen::lista_de_lances[i].destino, Gen::lista_de_lances[i].promove), no_lances);
+        printf("%s: %llu \n", Interface::lance_para_string(est.lista_de_lances[i].inicio, est.lista_de_lances[i].destino, est.lista_de_lances[i].promove), no_lances);
         total += no_lances;
     }
 

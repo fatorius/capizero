@@ -1,6 +1,8 @@
 #ifndef INTERFACE
 #define INTERFACE
 
+struct Estado;
+
 namespace Interface{
     extern bool tempo_fixo;
     extern bool profundidade_fixa;
@@ -10,14 +12,12 @@ namespace Interface{
 
     extern int tempo_gasto;
 
-    extern int lance_inicio, lance_destino, lance_promove;
-
     char *lance_para_string(int inicio, int destino, int promove);
-    void lance_computador();
+    void lance_computador(Estado &est);
     int obter_tempo();
-    int converter_lance(char *lnc);
+    int converter_lance(const Estado &est, char *lnc);
     int computar_tempo_para_lance(int remaining_ms, int inc_ms);
-    void obter_pv_uci(char *buf, int max_len, int profundidade);
+    void obter_pv_uci(Estado &est, char *buf, int max_len, int profundidade);
 };
 
 #endif

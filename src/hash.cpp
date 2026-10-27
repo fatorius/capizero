@@ -10,13 +10,10 @@
 
 #include "gen.h"
 #include "game.h"
+#include "estado.h"
 
 Bitboard::u64 hash[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 Bitboard::u64 lock[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
-
-Bitboard::u64 Hash::chaveAtual, Hash::lockAtual;
-int Hash::hash_inicio, Hash::hash_destino;
-int Hash::hash_score, Hash::hash_depth, Hash::hash_bound, Hash::hash_promove;
 
 size_t Hash::tt_entries_per_side = 0;
 
@@ -36,6 +33,35 @@ static int score_from_tt(int s, int ply){
 
 Hash::hashp *hashpos[LADOS] = {NULL, NULL};
 
+static_assert(sizeof(Hash::hashp) == 16, "entrada da TT deve ter 16 bytes");
+
+Bitboard::u64 Hash::empacotar(const EntradaTT &e){
+    return  (Bitboard::u64)(uint32_t)e.score
+         | ((Bitboard::u64)(e.inicio  & 63)              << 32)
+         | ((Bitboard::u64)(e.destino & 63)              << 38)
+         | ((Bitboard::u64)(uint8_t)(int8_t)e.depth      << 44)
+         | ((Bitboard::u64)(e.bound   & 3)               << 52)
+         | ((Bitboard::u64)(e.promove & 7)               << 54);
+}
+
+Hash::EntradaTT Hash::desempacotar(Bitboard::u64 dados){
+    EntradaTT e;
+    e.score   = (int32_t)(uint32_t)(dados & 0xFFFFFFFFULL);
+    e.inicio  = (int)((dados >> 32) & 63);
+    e.destino = (int)((dados >> 38) & 63);
+    e.depth   = (int8_t)(uint8_t)((dados >> 44) & 0xFF);
+    e.bound   = (int)((dados >> 52) & 3);
+    e.promove = (int)((dados >> 54) & 7);
+    return e;
+}
+
+static void zerar_tabela(Hash::hashp *tabela, size_t n){
+    for (size_t i = 0; i < n; i++){
+        tabela[i].chave_xor.store(0, std::memory_order_relaxed);
+        tabela[i].dados.store(0, std::memory_order_relaxed);
+    }
+}
+
 void Hash::liberar_memoria(){
     delete[] hashpos[BRANCAS];
     delete[] hashpos[PRETAS];
@@ -46,10 +72,10 @@ void Hash::liberar_memoria(){
 
 void Hash::limpar_tt(){
     if (hashpos[BRANCAS] != NULL){
-        std::memset(hashpos[BRANCAS], 0, sizeof(Hash::hashp) * tt_entries_per_side);
+        zerar_tabela(hashpos[BRANCAS], tt_entries_per_side);
     }
     if (hashpos[PRETAS] != NULL){
-        std::memset(hashpos[PRETAS], 0, sizeof(Hash::hashp) * tt_entries_per_side);
+        zerar_tabela(hashpos[PRETAS], tt_entries_per_side);
     }
 }
 
@@ -64,10 +90,11 @@ void Hash::realocar_tt(int size_mb){
     delete[] hashpos[BRANCAS];
     delete[] hashpos[PRETAS];
 
-    hashpos[BRANCAS] = new Hash::hashp[entries]();
-    hashpos[PRETAS]  = new Hash::hashp[entries]();
+    hashpos[BRANCAS] = new Hash::hashp[entries];
+    hashpos[PRETAS]  = new Hash::hashp[entries];
 
     tt_entries_per_side = entries;
+    limpar_tt();
 }
 
 int aleatorio(const int x){
@@ -101,95 +128,112 @@ static void ensure_tt_allocated(){
     }
 }
 
-void Hash::adicionar_chave(const int l, const int piece, const int casa){
-    chaveAtual ^= hash[l][piece][casa];
-    lockAtual ^= lock[l][piece][casa];
+void Hash::adicionar_chave(Estado &est, const int l, const int piece, const int casa){
+    est.chaveAtual ^= hash[l][piece][casa];
+    est.lockAtual ^= lock[l][piece][casa];
 }
 
-void Hash::adicionar_hash(const int ld, const Gen::lance lc,
+void Hash::adicionar_hash(const Estado &est, const int ld, const Gen::lance lc,
                           const int score, const int depth, const int bound,
                           const int promove){
     ensure_tt_allocated();
-    hashp* ptr = &hashpos[ld][chaveAtual % tt_entries_per_side];
+    hashp* ptr = &hashpos[ld][est.chaveAtual % tt_entries_per_side];
 
-    if (ptr->hashlock == lockAtual && depth < ptr->depth){
+    const Bitboard::u64 dados_atuais = ptr->dados.load(std::memory_order_relaxed);
+    const Bitboard::u64 chave_atual  = ptr->chave_xor.load(std::memory_order_relaxed);
+
+    if ((chave_atual ^ dados_atuais) == est.lockAtual && depth < desempacotar(dados_atuais).depth){
         return;
     }
 
-    ptr->hashlock = lockAtual;
-    ptr->inicio   = (uint16_t) lc.inicio;
-    ptr->dest     = (uint16_t) lc.destino;
-    ptr->score    = (int32_t)  score_to_tt(score, Game::ply);
-    ptr->depth    = (int8_t)   depth;
-    ptr->bound    = (uint8_t)  bound;
-    ptr->promove  = (uint8_t)  promove;
+    EntradaTT e;
+    e.inicio  = lc.inicio;
+    e.destino = lc.destino;
+    e.score   = score_to_tt(score, est.ply);
+    e.depth   = depth;
+    e.bound   = bound;
+    e.promove = promove;
+
+    const Bitboard::u64 dados = empacotar(e);
+    ptr->dados.store(dados, std::memory_order_relaxed);
+    ptr->chave_xor.store(est.lockAtual ^ dados, std::memory_order_relaxed);
 }
 
-void Hash::adicionar_pontuacao_de_hash(){
-    for (int lance = Game::qntt_lances_totais[Game::ply]; lance < Game::qntt_lances_totais[Game::ply + 1]; lance++){
-        const Gen::lance &m = Gen::lista_de_lances[lance];
-        if (m.inicio != hash_inicio || m.destino != hash_destino){
+Hash::hashp *Hash::entrada(const Estado &est, const int l){
+    ensure_tt_allocated();
+    return &hashpos[l][est.chaveAtual % tt_entries_per_side];
+}
+
+void Hash::adicionar_pontuacao_de_hash(Estado &est){
+    for (int lance = est.qntt_lances_totais[est.ply]; lance < est.qntt_lances_totais[est.ply + 1]; lance++){
+        const Gen::lance &m = est.lista_de_lances[lance];
+        if (m.inicio != est.hash_inicio || m.destino != est.hash_destino){
             continue;
         }
-        if (m.promove != hash_promove){
+        if (m.promove != est.hash_promove){
             continue;
         }
-        Gen::lista_de_lances[lance].score = PONTUACAO_HASH;
+        est.lista_de_lances[lance].score = PONTUACAO_HASH;
         return;
     }
 }
 
-Bitboard::u64 Hash::obter_lock(){
+Bitboard::u64 Hash::obter_lock(const Estado &est){
     Bitboard::u64 loc = 0;
     int l;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         l = 0;
-        if (Bitboard::tabuleiro[casa] != VAZIO){
-            if (Bitboard::bit_lados[PRETAS] & Bitboard::mask[casa]){
+        if (est.tabuleiro[casa] != VAZIO){
+            if (est.bit_lados[PRETAS] & Bitboard::mask[casa]){
                 l = 1;
             }
 
-            loc ^= lock[l][Bitboard::tabuleiro[casa]][casa];
+            loc ^= lock[l][est.tabuleiro[casa]][casa];
         }
     }
 
     return loc;
 }
 
-Bitboard::u64 Hash::obter_chave(){
+Bitboard::u64 Hash::obter_chave(const Estado &est){
     Bitboard::u64 chave = 0;
     int l;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
         l = 0;
-        if (Bitboard::tabuleiro[casa] != VAZIO){
-            if (Bitboard::bit_lados[PRETAS] & Bitboard::mask[casa]){
+        if (est.tabuleiro[casa] != VAZIO){
+            if (est.bit_lados[PRETAS] & Bitboard::mask[casa]){
                 l = 1;
             }
 
-            chave ^= hash[l][Bitboard::tabuleiro[casa]][casa];
+            chave ^= hash[l][est.tabuleiro[casa]][casa];
         }
     }
 
     return chave;
 }
 
-bool Hash::hash_lookup(const int l){
+bool Hash::hash_lookup(Estado &est, const int l){
     ensure_tt_allocated();
-    const Bitboard::u64 idx = chaveAtual % tt_entries_per_side;
-    const hashp &e = hashpos[l][idx];
+    const hashp &h = hashpos[l][est.chaveAtual % tt_entries_per_side];
 
-    if (e.hashlock != lockAtual){
+    // Cópias locais: a verificação e a decodificação usam o mesmo par de palavras.
+    const Bitboard::u64 dados = h.dados.load(std::memory_order_relaxed);
+    const Bitboard::u64 chave = h.chave_xor.load(std::memory_order_relaxed);
+
+    if ((chave ^ dados) != est.lockAtual){
         return false;
     }
 
-    hash_inicio  = e.inicio;
-    hash_destino = e.dest;
-    hash_score   = score_from_tt(e.score, Game::ply);
-    hash_depth   = e.depth;
-    hash_bound   = e.bound;
-    hash_promove = e.promove;
+    const EntradaTT e = desempacotar(dados);
+
+    est.hash_inicio  = e.inicio;
+    est.hash_destino = e.destino;
+    est.hash_score   = score_from_tt(e.score, est.ply);
+    est.hash_depth   = e.depth;
+    est.hash_bound   = e.bound;
+    est.hash_promove = e.promove;
 
     return true;
 }

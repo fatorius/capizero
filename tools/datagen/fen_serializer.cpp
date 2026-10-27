@@ -6,6 +6,7 @@
 #include "consts.h"
 #include "bitboard.h"
 #include "game.h"
+#include "estado.h"
 
 void Fen::serialize(char* out) {
     int pos = 0;
@@ -17,7 +18,7 @@ void Fen::serialize(char* out) {
         int empty = 0;
         for (int file = 0; file < 8; file++) {
             const int sq = rank * 8 + file;
-            const int piece = Bitboard::tabuleiro[sq];
+            const int piece = estado_principal.tabuleiro[sq];
             if (piece == VAZIO) {
                 empty++;
                 continue;
@@ -28,7 +29,7 @@ void Fen::serialize(char* out) {
             }
             char c = Consts::piece_char[piece];
             // Consts::piece_char is uppercase by default. Lowercase for black.
-            if (Bitboard::bit_lados[PRETAS] & Bitboard::mask[sq]) {
+            if (estado_principal.bit_lados[PRETAS] & Bitboard::mask[sq]) {
                 c = c + ('a' - 'A');
             }
             out[pos++] = c;
@@ -44,27 +45,27 @@ void Fen::serialize(char* out) {
     out[pos++] = ' ';
 
     // 2. Side to move.
-    out[pos++] = (Game::lado == BRANCAS) ? 'w' : 'b';
+    out[pos++] = (estado_principal.lado == BRANCAS) ? 'w' : 'b';
 
     out[pos++] = ' ';
 
     // 3. Castling rights, in canonical KQkq order.
-    if (Game::roque == 0) {
+    if (estado_principal.roque == 0) {
         out[pos++] = '-';
     } else {
-        if (Game::roque & BRANCAS_ROQUE_MENOR) out[pos++] = 'K';
-        if (Game::roque & BRANCAS_ROQUE_MAIOR) out[pos++] = 'Q';
-        if (Game::roque & PRETAS_ROQUE_MENOR)  out[pos++] = 'k';
-        if (Game::roque & PRETAS_ROQUE_MAIOR)  out[pos++] = 'q';
+        if (estado_principal.roque & BRANCAS_ROQUE_MENOR) out[pos++] = 'K';
+        if (estado_principal.roque & BRANCAS_ROQUE_MAIOR) out[pos++] = 'Q';
+        if (estado_principal.roque & PRETAS_ROQUE_MENOR)  out[pos++] = 'k';
+        if (estado_principal.roque & PRETAS_ROQUE_MAIOR)  out[pos++] = 'q';
     }
 
     out[pos++] = ' ';
 
     // 4. En passant target. 
     bool ep_emitted = false;
-    if (Game::hply > 1) {
-        const Game::jogo& last = Game::lista_do_jogo[Game::hply - 1];
-        const int piece_at_dest = Bitboard::tabuleiro[last.destino];
+    if (estado_principal.hply > 1) {
+        const Game::jogo& last = estado_principal.lista_do_jogo[estado_principal.hply - 1];
+        const int piece_at_dest = estado_principal.tabuleiro[last.destino];
         if (piece_at_dest == P && std::abs(last.destino - last.inicio) == 16) {
             const int ep_sq = (last.inicio + last.destino) / 2;
             const int ep_file = ep_sq & 7;
@@ -81,12 +82,12 @@ void Fen::serialize(char* out) {
     out[pos++] = ' ';
 
     // 5. Halfmove clock.
-    pos += std::sprintf(out + pos, "%d", Game::cinquenta);
+    pos += std::sprintf(out + pos, "%d", estado_principal.cinquenta);
 
     out[pos++] = ' ';
 
     // 6. Fullmove number. 
-    pos += std::sprintf(out + pos, "%d", (Game::hply + 1) / 2);
+    pos += std::sprintf(out + pos, "%d", (estado_principal.hply + 1) / 2);
 
     out[pos] = '\0';
 }

@@ -2,6 +2,7 @@
 
 #include "update.h"
 #include "eval.h"
+#include "estado.h"
 
 #include <string.h>
 #include <stdint.h>
@@ -30,17 +31,11 @@ Bitboard::u64 Bitboard::mask_path[LADOS][CASAS_DO_TABULEIRO];
 Bitboard::u64 Bitboard::not_coluna_a;
 Bitboard::u64 Bitboard::not_coluna_h;
 
-Bitboard::u64 Bitboard::bit_pieces[LADOS][TIPOS_DE_PIECES];
-Bitboard::u64 Bitboard::bit_lados[LADOS];
-Bitboard::u64 Bitboard::bit_total;
-
 Bitboard::u64 Bitboard::bit_entre[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
 Bitboard::u64 Bitboard::vetor_bits[CASAS_DO_TABULEIRO][CASAS_DO_TABULEIRO];
 Bitboard::u64 Bitboard::mask_vetores[CASAS_DO_TABULEIRO][8];
 
 int Bitboard::fileiras[LADOS][CASAS_DO_TABULEIRO];
-
-int Bitboard::tabuleiro[CASAS_DO_TABULEIRO];
 
 void Bitboard::init_bits(){
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; casa++){
@@ -205,20 +200,20 @@ void Bitboard::init_vetores(){
     }
 }
 
-void Bitboard::init_board(){
-    memset(bit_pieces, 0, sizeof(bit_pieces));
-    memset(bit_lados, 0, sizeof(bit_lados));
-    bit_total = 0;
+void Bitboard::init_board(Estado &est){
+    memset(est.bit_pieces, 0, sizeof(est.bit_pieces));
+    memset(est.bit_lados, 0, sizeof(est.bit_lados));
+    est.bit_total = 0;
 
     // Reset incremental phase counter before the per-square adicionar_piece
     // loop accumulates it back to PHASE_MAX for the starting position.
-    Eval::fase_valor = 0;
+    est.fase_valor = 0;
 
     for (int casa = 0; casa < CASAS_DO_TABULEIRO; ++casa) {
-        tabuleiro[casa] = VAZIO;
+        est.tabuleiro[casa] = VAZIO;
 
         if(Consts::tabuleiro_inicial[casa] < 6){
-            Update::adicionar_piece(Consts::cor_inicial[casa], Consts::tabuleiro_inicial[casa], casa);
+            Update::adicionar_piece(est, Consts::cor_inicial[casa], Consts::tabuleiro_inicial[casa], casa);
         }
     }
 }

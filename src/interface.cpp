@@ -12,10 +12,9 @@
 #include "search.h"
 #include "hash.h"
 #include "eval.h"
+#include "estado.h"
 
 using namespace std;
-
-extern int Interface::lance_inicio, Interface::lance_destino, Interface::lance_promove;
 
 int Interface::tempo_gasto;
 
@@ -44,20 +43,36 @@ int Interface::computar_tempo_para_lance(int remaining_ms, int inc_ms){
     return budget;
 }
 
-void Interface::obter_pv_uci(char *buf, int max_len, int profundidade){
-    Interface::lance_inicio  = Hash::hash_inicio;
-    Interface::lance_destino = Hash::hash_destino;
-    Interface::lance_promove = Hash::hash_promove;
-
+void Interface::obter_pv_uci(Estado &est, char *buf, int max_len, int profundidade){
     int pos = 0;
     buf[0] = '\0';
 
     for (int x = 0; x < profundidade; x++){
-        if (Hash::hash_lookup(Game::lado) == false){
+        int inicio, destino, promove;
+
+        if (x == 0){
+            inicio  = est.lance_escolhido.inicio;
+            destino = est.lance_escolhido.destino;
+            promove = est.lance_escolhido.promove;
+        }
+        else{
+            if (!Hash::hash_lookup(est, est.lado)){
+                break;
+            }
+            inicio  = est.hash_inicio;
+            destino = est.hash_destino;
+            promove = est.hash_promove;
+        }
+
+        if (inicio == destino || !Gen::lance_pseudo_legal(est, inicio, destino, promove)){
             break;
         }
 
-        char *mv = Interface::lance_para_string(Hash::hash_inicio, Hash::hash_destino, Hash::hash_promove);
+        if (!Update::fazer_lance(est, inicio, destino, promove)){
+            break;
+        }
+
+        char *mv = Interface::lance_para_string(inicio, destino, promove);
         int len = strlen(mv);
         if (pos + len + 2 >= max_len){
             break;
@@ -69,18 +84,16 @@ void Interface::obter_pv_uci(char *buf, int max_len, int profundidade){
         pos += len;
         buf[pos] = '\0';
 
-        Update::fazer_lance(Hash::hash_inicio, Hash::hash_destino, Hash::hash_promove);
-
         // Search returns VALOR_EMPATE on repetition without storing TT, but the
         // TT may hold a move from an earlier path to the same position. Stop
         // the PV here so output matches what the search actually evaluated.
-        if (Game::checar_repeticoes()){
+        if (Game::checar_repeticoes(est)){
             break;
         }
     }
 
-    while (Game::ply){
-        Update::desfaz_lance();
+    while (est.ply){
+        Update::desfaz_lance(est);
     }
 }
 
@@ -127,25 +140,25 @@ char *Interface::lance_para_string(int inicio, int destino, int promove){
     return str;
 }
 
-void Interface::lance_computador(){
-    Search::pensar(false);
+void Interface::lance_computador(Estado &est){
+    Search::pensar(est, false);
 
-    Hash::chaveAtual = Hash::obter_chave();
-    Hash::lockAtual = Hash::obter_lock();
+    est.chaveAtual = Hash::obter_chave(est);
+    est.lockAtual = Hash::obter_lock(est);
 
     Interface::tempo_gasto = Interface::obter_tempo() - Search::tempo_do_inicio;
 
-    Update::fazer_lance(Hash::hash_inicio, Hash::hash_destino, Hash::hash_promove);
+    Update::fazer_lance(est, est.lance_escolhido.inicio, est.lance_escolhido.destino, est.lance_escolhido.promove);
 
-    Eval::atualizar_materiais();
+    Eval::atualizar_materiais(est);
 
-    Game::ply = 0;
-    Game::qntt_lances_totais[0] = 0;
+    est.ply = 0;
+    est.qntt_lances_totais[0] = 0;
 
-    Gen::gerar_lances(Game::lado, Game::xlado);
+    Gen::gerar_lances(est, est.lado, est.xlado);
 }
 
-int Interface::converter_lance(char *lnc){
+int Interface::converter_lance(const Estado &est, char *lnc){
     int inicio, destino, i;
 
     if (
@@ -169,8 +182,8 @@ int Interface::converter_lance(char *lnc){
     else if (lnc[4] == 'b' || lnc[4] == 'B') pp = B;
     else if (lnc[4] == 'r' || lnc[4] == 'R') pp = T;
 
-    for (i = 0; i < Game::qntt_lances_totais[1]; i++){
-        const Gen::lance &m = Gen::lista_de_lances[i];
+    for (i = 0; i < est.qntt_lances_totais[1]; i++){
+        const Gen::lance &m = est.lista_de_lances[i];
         if (m.inicio != inicio || m.destino != destino){
             continue;
         }

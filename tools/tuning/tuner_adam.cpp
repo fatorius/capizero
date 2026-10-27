@@ -34,6 +34,7 @@
 #include "bitboard.h"
 #include "gen.h"
 #include "eval.h"
+#include "estado.h"
 
 // ---------------------------------------------------------------------------
 // Dataset loading (same format and parsing as tuner.cpp)
@@ -258,24 +259,24 @@ static void extract(const std::vector<TuningPos>& set, Data& d, long* occ) {
 
     for (size_t i = 0; i < set.size(); i++) {
         TuningPos p = set[i];  // setar_posicao wants non-const char* fields
-        Update::setar_posicao(p.fen, p.lado, p.roques, p.ep, p.hm, p.fm);
+        Update::setar_posicao(estado_principal, p.fen, p.lado, p.roques, p.ep, p.hm, p.fm);
 
         memset(cnt, 0, sizeof(cnt));
         PosInfo info;
         memset(&info, 0, sizeof(info));
 
         const int rei_sq[LADOS] = {
-            Bitboard::bitscan(Bitboard::bit_pieces[BRANCAS][R]),
-            Bitboard::bitscan(Bitboard::bit_pieces[PRETAS][R])
+            Bitboard::bitscan(estado_principal.bit_pieces[BRANCAS][R]),
+            Bitboard::bitscan(estado_principal.bit_pieces[PRETAS][R])
         };
 
         for (int l = 0; l < LADOS; l++) {
             const int sign = (l == BRANCAS) ? 1 : -1;
-            const Bitboard::u64 nao_proprios = ~Bitboard::bit_lados[l];
+            const Bitboard::u64 nao_proprios = ~estado_principal.bit_lados[l];
             const Bitboard::u64 zona = king_zone_of(rei_sq[l ^ 1]);
 
             for (int piece = P; piece <= R; piece++) {
-                Bitboard::u64 t = Bitboard::bit_pieces[l][piece];
+                Bitboard::u64 t = estado_principal.bit_pieces[l][piece];
                 while (t) {
                     int casa = Bitboard::bitscan(t);
                     t &= Bitboard::not_mask[casa];
@@ -285,7 +286,7 @@ static void extract(const std::vector<TuningPos>& set, Data& d, long* occ) {
                 }
             }
 
-            Bitboard::u64 t = Bitboard::bit_pieces[l][C];
+            Bitboard::u64 t = estado_principal.bit_pieces[l][C];
             while (t) {
                 int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
                 Bitboard::u64 att = Gen::bit_moves_cavalo[casa];
@@ -293,26 +294,26 @@ static void extract(const std::vector<TuningPos>& set, Data& d, long* occ) {
                 cnt[f] += sign; if (occ) occ[f]++;
                 info.ks[l][0] += Bitboard::popcount(att & zona);
             }
-            t = Bitboard::bit_pieces[l][B];
+            t = estado_principal.bit_pieces[l][B];
             while (t) {
                 int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
-                Bitboard::u64 att = Gen::atacantes_bispo(casa);
+                Bitboard::u64 att = Gen::atacantes_bispo(estado_principal, casa);
                 int f = MOB_B_BASE + Bitboard::popcount(att & nao_proprios);
                 cnt[f] += sign; if (occ) occ[f]++;
                 info.ks[l][1] += Bitboard::popcount(att & zona);
             }
-            t = Bitboard::bit_pieces[l][T];
+            t = estado_principal.bit_pieces[l][T];
             while (t) {
                 int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
-                Bitboard::u64 att = Gen::atacantes_torre(casa);
+                Bitboard::u64 att = Gen::atacantes_torre(estado_principal, casa);
                 int f = MOB_T_BASE + Bitboard::popcount(att & nao_proprios);
                 cnt[f] += sign; if (occ) occ[f]++;
                 info.ks[l][2] += Bitboard::popcount(att & zona);
             }
-            t = Bitboard::bit_pieces[l][D];
+            t = estado_principal.bit_pieces[l][D];
             while (t) {
                 int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
-                Bitboard::u64 att = Gen::atacantes_bispo(casa) | Gen::atacantes_torre(casa);
+                Bitboard::u64 att = Gen::atacantes_bispo(estado_principal, casa) | Gen::atacantes_torre(estado_principal, casa);
                 int f = MOB_D_BASE + Bitboard::popcount(att & nao_proprios);
                 cnt[f] += sign; if (occ) occ[f]++;
                 info.ks[l][3] += Bitboard::popcount(att & zona);
@@ -320,10 +321,10 @@ static void extract(const std::vector<TuningPos>& set, Data& d, long* occ) {
         }
 
         info.result = p.result;
-        info.phase  = (uint8_t)Eval::fase();
+        info.phase  = (uint8_t)Eval::fase(estado_principal);
 
-        int e = Eval::avaliar();                  // tuned params are zero: only untuned terms remain
-        if (Game::lado == PRETAS) e = -e;         // white POV
+        int e = Eval::avaliar(estado_principal);                  // tuned params are zero: only untuned terms remain
+        if (estado_principal.lado == PRETAS) e = -e;         // white POV
         info.rest = (float)e;
 
         d.pos.push_back(info);
@@ -458,9 +459,9 @@ static void check_equivalence(const std::vector<TuningPos>& set, const Data& d,
     size_t worst = 0;
     for (size_t i = 0; i < n; i++) {
         TuningPos p = set[i];
-        Update::setar_posicao(p.fen, p.lado, p.roques, p.ep, p.hm, p.fm);
-        int e = Eval::avaliar();
-        if (Game::lado == PRETAS) e = -e;
+        Update::setar_posicao(estado_principal, p.fen, p.lado, p.roques, p.ep, p.hm, p.fm);
+        int e = Eval::avaliar(estado_principal);
+        if (estado_principal.lado == PRETAS) e = -e;
         double diff = std::fabs(eval_pos(d, i, &theta[0]) - (double)e);
         sum_diff += diff;
         if (diff > max_diff) { max_diff = diff; worst = i; }
@@ -482,9 +483,9 @@ static double engine_loss(const std::vector<TuningPos>& set, size_t n, double K,
     double sum = 0.0;
     for (size_t i = 0; i < n; i++) {
         TuningPos p = set[i];
-        Update::setar_posicao(p.fen, p.lado, p.roques, p.ep, p.hm, p.fm);
-        int e = Eval::avaliar();
-        if (Game::lado == PRETAS) e = -e;
+        Update::setar_posicao(estado_principal, p.fen, p.lado, p.roques, p.ep, p.hm, p.fm);
+        int e = Eval::avaliar(estado_principal);
+        if (estado_principal.lado == PRETAS) e = -e;
         double err = (double)p.result - sigmoid((double)e, K);
         sum += err * err;
     }
