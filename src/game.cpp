@@ -1,5 +1,7 @@
 #include "game.h"
 
+#include <string.h>
+
 #include "gen.h"
 #include "eval.h"
 #include "update.h"
@@ -57,4 +59,30 @@ void Game::nova_posicao(Estado &est){
 
     est.chaveAtual = Hash::obter_chave(est);
     est.lockAtual = Hash::obter_lock(est);
+}
+
+void Game::copiar_posicao(Estado &dest, const Estado &orig){
+    memcpy(dest.bit_pieces, orig.bit_pieces, sizeof(dest.bit_pieces));
+    memcpy(dest.bit_lados, orig.bit_lados, sizeof(dest.bit_lados));
+    dest.bit_total = orig.bit_total;
+    memcpy(dest.tabuleiro, orig.tabuleiro, sizeof(dest.tabuleiro));
+
+    dest.lado = orig.lado;
+    dest.xlado = orig.xlado;
+    dest.cinquenta = orig.cinquenta;
+    dest.roque = orig.roque;
+    dest.hply = orig.hply;
+    dest.jogada = orig.jogada;
+    dest.ply = 0;
+    dest.qntt_lances_totais[0] = 0;
+
+    dest.chaveAtual = orig.chaveAtual;
+    dest.lockAtual = orig.lockAtual;
+    memcpy(dest.peao_mat, orig.peao_mat, sizeof(dest.peao_mat));
+    memcpy(dest.piece_mat, orig.piece_mat, sizeof(dest.piece_mat));
+    dest.fase_valor = orig.fase_valor;
+
+    // Entradas 0..hply: repetições e en passant olham para trás, e a ordenação
+    // na raiz lê a entrada hply.
+    memcpy(dest.lista_do_jogo, orig.lista_do_jogo, (orig.hply + 1) * sizeof(Game::jogo));
 }

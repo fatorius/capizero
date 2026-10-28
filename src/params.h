@@ -16,6 +16,9 @@ namespace Params{
     #define MIN_TT_MB     1
     #define MAX_TT_MB     4096
 
+    // Threads de busca (Lazy SMP): cada uma tem o próprio Estado (~3 MB)
+    #define MAX_THREADS 64
+
     #define PILHA_DE_LANCES 10000
     #define PILHA_DO_JOGO 2000
 

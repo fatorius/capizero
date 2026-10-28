@@ -245,7 +245,7 @@ void Tests::test7(){
     Estado *outro = new Estado();
     Hash::limpar_tt();
     setar_fen(*outro, kiwipete);
-    std::thread tc(Search::pensar, std::ref(*outro), false);
+    std::thread tc(Search::pensar, std::ref(*outro), false, true);
     tc.join();
     const int nos_outro = outro->lances_avaliados;
     delete outro;

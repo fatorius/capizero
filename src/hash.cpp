@@ -122,7 +122,7 @@ void Hash::iniciar_hash(){
 
 }
 
-static void ensure_tt_allocated(){
+void Hash::garantir_tt(){
     if (Hash::tt_entries_per_side == 0){
         Hash::realocar_tt(DEFAULT_TT_MB);
     }
@@ -136,7 +136,7 @@ void Hash::adicionar_chave(Estado &est, const int l, const int piece, const int 
 void Hash::adicionar_hash(const Estado &est, const int ld, const Gen::lance lc,
                           const int score, const int depth, const int bound,
                           const int promove){
-    ensure_tt_allocated();
+    Hash::garantir_tt();
     hashp* ptr = &hashpos[ld][est.chaveAtual % tt_entries_per_side];
 
     const Bitboard::u64 dados_atuais = ptr->dados.load(std::memory_order_relaxed);
@@ -160,7 +160,7 @@ void Hash::adicionar_hash(const Estado &est, const int ld, const Gen::lance lc,
 }
 
 Hash::hashp *Hash::entrada(const Estado &est, const int l){
-    ensure_tt_allocated();
+    Hash::garantir_tt();
     return &hashpos[l][est.chaveAtual % tt_entries_per_side];
 }
 
@@ -215,7 +215,7 @@ Bitboard::u64 Hash::obter_chave(const Estado &est){
 }
 
 bool Hash::hash_lookup(Estado &est, const int l){
-    ensure_tt_allocated();
+    Hash::garantir_tt();
     const hashp &h = hashpos[l][est.chaveAtual % tt_entries_per_side];
 
     // Cópias locais: a verificação e a decodificação usam o mesmo par de palavras.

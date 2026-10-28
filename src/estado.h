@@ -39,6 +39,8 @@ struct Estado{
 
     // Busca e ordenação de lances
     int lances_avaliados;
+    int nos_publicados; // parte de lances_avaliados já somada em Search::nos_auxiliares
+    bool auxiliar;      // thread auxiliar do Lazy SMP: não olha o relógio nem imprime
     int mc; // próxima posição livre em lista_de_lances durante a geração
     Gen::lance killers_primarios[MAX_PLY];
     Gen::lance killers_secundarios[MAX_PLY];

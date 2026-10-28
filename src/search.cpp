@@ -37,15 +37,22 @@ void Search::init_lmr(){
 // Pedido de parada da busca. Quando ligado, cada nó de pesquisa() desfaz o
 // próprio lance e retorna sem gravar na TT nem mexer em history/killers,
 // e pensar() descarta a iteração incompleta.
-std::atomic<bool> parar_pesquisa(false);
+std::atomic<bool> Search::parar_pesquisa(false);
+
+std::atomic<long long> Search::nos_auxiliares(0);
 
 static inline bool pesquisa_parada(){
-    return parar_pesquisa.load(std::memory_order_relaxed);
+    return Search::parar_pesquisa.load(std::memory_order_relaxed);
+}
+
+static void publicar_nos(Estado &est){
+    Search::nos_auxiliares.fetch_add(est.lances_avaliados - est.nos_publicados, std::memory_order_relaxed);
+    est.nos_publicados = est.lances_avaliados;
 }
 
 void verificar_tempo(const Estado &est){
     if ((Interface::obter_tempo() >= Search::tempo_do_fim || (Interface::tempo_maximo < 50 && est.ply > 1)) && Interface::profundidade_fixa == 0 && est.ply > 1){
-        parar_pesquisa.store(true, std::memory_order_relaxed);
+        Search::parar_pesquisa.store(true, std::memory_order_relaxed);
     }
 }
 
@@ -227,7 +234,13 @@ int Search::pesquisa(Estado &est, int alpha, int beta, int profundidade, bool pv
     est.lances_avaliados++;
 
     if ((est.lances_avaliados & VERIFICACAO_DE_LANCES) == 0){
-        verificar_tempo(est);
+        // Só a thread principal decide o fim da busca.
+        if (est.auxiliar){
+            publicar_nos(est);
+        }
+        else{
+            verificar_tempo(est);
+        }
     }
 
     if (pesquisa_parada()){
@@ -502,23 +515,73 @@ int Search::pesquisa(Estado &est, int alpha, int beta, int profundidade, bool pv
     return alpha;
 }
 
-void Search::pensar(Estado &est, bool verbose){
-    int melhor_linha;
-    int alpha, beta;
-
-    parar_pesquisa.store(false, std::memory_order_relaxed);
-
-    if (!Interface::tempo_fixo){
-        if (Attacks::casa_esta_sendo_atacada(est, est.xlado, Bitboard::bitscan(est.bit_pieces[est.lado][R]))){
-            Interface::tempo_maximo = Interface::tempo_maximo / 2;
-        }
+// Busca parada antes de completar a profundidade 1 (stop logo depois do go):
+// devolve o lance legal mais bem ordenado, para nunca responder sem lance
+// quando há lances legais.
+static void garantir_lance(Estado &est){
+    if (est.lance_escolhido.inicio != est.lance_escolhido.destino){
+        return;
     }
 
-    tempo_do_inicio = Interface::obter_tempo();
-    tempo_do_fim = tempo_do_inicio + Interface::tempo_maximo;
+    est.ply = 0;
+    est.qntt_lances_totais[0] = 0;
+    Gen::gerar_lances(est, est.lado, est.xlado);
+
+    int melhor_score = 0;
+    for (int i = 0; i < est.qntt_lances_totais[1]; i++){
+        const Gen::lance l = est.lista_de_lances[i];
+        if (!Update::fazer_lance(est, l.inicio, l.destino, l.promove)){
+            continue;
+        }
+        Update::desfaz_lance(est);
+
+        if (est.lance_escolhido.inicio == est.lance_escolhido.destino || l.score > melhor_score){
+            est.lance_escolhido = l;
+            melhor_score = l.score;
+        }
+    }
+}
+
+static void aprofundar(Estado &est, bool verbose, int profundidade_inicial);
+
+void Search::pensar(Estado &est, bool verbose, bool zerar_parada){
+    if (zerar_parada){
+        parar_pesquisa.store(false, std::memory_order_relaxed);
+    }
+
+    aprofundar(est, verbose, 1);
+    garantir_lance(est);
+}
+
+void Search::pensar_auxiliar(Estado &est, int id){
+    // Diversificação: as auxiliares ímpares começam uma profundidade à frente.
+    aprofundar(est, false, 1 + (id & 1));
+    publicar_nos(est);
+}
+
+// Iterative deepening com janelas de aspiração. O relógio (tempo_do_*,
+// Interface::tempo_maximo) é só da thread principal; as auxiliares rodam até
+// parar_pesquisa ou até profundidade_maxima.
+static void aprofundar(Estado &est, bool verbose, int profundidade_inicial){
+    using namespace Search;
+
+    int melhor_linha = 0;
+    int alpha, beta;
+
+    if (!est.auxiliar){
+        if (!Interface::tempo_fixo){
+            if (Attacks::casa_esta_sendo_atacada(est, est.xlado, Bitboard::bitscan(est.bit_pieces[est.lado][R]))){
+                Interface::tempo_maximo = Interface::tempo_maximo / 2;
+            }
+        }
+
+        tempo_do_inicio = Interface::obter_tempo();
+        tempo_do_fim = tempo_do_inicio + Interface::tempo_maximo;
+    }
 
     est.ply = 0;
     est.lances_avaliados = 0;
+    est.nos_publicados = 0;
 
     memset(&est.melhor_lance_raiz, 0, sizeof(est.melhor_lance_raiz));
     memset(&est.lance_escolhido, 0, sizeof(est.lance_escolhido));
@@ -529,8 +592,8 @@ void Search::pensar(Estado &est, bool verbose){
     memset(est.historico_heuristica, 0, sizeof(est.historico_heuristica));
     memset(est.contraLance_heuristica, 0, sizeof(est.contraLance_heuristica));
 
-    for (int profundidade = 1; profundidade <= Interface::profundidade_maxima; ++profundidade){
-        if (!Interface::profundidade_fixa && Interface::profundidade_maxima > 1){
+    for (int profundidade = profundidade_inicial; profundidade <= Interface::profundidade_maxima; ++profundidade){
+        if (!est.auxiliar && !Interface::profundidade_fixa && Interface::profundidade_maxima > 1){
             if (Interface::tempo_fixo){
                 if (Interface::obter_tempo() >= tempo_do_inicio + Interface::tempo_maximo){
                     parar_pesquisa.store(true, std::memory_order_relaxed);
@@ -544,7 +607,7 @@ void Search::pensar(Estado &est, bool verbose){
         }
 
         int delta = TAMANHO_JANELA_DE_PESQUISA;
-        if (profundidade == 1){
+        if (profundidade == profundidade_inicial){
             alpha = ALPHA_INICIAL;
             beta  = BETA_INICIAL;
         }
@@ -599,26 +662,29 @@ void Search::pensar(Estado &est, bool verbose){
                 if (elapsed_ms < 1){
                     elapsed_ms = 1;
                 }
-                int nps_uci = (int)((double)est.lances_avaliados * 1000.0 / (double)elapsed_ms);
+                const long long nos = est.lances_avaliados + nos_auxiliares.load(std::memory_order_relaxed);
+                const long long nps_uci = nos * 1000 / elapsed_ms;
 
-                printf("info depth %d seldepth %d time %d nodes %d nps %d ",
-                    profundidade, profundidade, elapsed_ms, est.lances_avaliados, nps_uci);
-
+                char score_buf[32];
                 if (melhor_linha >= VALOR_XEQUE_MATE_BRANCAS - MAX_PLY){
                     int mate_in = (VALOR_XEQUE_MATE_BRANCAS - melhor_linha + 1) / 2;
-                    printf("score mate %d ", mate_in);
+                    snprintf(score_buf, sizeof(score_buf), "mate %d", mate_in);
                 }
                 else if (melhor_linha <= VALOR_XEQUE_MATE_PRETAS + MAX_PLY){
                     int mate_in = (melhor_linha - VALOR_XEQUE_MATE_PRETAS) / 2;
-                    printf("score mate %d ", mate_in);
+                    snprintf(score_buf, sizeof(score_buf), "mate %d", mate_in);
                 }
                 else{
-                    printf("score cp %d ", melhor_linha);
+                    snprintf(score_buf, sizeof(score_buf), "cp %d", melhor_linha);
                 }
 
                 static char pv_buf[512];
                 Interface::obter_pv_uci(est, pv_buf, sizeof(pv_buf), profundidade);
-                printf("pv %s\n", pv_buf);
+
+                // Uma linha num único printf: a thread do UCI pode imprimir
+                // "readyok" ao mesmo tempo e não pode cair no meio da linha.
+                printf("info depth %d seldepth %d time %d nodes %lld nps %lld score %s pv %s\n",
+                    profundidade, profundidade, elapsed_ms, nos, nps_uci, score_buf, pv_buf);
                 fflush(stdout);
             }
         }

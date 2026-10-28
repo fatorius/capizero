@@ -42,6 +42,8 @@ namespace Hash{
     void liberar_memoria();
     void limpar_tt();
     void realocar_tt(int size_mb);
+    // Aloca a TT no tamanho padrão se nenhum setoption Hash chegou antes.
+    void garantir_tt();
     void adicionar_hash(const Estado &est, const int ld, const Gen::lance lc,
                         const int score, const int depth, const int bound,
                         const int promove);
