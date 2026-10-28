@@ -542,31 +542,46 @@ static void garantir_lance(Estado &est){
     }
 }
 
-static void aprofundar(Estado &est, bool verbose, int profundidade_inicial);
+static void aprofundar(Estado &est, bool verbose, int id);
 
 void Search::pensar(Estado &est, bool verbose, bool zerar_parada){
     if (zerar_parada){
         parar_pesquisa.store(false, std::memory_order_relaxed);
     }
 
-    aprofundar(est, verbose, 1);
+    aprofundar(est, verbose, 0);
     garantir_lance(est);
 }
 
 void Search::pensar_auxiliar(Estado &est, int id){
-    // Diversificação: as auxiliares ímpares começam uma profundidade à frente.
-    aprofundar(est, false, 1 + (id & 1));
+    aprofundar(est, false, id);
     publicar_nos(est);
 }
 
+// Skip-blocks (Stockfish 9/10): a auxiliar id pula as profundidades em que
+// (profundidade + hply + fase) / tamanho é ímpar. Cada auxiliar busca em blocos
+// de profundidades diferentes das outras e quase sempre à frente da principal,
+// e a TT leva os resultados dela para as demais.
+static const int tamanho_salto[20] = { 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4 };
+static const int fase_salto[20]    = { 0, 1, 0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7 };
+
+static inline bool pular_profundidade(const Estado &est, int id, int profundidade){
+    if (id == 0){
+        return false;
+    }
+    const int i = (id - 1) % 20;
+    return ((profundidade + est.hply + fase_salto[i]) / tamanho_salto[i]) % 2;
+}
+
 // Iterative deepening com janelas de aspiração. O relógio (tempo_do_*,
-// Interface::tempo_maximo) é só da thread principal; as auxiliares rodam até
-// parar_pesquisa ou até profundidade_maxima.
-static void aprofundar(Estado &est, bool verbose, int profundidade_inicial){
+// Interface::tempo_maximo) é só da thread principal (id 0); as auxiliares rodam
+// até parar_pesquisa ou até profundidade_maxima.
+static void aprofundar(Estado &est, bool verbose, int id){
     using namespace Search;
 
     int melhor_linha = 0;
     int alpha, beta;
+    bool primeira_iteracao = true;
 
     if (!est.auxiliar){
         if (!Interface::tempo_fixo){
@@ -592,7 +607,11 @@ static void aprofundar(Estado &est, bool verbose, int profundidade_inicial){
     memset(est.historico_heuristica, 0, sizeof(est.historico_heuristica));
     memset(est.contraLance_heuristica, 0, sizeof(est.contraLance_heuristica));
 
-    for (int profundidade = profundidade_inicial; profundidade <= Interface::profundidade_maxima; ++profundidade){
+    for (int profundidade = 1; profundidade <= Interface::profundidade_maxima; ++profundidade){
+        if (pular_profundidade(est, id, profundidade)){
+            continue;
+        }
+
         if (!est.auxiliar && !Interface::profundidade_fixa && Interface::profundidade_maxima > 1){
             if (Interface::tempo_fixo){
                 if (Interface::obter_tempo() >= tempo_do_inicio + Interface::tempo_maximo){
@@ -607,7 +626,7 @@ static void aprofundar(Estado &est, bool verbose, int profundidade_inicial){
         }
 
         int delta = TAMANHO_JANELA_DE_PESQUISA;
-        if (profundidade == profundidade_inicial){
+        if (primeira_iteracao){
             alpha = ALPHA_INICIAL;
             beta  = BETA_INICIAL;
         }
@@ -653,6 +672,7 @@ static void aprofundar(Estado &est, bool verbose, int profundidade_inicial){
         }
 
         // Iteração completa: o lance da raiz vira o bestmove.
+        primeira_iteracao = false;
         est.lance_escolhido = est.melhor_lance_raiz;
         est.score_escolhido = melhor_linha;
 

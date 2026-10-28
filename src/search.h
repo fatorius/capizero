@@ -27,7 +27,8 @@ namespace Search{
     void pensar(Estado &est, bool verbose, bool zerar_parada = true);
 
     // Busca de uma thread auxiliar (est.auxiliar = true): iterative deepening
-    // até parar_pesquisa, sem relógio e sem saída. id diversifica a busca.
+    // até parar_pesquisa, sem relógio e sem saída. id (1..) escolhe as
+    // profundidades que a thread pula (skip-blocks).
     void pensar_auxiliar(Estado &est, int id);
     // null_permitido = false on the immediate child of a null-move so we don't
     // recurse two null-moves in a row (which would just compound the depth
