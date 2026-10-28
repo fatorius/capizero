@@ -19,6 +19,11 @@ namespace Params{
     // Threads de busca (Lazy SMP): cada uma tem o próprio Estado (~3 MB)
     #define MAX_THREADS 64
 
+    // Orçamento mínimo de um lance, em ms
+    #define TEMPO_MINIMO_LANCE 5
+    // ms que sempre ficam no relógio, para absorver a latência da GUI e do processo
+    #define TEMPO_RESERVA 30
+
     #define PILHA_DE_LANCES 10000
     #define PILHA_DO_JOGO 2000
 

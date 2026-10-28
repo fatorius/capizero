@@ -23,18 +23,18 @@ bool Interface::tempo_fixo, Interface::profundidade_fixa;
 
 int Interface::computar_tempo_para_lance(int remaining_ms, int inc_ms){
     if (remaining_ms <= 0){
-        return 50;
+        return TEMPO_MINIMO_LANCE;
     }
 
     int budget = remaining_ms / 30 + inc_ms / 2;
-    int max_budget = remaining_ms - 50;
+    int max_budget = remaining_ms - TEMPO_RESERVA;
 
-    if (max_budget < 50){
-        max_budget = 50;
+    if (max_budget < TEMPO_MINIMO_LANCE){
+        max_budget = TEMPO_MINIMO_LANCE;
     }
 
-    if (budget < 50){
-        budget = 50;
+    if (budget < TEMPO_MINIMO_LANCE){
+        budget = TEMPO_MINIMO_LANCE;
     }
     if (budget > max_budget){
         budget = max_budget;

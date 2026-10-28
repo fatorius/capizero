@@ -51,7 +51,7 @@ static void publicar_nos(Estado &est){
 }
 
 void verificar_tempo(const Estado &est){
-    if ((Interface::obter_tempo() >= Search::tempo_do_fim || (Interface::tempo_maximo < 50 && est.ply > 1)) && Interface::profundidade_fixa == 0 && est.ply > 1){
+    if (Interface::obter_tempo() >= Search::tempo_do_fim && Interface::profundidade_fixa == 0 && est.ply > 1){
         Search::parar_pesquisa.store(true, std::memory_order_relaxed);
     }
 }
