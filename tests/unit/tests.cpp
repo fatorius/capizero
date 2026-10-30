@@ -349,3 +349,106 @@ void Tests::test8(){
     }
     cout<<"-----------------"<<endl;
 }
+
+// Teste 9
+// Chave Zobrist com direitos de roque e en passant:
+// 9.1 em cada nó de uma árvore perft (e depois de cada lance nulo), a chave
+//     incremental bate com a calculada do zero, também depois de desfazer;
+// 9.2 posições que só diferem nos direitos de roque ou num en passant
+//     possível têm chaves diferentes; en passant sem peão para capturar não
+//     muda a chave;
+// 9.3 position startpos duas vezes seguidas dá a mesma chave, e voltar à
+//     posição inicial com lances de cavalo também.
+static bool chave_confere(const Estado &est){
+    return est.chaveAtual == Hash::obter_chave(est) && est.lockAtual == Hash::obter_lock(est);
+}
+
+static void percorrer_chaves(Estado &est, int profundidade, unsigned long long &nos, int &erros){
+    nos++;
+    if (!chave_confere(est)){
+        erros++;
+    }
+    if (profundidade == 0){
+        return;
+    }
+
+    if (est.ply > 0){
+        Update::fazer_null_move(est);
+        if (!chave_confere(est)) erros++;
+        Update::desfaz_null_move(est);
+        if (!chave_confere(est)) erros++;
+    }
+
+    Gen::gerar_lances(est, est.lado, est.xlado);
+    for (int i = est.qntt_lances_totais[est.ply]; i < est.qntt_lances_totais[est.ply+1]; i++){
+        const Gen::lance l = est.lista_de_lances[i];
+        if (!Update::fazer_lance(est, l.inicio, l.destino, l.promove)){
+            if (!chave_confere(est)) erros++;
+            continue;
+        }
+        percorrer_chaves(est, profundidade - 1, nos, erros);
+        Update::desfaz_lance(est);
+        if (!chave_confere(est)) erros++;
+    }
+}
+
+static Bitboard::u64 chave_da_fen(Estado &est, const char *fen){
+    setar_fen(est, fen);
+    est.ply = 0;
+    return est.chaveAtual;
+}
+
+void Tests::test9(){
+    cout<<"Test 9 - Chave Zobrist com roque e en passant"<<endl;
+
+    Estado *est = new Estado();
+    int erros = 0;
+    unsigned long long nos = 0;
+
+    struct { const char *fen; int profundidade; } arvores[] = {
+        {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 3},
+        {"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 4},
+        {"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8", 3},
+        {"rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3", 3},
+    };
+    for (unsigned i = 0; i < sizeof(arvores) / sizeof(arvores[0]); i++){
+        setar_fen(*est, arvores[i].fen);
+        est->ply = 0;
+        est->qntt_lances_totais[0] = 0;
+        percorrer_chaves(*est, arvores[i].profundidade, nos, erros);
+    }
+    cout<<"Árvores: "<<nos<<" nós, "<<erros<<" chave(s) incremental(is) diferente(s) da calculada"<<endl;
+
+    const bool roque = chave_da_fen(*est, "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1")
+                    != chave_da_fen(*est, "r3k2r/8/8/8/8/8/8/R3K2R w Kkq - 0 1");
+    const bool ep = chave_da_fen(*est, "rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3")
+                 != chave_da_fen(*est, "rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3");
+    const bool ep_inutil = chave_da_fen(*est, "rnbqkbnr/pppp1ppp/8/4p3/8/8/PPPPPPPP/RNBQKBNR w KQkq e6 0 2")
+                        == chave_da_fen(*est, "rnbqkbnr/pppp1ppp/8/4p3/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 2");
+
+    Game::novo_jogo(*est);
+    const Bitboard::u64 inicial = est->chaveAtual;
+    Game::novo_jogo(*est);
+    const bool startpos_estavel = (est->chaveAtual == inicial);
+    const int ida_e_volta[4][2] = {{G1, F3}, {G8, F6}, {F3, G1}, {F6, G8}};
+    for (int i = 0; i < 4; i++){
+        Update::fazer_lance(*est, ida_e_volta[i][0], ida_e_volta[i][1], P);
+    }
+    const bool repeticao = (est->chaveAtual == inicial) && Game::checar_repeticoes(*est);
+
+    cout<<"Roque muda a chave: "<<(roque ? "ok" : "FALHOU")
+        <<" | en passant possível muda: "<<(ep ? "ok" : "FALHOU")
+        <<" | en passant sem captura não muda: "<<(ep_inutil ? "ok" : "FALHOU")<<endl;
+    cout<<"startpos repetido: "<<(startpos_estavel ? "ok" : "FALHOU")
+        <<" | repetição depois de Cf3 Cf6 Cg1 Cg8: "<<(repeticao ? "ok" : "FALHOU")<<endl;
+
+    delete est;
+
+    if (erros == 0 && roque && ep && ep_inutil && startpos_estavel && repeticao){
+        TESTE_SUCESSO;
+    }
+    else{
+        TESTE_FALHO;
+    }
+    cout<<"-----------------"<<endl;
+}

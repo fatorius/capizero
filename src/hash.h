@@ -49,10 +49,20 @@ namespace Hash{
                         const int promove);
     void adicionar_chave(Estado &est, const int l, const int piece, const int casa);
 
+    // Coluna do peão que acabou de avançar duas casas, se um peão do lado a
+    // jogar está ao lado dele (a mesma condição de Gen::gerar_en_passant);
+    // -1 se não há captura en passant.
+    int coluna_en_passant(const Estado &est);
+
+    // Depois de um lance: troca na chave os direitos de roque (roque_antes ->
+    // est.roque) e a coluna de en passant (ep_antes -> ep; -1 = nenhuma).
+    void atualizar_roque_ep(Estado &est, const int roque_antes, const int ep_antes, const int ep);
+
     void adicionar_pontuacao_de_hash(Estado &est);
 
     bool hash_lookup(Estado &est, const int l);
 
+    // Chave e lock calculados do zero: peças, direitos de roque e en passant.
     Bitboard::u64 obter_lock(const Estado &est);
     Bitboard::u64 obter_chave(const Estado &est);
 };

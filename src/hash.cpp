@@ -15,6 +15,10 @@
 Bitboard::u64 hash[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 Bitboard::u64 lock[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 
+// Direitos de roque (índice = est.roque, 0 sem direitos = 0) e coluna de en passant.
+static Bitboard::u64 hash_roque[16], lock_roque[16];
+static Bitboard::u64 hash_ep[8], lock_ep[8];
+
 size_t Hash::tt_entries_per_side = 0;
 
 #define MATE_THRESHOLD (VALOR_XEQUE_MATE_BRANCAS - MAX_PLY)
@@ -120,6 +124,15 @@ void Hash::iniciar_hash(){
         }
     }
 
+    // Depois das peças, para que as chaves das peças continuem as mesmas.
+    for (int r = 1; r < 16; r++){
+        hash_roque[r] = aleatorio64();
+        lock_roque[r] = aleatorio64();
+    }
+    for (int c = 0; c < 8; c++){
+        hash_ep[c] = aleatorio64();
+        lock_ep[c] = aleatorio64();
+    }
 }
 
 void Hash::garantir_tt(){
@@ -131,6 +144,42 @@ void Hash::garantir_tt(){
 void Hash::adicionar_chave(Estado &est, const int l, const int piece, const int casa){
     est.chaveAtual ^= hash[l][piece][casa];
     est.lockAtual ^= lock[l][piece][casa];
+}
+
+int Hash::coluna_en_passant(const Estado &est){
+    if (est.hply < 1){
+        return -1;
+    }
+
+    const Game::jogo &ultimo = est.lista_do_jogo[est.hply - 1];
+    const int ep = ultimo.destino;
+    if (est.tabuleiro[ep] != P || abs(ultimo.inicio - ep) != AVANCO_DUPLO){
+        return -1;
+    }
+
+    const int coluna = Consts::colunas[ep];
+    if ((coluna > COLUNA_A && (Bitboard::mask[ep-1] & est.bit_pieces[est.lado][P])) ||
+        (coluna < COLUNA_H && (Bitboard::mask[ep+1] & est.bit_pieces[est.lado][P]))){
+        return coluna;
+    }
+    return -1;
+}
+
+void Hash::atualizar_roque_ep(Estado &est, const int roque_antes, const int ep_antes, const int ep){
+    if (roque_antes != est.roque){
+        est.chaveAtual ^= hash_roque[roque_antes] ^ hash_roque[est.roque];
+        est.lockAtual  ^= lock_roque[roque_antes] ^ lock_roque[est.roque];
+    }
+
+    if (ep_antes >= 0){
+        est.chaveAtual ^= hash_ep[ep_antes];
+        est.lockAtual  ^= lock_ep[ep_antes];
+    }
+
+    if (ep >= 0){
+        est.chaveAtual ^= hash_ep[ep];
+        est.lockAtual  ^= lock_ep[ep];
+    }
 }
 
 void Hash::adicionar_hash(const Estado &est, const int ld, const Gen::lance lc,
@@ -193,6 +242,12 @@ Bitboard::u64 Hash::obter_lock(const Estado &est){
         }
     }
 
+    loc ^= lock_roque[est.roque];
+    const int ep = coluna_en_passant(est);
+    if (ep >= 0){
+        loc ^= lock_ep[ep];
+    }
+
     return loc;
 }
 
@@ -209,6 +264,12 @@ Bitboard::u64 Hash::obter_chave(const Estado &est){
 
             chave ^= hash[l][est.tabuleiro[casa]][casa];
         }
+    }
+
+    chave ^= hash_roque[est.roque];
+    const int ep = coluna_en_passant(est);
+    if (ep >= 0){
+        chave ^= hash_ep[ep];
     }
 
     return chave;

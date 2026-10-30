@@ -98,12 +98,24 @@ void Update::desfaz_lance(Estado &est){
             mover_piece(est, est.lado, T, D8, A8);
         }
     }
+
+    // As peças voltaram, mas roque e en passant também entram na chave: a
+    // entrada guarda a chave de antes do lance.
+    est.chaveAtual = ultimo_lance->hash;
+    est.lockAtual = ultimo_lance->lock;
 }
 
 bool Update::fazer_lance(Estado &est, const int inicio, const int destino, const int promove){
     if (!(est.bit_lados[est.lado] & Bitboard::mask[inicio])) return false;
     if (est.bit_lados[est.lado] & Bitboard::mask[destino])  return false;
-    
+
+    // Chave antes do lance (antes de a torre do roque se mover): vai para a
+    // lista do jogo, para repetições e para desfaz_lance.
+    const Bitboard::u64 chave_antes = est.chaveAtual;
+    const Bitboard::u64 lock_antes = est.lockAtual;
+    const int roque_antes = est.roque;
+    const int ep_antes = est.lista_do_jogo[est.hply - 1].ep;
+
     // 1. lida com o roque do rei, movendo também a torre
     if (abs(inicio - destino) == ROQUE && est.tabuleiro[inicio] == R){
 
@@ -152,8 +164,8 @@ bool Update::fazer_lance(Estado &est, const int inicio, const int destino, const
     j->captura = est.tabuleiro[destino];
     j->roque = est.roque;
     j->cinquenta = est.cinquenta;
-    j->hash = est.chaveAtual;
-    j->lock = est.lockAtual;
+    j->hash = chave_antes;
+    j->lock = lock_antes;
     j->promove = P;
     
     est.roque &= Consts::roque_mask[inicio] & Consts::roque_mask[destino];
@@ -212,6 +224,13 @@ bool Update::fazer_lance(Estado &est, const int inicio, const int destino, const
         return false;
     }
 
+    // Só um avanço duplo cria en passant; quase sempre não há nada a trocar.
+    const int ep = Hash::coluna_en_passant(est);
+    j->ep = ep;
+    if (roque_antes != est.roque || ep_antes >= 0 || ep >= 0){
+        Hash::atualizar_roque_ep(est, roque_antes, ep_antes, ep);
+    }
+
     return true;
 }
 
@@ -239,6 +258,8 @@ void Update::desfaz_captura(Estado &est){
 }
 
 void Update::fazer_null_move(Estado &est){
+    const int ep_antes = est.lista_do_jogo[est.hply - 1].ep;
+
     // Push a sentinel history entry. EP availability in `gerar_en_passant`
     // is detected by reading the previous entry and checking for a double
     // pawn push — inicio == destino == 0 satisfies neither condition, so EP
@@ -250,6 +271,7 @@ void Update::fazer_null_move(Estado &est){
     j->captura   = VAZIO;
     j->cinquenta = est.cinquenta;
     j->roque     = est.roque;
+    j->ep        = -1;
     j->hash      = est.chaveAtual;
     j->lock      = est.lockAtual;
 
@@ -267,9 +289,11 @@ void Update::fazer_null_move(Estado &est){
 
     est.lado  ^= 1;
     est.xlado ^= 1;
-    // Zobrist key intentionally not updated: capizero stores side-to-move
-    // implicitly via per-side TT tables (`hashpos[BRANCAS]` vs `hashpos[PRETAS]`),
-    // and the key has no castling/EP component to clear.
+    // O lado a jogar não entra na chave (cada lado tem a própria tabela na
+    // TT), mas o en passant some com o lance nulo.
+    if (ep_antes >= 0){
+        Hash::atualizar_roque_ep(est, est.roque, ep_antes, -1);
+    }
 }
 
 void Update::desfaz_null_move(Estado &est){
@@ -281,6 +305,8 @@ void Update::desfaz_null_move(Estado &est){
     Game::jogo *j = &est.lista_do_jogo[est.hply];
     est.cinquenta = j->cinquenta;
     est.roque     = j->roque;
+    est.chaveAtual = j->hash;
+    est.lockAtual  = j->lock;
 }
 
 int Update::fazer_captura(Estado &est, const int inicio, const int destino){
@@ -592,4 +618,9 @@ void Update::setar_posicao(Estado &est, char posicao[80], char lado_a_jogar[1], 
         j->inicio = obter_casa_inicio_por_en_passant(casa_en_passant);
         j->destino = obter_casa_destino_por_en_passant(casa_en_passant);
     }
+
+    // Roque e en passant só ficam definidos aqui.
+    j->ep = Hash::coluna_en_passant(est);
+    est.chaveAtual = Hash::obter_chave(est);
+    est.lockAtual  = Hash::obter_lock(est);
 }

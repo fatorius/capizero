@@ -13,6 +13,7 @@ namespace Game{
         int captura;
         int cinquenta;
         int roque;
+        int ep; // coluna de en passant da posição depois do lance (-1: nenhuma)
         Bitboard::u64 hash;
         Bitboard::u64 lock;
     } jogo;
