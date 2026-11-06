@@ -349,3 +349,60 @@ void Tests::test8(){
     }
     cout<<"-----------------"<<endl;
 }
+
+// Teste 9
+// Chave da posição inicial: position startpos várias vezes seguidas dá sempre
+// a mesma chave (a calculada do zero), e voltar à posição inicial com
+// Cf3 Cf6 Cg1 Cg8 é detectado como repetição pela busca, que recalcula a
+// chave do zero e compara com o histórico da partida.
+void Tests::test9(){
+    cout<<"Test 9 - Chave da posição inicial"<<endl;
+
+    Estado *est = new Estado();
+
+    bool estavel = true;
+    Bitboard::u64 inicial = 0;
+    for (int i = 0; i < 3; i++){
+        Game::novo_jogo(*est);
+        if (est->chaveAtual != Hash::obter_chave(*est) || est->lockAtual != Hash::obter_lock(*est)){
+            estavel = false;
+        }
+        if (i == 0){
+            inicial = est->chaveAtual;
+        }
+        else if (est->chaveAtual != inicial){
+            estavel = false;
+        }
+    }
+
+    // Como no UCI: cada position startpos chama novo_jogo e aplica os lances
+    // da partida; a busca recalcula a chave do zero (Game::nova_posicao) e
+    // compara com o histórico. Duas partidas seguidas, porque o erro antigo
+    // aparecia em uma a cada duas.
+    bool repeticao = true;
+    for (int partida = 0; partida < 2; partida++){
+        Game::novo_jogo(*est);
+        Update::fazer_lance(*est, G1, F3, P);
+        Update::fazer_lance(*est, G8, F6, P);
+        Update::fazer_lance(*est, F3, G1, P);
+        Game::nova_posicao(*est);
+        est->ply = 0;
+        Update::fazer_lance(*est, F6, G8, P);
+        if (!Game::checar_repeticoes(*est)){
+            repeticao = false;
+        }
+    }
+
+    cout<<"Chave igual em 3 position startpos seguidos: "<<(estavel ? "ok" : "FALHOU")
+        <<" | repetição depois de Cf3 Cf6 Cg1 Cg8 em 2 partidas: "<<(repeticao ? "ok" : "FALHOU")<<endl;
+
+    delete est;
+
+    if (estavel && repeticao){
+        TESTE_SUCESSO;
+    }
+    else{
+        TESTE_FALHO;
+    }
+    cout<<"-----------------"<<endl;
+}
