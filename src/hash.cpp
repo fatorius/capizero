@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <cstdlib>
 #include <cstring>
+#include <new>
 
 #include "consts.h"
 #include "values.h"
@@ -15,7 +16,7 @@
 Bitboard::u64 hash[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 Bitboard::u64 lock[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
 
-size_t Hash::tt_entries_per_side = 0;
+size_t Hash::tt_clusters_per_side = 0;
 
 #define MATE_THRESHOLD (VALOR_XEQUE_MATE_BRANCAS - MAX_PLY)
 
@@ -31,9 +32,13 @@ static int score_from_tt(int s, int ply){
     return s;
 }
 
-Hash::hashp *hashpos[LADOS] = {NULL, NULL};
+// Clusters alinhados em 64 bytes dentro de hashbruto (new não garante o
+// alinhamento em C++11).
+Hash::cluster *hashpos[LADOS] = {NULL, NULL};
+static char *hashbruto[LADOS] = {NULL, NULL};
 
 static_assert(sizeof(Hash::hashp) == 16, "entrada da TT deve ter 16 bytes");
+static_assert(sizeof(Hash::cluster) == 64, "cluster da TT deve ocupar uma linha de cache");
 
 Bitboard::u64 Hash::empacotar(const EntradaTT &e){
     return  (Bitboard::u64)(uint32_t)e.score
@@ -55,27 +60,30 @@ Hash::EntradaTT Hash::desempacotar(Bitboard::u64 dados){
     return e;
 }
 
-static void zerar_tabela(Hash::hashp *tabela, size_t n){
+static void zerar_tabela(Hash::cluster *tabela, size_t n){
     for (size_t i = 0; i < n; i++){
-        tabela[i].chave_xor.store(0, std::memory_order_relaxed);
-        tabela[i].dados.store(0, std::memory_order_relaxed);
+        for (int j = 0; j < TT_ENTRADAS_POR_CLUSTER; j++){
+            tabela[i].entradas[j].chave_xor.store(0, std::memory_order_relaxed);
+            tabela[i].entradas[j].dados.store(0, std::memory_order_relaxed);
+        }
     }
 }
 
 void Hash::liberar_memoria(){
-    delete[] hashpos[BRANCAS];
-    delete[] hashpos[PRETAS];
-    hashpos[BRANCAS] = NULL;
-    hashpos[PRETAS]  = NULL;
-    tt_entries_per_side = 0;
+    for (int l = 0; l < LADOS; l++){
+        delete[] hashbruto[l];
+        hashbruto[l] = NULL;
+        hashpos[l] = NULL;
+    }
+    tt_clusters_per_side = 0;
 }
 
 void Hash::limpar_tt(){
     if (hashpos[BRANCAS] != NULL){
-        zerar_tabela(hashpos[BRANCAS], tt_entries_per_side);
+        zerar_tabela(hashpos[BRANCAS], tt_clusters_per_side);
     }
     if (hashpos[PRETAS] != NULL){
-        zerar_tabela(hashpos[PRETAS], tt_entries_per_side);
+        zerar_tabela(hashpos[PRETAS], tt_clusters_per_side);
     }
 }
 
@@ -85,15 +93,20 @@ void Hash::realocar_tt(int size_mb){
 
     // Split total budget across the two per-side tables.
     const size_t total_bytes = (size_t)size_mb * 1024u * 1024u;
-    const size_t entries     = total_bytes / (2u * sizeof(Hash::hashp));
+    const size_t clusters    = total_bytes / (2u * sizeof(Hash::cluster));
 
-    delete[] hashpos[BRANCAS];
-    delete[] hashpos[PRETAS];
+    liberar_memoria();
 
-    hashpos[BRANCAS] = new Hash::hashp[entries];
-    hashpos[PRETAS]  = new Hash::hashp[entries];
+    for (int l = 0; l < LADOS; l++){
+        hashbruto[l] = new char[clusters * sizeof(Hash::cluster) + 63];
+        const uintptr_t alinhado = ((uintptr_t)hashbruto[l] + 63) & ~(uintptr_t)63;
+        hashpos[l] = (Hash::cluster *)alinhado;
+        for (size_t i = 0; i < clusters; i++){
+            new (&hashpos[l][i]) Hash::cluster;
+        }
+    }
 
-    tt_entries_per_side = entries;
+    tt_clusters_per_side = clusters;
     limpar_tt();
 }
 
@@ -123,7 +136,7 @@ void Hash::iniciar_hash(){
 }
 
 void Hash::garantir_tt(){
-    if (Hash::tt_entries_per_side == 0){
+    if (Hash::tt_clusters_per_side == 0){
         Hash::realocar_tt(DEFAULT_TT_MB);
     }
 }
@@ -137,13 +150,32 @@ void Hash::adicionar_hash(const Estado &est, const int ld, const Gen::lance lc,
                           const int score, const int depth, const int bound,
                           const int promove){
     Hash::garantir_tt();
-    hashp* ptr = &hashpos[ld][est.chaveAtual % tt_entries_per_side];
+    cluster &c = hashpos[ld][est.chaveAtual % tt_clusters_per_side];
 
-    const Bitboard::u64 dados_atuais = ptr->dados.load(std::memory_order_relaxed);
-    const Bitboard::u64 chave_atual  = ptr->chave_xor.load(std::memory_order_relaxed);
+    // A mesma posição já no cluster: sobrescreve, a menos que a entrada seja
+    // bem mais profunda (e o resultado novo não seja exato). Senão, a vítima é
+    // uma entrada vazia ou a de menor profundidade.
+    hashp *ptr = NULL;
+    int menor_valor = 0;
+    for (int i = 0; i < TT_ENTRADAS_POR_CLUSTER; i++){
+        hashp &h = c.entradas[i];
+        const Bitboard::u64 d = h.dados.load(std::memory_order_relaxed);
+        const Bitboard::u64 k = h.chave_xor.load(std::memory_order_relaxed);
+        const EntradaTT atual = desempacotar(d);
 
-    if ((chave_atual ^ dados_atuais) == est.lockAtual && depth < desempacotar(dados_atuais).depth){
-        return;
+        if ((k ^ d) == est.lockAtual){
+            if (depth + MARGEM_PROFUNDIDADE_TT < atual.depth && bound != TT_BOUND_EXACT){
+                return;
+            }
+            ptr = &h;
+            break;
+        }
+
+        const int valor = (k == 0 && d == 0) ? -1000000 : atual.depth;
+        if (ptr == NULL || valor < menor_valor){
+            ptr = &h;
+            menor_valor = valor;
+        }
     }
 
     EntradaTT e;
@@ -161,7 +193,14 @@ void Hash::adicionar_hash(const Estado &est, const int ld, const Gen::lance lc,
 
 Hash::hashp *Hash::entrada(const Estado &est, const int l){
     Hash::garantir_tt();
-    return &hashpos[l][est.chaveAtual % tt_entries_per_side];
+    cluster &c = hashpos[l][est.chaveAtual % tt_clusters_per_side];
+    for (int i = 0; i < TT_ENTRADAS_POR_CLUSTER; i++){
+        hashp &h = c.entradas[i];
+        if ((h.chave_xor.load(std::memory_order_relaxed) ^ h.dados.load(std::memory_order_relaxed)) == est.lockAtual){
+            return &h;
+        }
+    }
+    return NULL;
 }
 
 void Hash::adicionar_pontuacao_de_hash(Estado &est){
@@ -216,13 +255,22 @@ Bitboard::u64 Hash::obter_chave(const Estado &est){
 
 bool Hash::hash_lookup(Estado &est, const int l){
     Hash::garantir_tt();
-    const hashp &h = hashpos[l][est.chaveAtual % tt_entries_per_side];
+    cluster &c = hashpos[l][est.chaveAtual % tt_clusters_per_side];
 
-    // Cópias locais: a verificação e a decodificação usam o mesmo par de palavras.
-    const Bitboard::u64 dados = h.dados.load(std::memory_order_relaxed);
-    const Bitboard::u64 chave = h.chave_xor.load(std::memory_order_relaxed);
+    hashp *h = NULL;
+    Bitboard::u64 dados = 0;
+    for (int i = 0; i < TT_ENTRADAS_POR_CLUSTER; i++){
+        // Cópias locais: a verificação e a decodificação usam o mesmo par de palavras.
+        const Bitboard::u64 d = c.entradas[i].dados.load(std::memory_order_relaxed);
+        const Bitboard::u64 k = c.entradas[i].chave_xor.load(std::memory_order_relaxed);
+        if ((k ^ d) == est.lockAtual){
+            h = &c.entradas[i];
+            dados = d;
+            break;
+        }
+    }
 
-    if ((chave ^ dados) != est.lockAtual){
+    if (h == NULL){
         return false;
     }
 

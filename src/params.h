@@ -24,6 +24,10 @@ namespace Params{
     // ms que sempre ficam no relógio, para absorver a latência da GUI e do processo
     #define TEMPO_RESERVA 30
 
+    // Mesma posição na TT: a entrada antiga só fica se for mais de
+    // MARGEM_PROFUNDIDADE_TT plies mais profunda e o novo limite não for EXACT.
+    #define MARGEM_PROFUNDIDADE_TT 4
+
     #define PILHA_DE_LANCES 10000
     #define PILHA_DO_JOGO 2000
 

@@ -21,6 +21,13 @@ namespace Hash{
         std::atomic<Bitboard::u64> dados;
     };
 
+    // 4 entradas de 16 bytes numa linha de cache de 64 bytes: um probe olha as
+    // 4 e uma gravação escolhe qual sobrescrever.
+    #define TT_ENTRADAS_POR_CLUSTER 4
+    struct cluster{
+        hashp entradas[TT_ENTRADAS_POR_CLUSTER];
+    };
+
     struct EntradaTT{
         int inicio;
         int destino;
@@ -33,10 +40,11 @@ namespace Hash{
     Bitboard::u64 empacotar(const EntradaTT &e);
     EntradaTT desempacotar(Bitboard::u64 dados);
 
+    // Entrada do cluster que guarda a posição atual, ou NULL.
     hashp *entrada(const Estado &est, const int l);
 
-    // Number of TT entries per side. Set by iniciar_hash()/realocar_tt().
-    extern size_t tt_entries_per_side;
+    // Clusters por lado. Definido por realocar_tt().
+    extern size_t tt_clusters_per_side;
 
     void iniciar_hash();
     void liberar_memoria();

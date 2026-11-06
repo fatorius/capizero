@@ -318,6 +318,13 @@ void Tests::test8(){
         && est->hash_depth == 9 && est->hash_bound == TT_BOUND_EXACT && est->hash_promove == 0;
 
     Hash::hashp *h = Hash::entrada(*est, est->lado);
+    if (h == NULL){
+        cout<<"Entrada gravada não encontrada no cluster"<<endl;
+        delete est;
+        TESTE_FALHO;
+        cout<<"-----------------"<<endl;
+        return;
+    }
     const Bitboard::u64 dados = h->dados.load();
     const Bitboard::u64 chave = h->chave_xor.load();
 
@@ -342,6 +349,77 @@ void Tests::test8(){
     Hash::limpar_tt();
 
     if (falhas == 0 && achou && !dados_trocados && !chave_trocada && restaurada){
+        TESTE_SUCESSO;
+    }
+    else{
+        TESTE_FALHO;
+    }
+    cout<<"-----------------"<<endl;
+}
+
+// Teste 10
+// Clusters da TT: posições que caem no mesmo cluster convivem até 4; a quinta
+// substitui a de menor profundidade; a mesma posição só mantém a entrada antiga
+// se ela for bem mais profunda.
+void Tests::test10(){
+    cout<<"Test 10 - Clusters na TT"<<endl;
+
+    Hash::realocar_tt(MIN_TT_MB);
+    const Bitboard::u64 n = Hash::tt_clusters_per_side;
+
+    Estado *est = new Estado();
+    est->ply = 0;
+
+    // Posição i: chaves que caem todas no mesmo cluster, locks diferentes.
+    auto posicionar = [&](int i){
+        est->chaveAtual = 12345 + (Bitboard::u64)i * n;
+        est->lockAtual  = 0x5A5A0000ULL + i;
+    };
+    auto gravar = [&](int i, int depth, int score){
+        posicionar(i);
+        Gen::lance lc;
+        lc.inicio = E2; lc.destino = E4; lc.promove = 0; lc._pad = 0; lc.score = 0;
+        Hash::adicionar_hash(*est, BRANCAS, lc, score, depth, TT_BOUND_EXACT, 0);
+    };
+    // Probe: devolve o score guardado ou -1 se não achou.
+    auto ler = [&](int i){
+        posicionar(i);
+        return Hash::hash_lookup(*est, BRANCAS) ? est->hash_score : -1;
+    };
+
+    bool ok = true;
+
+    // 1. Quatro posições no mesmo cluster.
+    gravar(0, 5, 100); gravar(1, 9, 101); gravar(2, 3, 102); gravar(3, 7, 103);
+    const bool quatro = ler(0) == 100 && ler(1) == 101 && ler(2) == 102 && ler(3) == 103;
+    ok = ok && quatro;
+
+    // 2. A quinta substitui a de menor profundidade (posição 2, depth 3).
+    gravar(4, 6, 104);
+    const bool quinta = ler(2) == -1 && ler(0) == 100 && ler(1) == 101 && ler(3) == 103 && ler(4) == 104;
+    ok = ok && quinta;
+
+    // 3. Mesma posição: uma gravação bem mais rasa (e não exata)
+    //    é ignorada; uma só um pouco mais rasa substitui.
+    posicionar(1);
+    Gen::lance lc;
+    lc.inicio = E2; lc.destino = E4; lc.promove = 0; lc._pad = 0; lc.score = 0;
+    Hash::adicionar_hash(*est, BRANCAS, lc, 999, 9 - MARGEM_PROFUNDIDADE_TT - 1, TT_BOUND_LOWER, 0);
+    const bool ignorada = ler(1) == 101 && est->hash_depth == 9;
+    gravar(1, 9 - MARGEM_PROFUNDIDADE_TT, 201);
+    const bool substituida = ler(1) == 201 && est->hash_depth == 9 - MARGEM_PROFUNDIDADE_TT;
+    gravar(1, 9, 101);
+    const bool mesma = ignorada && substituida;
+    ok = ok && mesma;
+
+    cout<<"Quatro no cluster: "<<(quatro ? "ok" : "FALHOU")
+        <<" | quinta substitui a mais rasa: "<<(quinta ? "ok" : "FALHOU")
+        <<" | margem de profundidade na mesma posição: "<<(mesma ? "ok" : "FALHOU")<<endl;
+
+    delete est;
+    Hash::realocar_tt(DEFAULT_TT_MB);
+
+    if (ok){
         TESTE_SUCESSO;
     }
     else{
