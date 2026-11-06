@@ -21,7 +21,11 @@ void Game::novo_jogo(Estado &est){
     est.jogada = 0;
 
     Bitboard::init_board(est);
-    
+
+    // init_board soma as peças na chave que já existia: calcula do zero.
+    est.chaveAtual = Hash::obter_chave(est);
+    est.lockAtual = Hash::obter_lock(est);
+
     Gen::gerar_lances(est, est.lado, est.xlado);
 }
 
