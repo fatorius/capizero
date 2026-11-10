@@ -25,6 +25,12 @@
 #define TEST7_PERFT_POSICAO3 674624
 #define TEST7_PROFUNDIDADE_BUSCA 9
 
+// Mate em 1 (Td1#): com mate distance pruning a busca inteira fica em
+// poucas centenas de nós; sem ele, ~9 milhões na profundidade 20.
+#define TEST10_FEN "3r2k1/2p5/2n1p1pp/1p1rP3/p7/P1P1RN1P/1P2RPP1/4K3 b - - 1 29"
+#define TEST10_PROFUNDIDADE 20
+#define TEST10_MAX_NOS 2000
+
 namespace Tests{
     void test1();
     void test2();
@@ -35,6 +41,7 @@ namespace Tests{
     void test7();
     void test8();
     void test9();
+    void test10();
 }
 
 

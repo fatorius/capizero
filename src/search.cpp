@@ -225,11 +225,28 @@ int Search::pesquisa(Estado &est, int alpha, int beta, int profundidade, bool pv
         return VALOR_EMPATE;
     }
 
-    const int alpha_original = alpha;
-
     if (profundidade < 1){
         return pesquisa_rapida(est, alpha, beta);
     }
+
+    // Mate distance pruning: daqui não dá para levar mate antes deste ply
+    // nem dar mate antes do próximo. Se a janela já exige algo melhor que
+    // isso (um mate mais curto foi achado acima), o nó não pode mudar nada.
+    if (est.ply){
+        const int levar_mate_agora = VALOR_XEQUE_MATE_PADRAO + est.ply;
+        const int dar_mate_no_proximo = -(VALOR_XEQUE_MATE_PADRAO + est.ply + 1);
+        if (alpha < levar_mate_agora){
+            alpha = levar_mate_agora;
+        }
+        if (beta > dar_mate_no_proximo){
+            beta = dar_mate_no_proximo;
+        }
+        if (alpha >= beta){
+            return alpha;
+        }
+    }
+
+    const int alpha_original = alpha;
 
     est.lances_avaliados++;
 
