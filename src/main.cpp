@@ -10,6 +10,12 @@
 int main(int argc, char **argv){
     Init::init();
 
+    if (argc >= 3 && !strcmp(argv[1], "bench") && !strcmp(argv[2], "perf")){
+        Bench::run_performance_bench();
+        Hash::liberar_memoria();
+        return 0;
+    }
+
     if (argc >= 2 && !strcmp(argv[1], "bench")){
         int depth = (argc >= 3) ? atoi(argv[2]) : 13;
         if (depth < 1){
@@ -22,7 +28,7 @@ int main(int argc, char **argv){
 
     if (argc >= 2 && strcmp(argv[1], "uci")){
         fprintf(stderr, "unknown argument: %s\n", argv[1]);
-        fprintf(stderr, "usage: %s [uci | bench [depth]]\n", argv[0]);
+        fprintf(stderr, "usage: %s [uci | bench [depth] | bench perf]\n", argv[0]);
         Hash::liberar_memoria();
         return 1;
     }

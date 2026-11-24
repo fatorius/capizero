@@ -82,11 +82,6 @@ tests: clean ./tests/unit/unit_tests.o ./tests/unit/tests.o $(SRCS)
 	@ echo "================="
 	@ echo "capi_tests compilado com sucesso"
 
-bench: clean ./tests/bench/bench_tests.o $(SRCS)
-	@ $(COMP) $(CXXFLAGS) -o capi_bench ./tests/bench/bench_tests.o $(SRCS)
-	@ echo "================="
-	@ echo "capi_bench compilado com sucesso"
-
 # Texel-style eval tuner. Reuses the engine's eval/board/state code; tuner.cpp
 # adds the dataset loader, loss function, and (eventually) coordinate-descent
 # tuning loop. Runs as: ./capi_tuner <dataset.txt>
@@ -140,7 +135,6 @@ help:
 	@ echo "tests: compila um binário para testes unitários"
 	@ echo "debug: compila o capizero sem optimizações e com flags para debug"
 	@ echo "tsan: compila o capizero com ThreadSanitizer (capi_tsan)"
-	@ echo "bench: compila um binário para testar a performance da engine no seu computador"
 	@ echo "tuner: compila o Texel tuner por coordinate descent (tools/tuning)"
 	@ echo "tuner_adam: compila o Texel tuner por gradiente/Adam (tools/tuning)"
 	@ echo "selfplay: compila o coletor de partidas de self-play (tools/datagen)"
@@ -157,6 +151,10 @@ help:
 	@ echo "clean: deleta todos os arquivos .o"
 	@ echo "help: exibe este menu"
 	@ echo "credits: exibe os criadores do capizero"
+	@ echo "----------------------"
+	@ echo "Bench (no binário do capizero): "
+	@ echo "./capizero bench [profundidade]: busca nas FENs do bench, contagem de nós determinística (padrão 13)"
+	@ echo "./capizero bench perf: perft, avaliações e busca por segundo neste computador"
 	@ echo "----------------------"
 	@ echo ""
 

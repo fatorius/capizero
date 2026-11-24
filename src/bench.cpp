@@ -48,7 +48,7 @@ void Bench::search_performance_test(){
     printf("Pesquisa de lances: %dK posições por segundo\n", nps_search);
     printf("Tempo para chegar pesquisar na profundidade 11: %f segundos\n", (float) delta / 1000.0);
     printf("Lances avaliados: %dK\n", estado_principal.lances_avaliados / 1000);
-    printf("Lance do computador: %s \n", Interface::lance_para_string(estado_principal.lista_do_jogo[0].inicio, estado_principal.lista_do_jogo[0].destino, 0));
+    printf("Lance do computador: %s \n", Interface::lance_para_string(estado_principal.lance_escolhido.inicio, estado_principal.lance_escolhido.destino, estado_principal.lance_escolhido.promove));
 }
 
 void Bench::eval_performance_test(){
@@ -68,6 +68,21 @@ void Bench::eval_performance_test(){
     int nps_eval = (double) avals / (double) 5000;
 
     printf("Avaliações de posições: %dK posições por segundo\n", nps_eval);
+}
+
+void Bench::run_performance_bench(){
+    printf("capizero %s por Hugo Souza 2026\n", CAPIZERO_VERSION);
+    printf("build %d \n", BUILDNO);
+    printf("compilado em %s \n\n", __TIMESTAMP__);
+    printf("executando testes de performance \n\n\n");
+
+    Game::novo_jogo(estado_principal);
+    movegen_performance_test();
+
+    Game::novo_jogo(estado_principal);
+    eval_performance_test();
+
+    search_performance_test();
 }
 
 void Bench::run_standard_bench(int depth){
