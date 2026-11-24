@@ -26,6 +26,7 @@ int main(){
     Tests::test7();
     Tests::test8();
     Tests::test9();
+    Tests::test10();
 
     Hash::liberar_memoria();
 

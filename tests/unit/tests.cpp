@@ -406,3 +406,39 @@ void Tests::test9(){
     }
     cout<<"-----------------"<<endl;
 }
+
+// Teste 10
+// Mate distance pruning: depois de achar o mate em 1, as iterações
+// seguintes não podem explorar os outros lances da raiz em busca de um
+// mate mais curto, que é impossível.
+void Tests::test10(){
+    cout<<"Test 10 - Mate distance pruning"<<endl;
+
+    Interface::profundidade_maxima = TEST10_PROFUNDIDADE;
+    Interface::tempo_maximo = 1 << 25;
+    Interface::profundidade_fixa = true;
+    Interface::tempo_fixo = false;
+
+    Estado *est = new Estado();
+    Hash::limpar_tt();
+    setar_fen(*est, TEST10_FEN);
+    Search::pensar(*est, false);
+
+    const bool lance_ok = est->lance_escolhido.inicio == D5 && est->lance_escolhido.destino == D1;
+    const bool mate_ok = est->score_escolhido == -(VALOR_XEQUE_MATE_PADRAO + 1);
+    const int nos = est->lances_avaliados;
+    delete est;
+    Hash::limpar_tt();
+
+    cout<<"Profundidade "<<TEST10_PROFUNDIDADE<<": lance "<<(lance_ok ? "d5d1 ok" : "ERRADO")
+        <<" | score "<<(mate_ok ? "mate 1 ok" : "ERRADO")
+        <<" | "<<nos<<" nós (máximo "<<TEST10_MAX_NOS<<")"<<endl;
+
+    if (lance_ok && mate_ok && nos <= TEST10_MAX_NOS){
+        TESTE_SUCESSO;
+    }
+    else{
+        TESTE_FALHO;
+    }
+    cout<<"-----------------"<<endl;
+}
