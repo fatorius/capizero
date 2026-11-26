@@ -248,6 +248,49 @@ static void handle_setoption(char *args){
     // Unknown options: silently accept (UCI requires tolerance of unknown names).
 }
 
+static void handle_d(){
+    // Imprime a posição de estado_principal (a do último "position"). Monta
+    // tudo num buffer e imprime num único printf: durante uma busca a thread
+    // de busca pode imprimir "info" e as linhas não podem se misturar.
+    const Estado &est = estado_principal;
+    char buf[2048];
+    int n = 0;
+
+    n += snprintf(buf + n, sizeof(buf) - n, "\n +---+---+---+---+---+---+---+---+\n");
+    for (int fileira = 7; fileira >= 0; fileira--){
+        for (int coluna = 0; coluna < 8; coluna++){
+            const int casa = fileira * 8 + coluna;
+            char c = ' ';
+            if (est.tabuleiro[casa] != VAZIO){
+                c = Consts::piece_char[est.tabuleiro[casa]];
+                if (est.bit_lados[PRETAS] & Bitboard::mask[casa]){
+                    c = c + ('a' - 'A');
+                }
+            }
+            n += snprintf(buf + n, sizeof(buf) - n, " | %c", c);
+        }
+        n += snprintf(buf + n, sizeof(buf) - n, " | %d\n +---+---+---+---+---+---+---+---+\n", fileira + 1);
+    }
+    n += snprintf(buf + n, sizeof(buf) - n, "   a   b   c   d   e   f   g   h\n\n");
+
+    char roques[5];
+    int r = 0;
+    if (est.roque & BRANCAS_ROQUE_MENOR) roques[r++] = 'K';
+    if (est.roque & BRANCAS_ROQUE_MAIOR) roques[r++] = 'Q';
+    if (est.roque & PRETAS_ROQUE_MENOR)  roques[r++] = 'k';
+    if (est.roque & PRETAS_ROQUE_MAIOR)  roques[r++] = 'q';
+    if (r == 0) roques[r++] = '-';
+    roques[r] = '\0';
+
+    n += snprintf(buf + n, sizeof(buf) - n, "Lado a jogar: %s\n", est.lado == BRANCAS ? "brancas" : "pretas");
+    n += snprintf(buf + n, sizeof(buf) - n, "Roque: %s\n", roques);
+    n += snprintf(buf + n, sizeof(buf) - n, "Regra dos 50 lances: %d\n", est.cinquenta);
+    n += snprintf(buf + n, sizeof(buf) - n, "Chave: %016llx\n", (unsigned long long) est.chaveAtual);
+
+    printf("%s", buf);
+    fflush(stdout);
+}
+
 void Uci::loop(){
     Threads::iniciar();
 
@@ -313,6 +356,9 @@ void Uci::loop(){
         else if (!strcmp(cmd, "setoption")){
             char *rest = strtok(NULL, "");
             handle_setoption(rest);
+        }
+        else if (!strcmp(cmd, "d")){
+            handle_d();
         }
         else if (!strcmp(cmd, "debug") ||
                  !strcmp(cmd, "register") ||
