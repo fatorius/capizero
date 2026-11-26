@@ -6,7 +6,11 @@
 //
 //   eval_white = [ sum_f coef_f * mg_f * fase + sum_f coef_f * eg_f * (MAX-fase) ] / MAX
 //              + (PW^2 - PB^2) / KS_SCALE * fase / MAX      (king safety, mg only)
-//              + rest                                       (untuned terms, constant)
+//              + rest                                       (untuned remainder, constant)
+//
+// Every eval term is tuned now (PSTs, mobility, king safety, passed and
+// isolated pawns, rook files, bishop pair, pawn shield), so `rest` is only the
+// rounding of the phase interpolation.
 //
 // so each position is reduced ONCE to a sparse feature vector, and every epoch
 // is a pass over those vectors with an analytic gradient fed to Adam.
@@ -119,6 +123,9 @@ static std::vector<TuningPos> load_dataset(const char *path) {
 // Feature f has two parameters (mg, eg): theta[2f], theta[2f+1].
 //   f in [0, 384)        PST: piece * 64 + square (white-side indexing)
 //   f in [384, 450)      mobility buckets: knight 9, bishop 14, rook 15, queen 28
+//   f in [450, 458)      passed pawn by relative rank (0 = 1st)
+//   f = 458..461         isolated pawn, rook on semi-open file, rook on open file, bishop pair
+//   f in [462, 468)      pawn shield, see Eval::indice_escudo
 // theta[KS_BASE + i]      king-safety weights (c, b, t, d), mg only.
 
 static const int PST_FEATURES = 6 * CASAS_DO_TABULEIRO;
@@ -126,7 +133,13 @@ static const int MOB_C_BASE = PST_FEATURES;
 static const int MOB_B_BASE = MOB_C_BASE + 9;
 static const int MOB_T_BASE = MOB_B_BASE + 14;
 static const int MOB_D_BASE = MOB_T_BASE + 15;
-static const int NUM_FEATURES = MOB_D_BASE + 28;
+static const int PASSADO_BASE = MOB_D_BASE + 28;
+static const int ISOLADO_F = PASSADO_BASE + 8;
+static const int SEMI_ABERTA_F = ISOLADO_F + 1;
+static const int ABERTA_F = SEMI_ABERTA_F + 1;
+static const int PAR_BISPOS_F = ABERTA_F + 1;
+static const int ESCUDO_BASE = PAR_BISPOS_F + 1;
+static const int NUM_FEATURES = ESCUDO_BASE + 6;
 static const int KS_BASE = 2 * NUM_FEATURES;
 static const int NUM_PARAMS = KS_BASE + 4;
 
@@ -148,6 +161,12 @@ static void bind_slots() {
     for (int i = 0; i < 14; i++) { feature_slot[MOB_B_BASE + i] = &Eval::mobilidade_bispo[i];  feature_mirror[MOB_B_BASE + i] = NULL; }
     for (int i = 0; i < 15; i++) { feature_slot[MOB_T_BASE + i] = &Eval::mobilidade_torre[i];  feature_mirror[MOB_T_BASE + i] = NULL; }
     for (int i = 0; i < 28; i++) { feature_slot[MOB_D_BASE + i] = &Eval::mobilidade_dama[i];   feature_mirror[MOB_D_BASE + i] = NULL; }
+    for (int i = 0; i < 8; i++)  { feature_slot[PASSADO_BASE + i] = &Eval::passado[i]; feature_mirror[PASSADO_BASE + i] = NULL; }
+    feature_slot[ISOLADO_F]     = &Eval::peao_isolado;       feature_mirror[ISOLADO_F]     = NULL;
+    feature_slot[SEMI_ABERTA_F] = &Eval::coluna_semi_aberta; feature_mirror[SEMI_ABERTA_F] = NULL;
+    feature_slot[ABERTA_F]      = &Eval::coluna_aberta;      feature_mirror[ABERTA_F]      = NULL;
+    feature_slot[PAR_BISPOS_F]  = &Eval::par_de_bispos;      feature_mirror[PAR_BISPOS_F]  = NULL;
+    for (int i = 0; i < 6; i++)  { feature_slot[ESCUDO_BASE + i] = &Eval::escudo[i]; feature_mirror[ESCUDO_BASE + i] = NULL; }
     ks_slot[0] = &Eval::ks_weight_c;
     ks_slot[1] = &Eval::ks_weight_b;
     ks_slot[2] = &Eval::ks_weight_t;
@@ -206,6 +225,8 @@ struct SavedParams {
     Eval::Score casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
     Eval::Score mc[9], mb[14], mt[15], md[28];
     Eval::Score ks[4];
+    Eval::Score passado[8], escudo[6];
+    Eval::Score isolado, semi_aberta, aberta, par_bispos;
 };
 
 static void save_params(SavedParams& s) {
@@ -215,6 +236,12 @@ static void save_params(SavedParams& s) {
     memcpy(s.mt, Eval::mobilidade_torre,  sizeof(s.mt));
     memcpy(s.md, Eval::mobilidade_dama,   sizeof(s.md));
     for (int i = 0; i < 4; i++) s.ks[i] = *ks_slot[i];
+    memcpy(s.passado, Eval::passado, sizeof(s.passado));
+    memcpy(s.escudo,  Eval::escudo,  sizeof(s.escudo));
+    s.isolado = Eval::peao_isolado;
+    s.semi_aberta = Eval::coluna_semi_aberta;
+    s.aberta = Eval::coluna_aberta;
+    s.par_bispos = Eval::par_de_bispos;
 }
 
 static void restore_params(const SavedParams& s) {
@@ -224,6 +251,12 @@ static void restore_params(const SavedParams& s) {
     memcpy(Eval::mobilidade_torre,  s.mt, sizeof(s.mt));
     memcpy(Eval::mobilidade_dama,   s.md, sizeof(s.md));
     for (int i = 0; i < 4; i++) *ks_slot[i] = s.ks[i];
+    memcpy(Eval::passado, s.passado, sizeof(s.passado));
+    memcpy(Eval::escudo,  s.escudo,  sizeof(s.escudo));
+    Eval::peao_isolado = s.isolado;
+    Eval::coluna_semi_aberta = s.semi_aberta;
+    Eval::coluna_aberta = s.aberta;
+    Eval::par_de_bispos = s.par_bispos;
 }
 
 static void zero_params() {
@@ -233,6 +266,12 @@ static void zero_params() {
     memset(Eval::mobilidade_torre,  0, sizeof(Eval::Score) * 15);
     memset(Eval::mobilidade_dama,   0, sizeof(Eval::Score) * 28);
     for (int i = 0; i < 4; i++) *ks_slot[i] = 0;
+    memset(Eval::passado, 0, sizeof(Eval::passado));
+    memset(Eval::escudo,  0, sizeof(Eval::escudo));
+    Eval::peao_isolado = 0;
+    Eval::coluna_semi_aberta = 0;
+    Eval::coluna_aberta = 0;
+    Eval::par_de_bispos = 0;
 }
 
 // Use the evaluator's own zone so the extracted counts always match whatever
@@ -286,7 +325,41 @@ static void extract(const std::vector<TuningPos>& set, Data& d, long* occ) {
                 }
             }
 
-            Bitboard::u64 t = estado_principal.bit_pieces[l][C];
+            // Structure terms: same conditions as avaliar_peao / avaliar_torre /
+            // the shield in Eval::avaliar (the equivalence check in main guards this).
+            const Bitboard::u64 peoes_proprios = estado_principal.bit_pieces[l][P];
+            const Bitboard::u64 peoes_inimigos = estado_principal.bit_pieces[l ^ 1][P];
+            const Bitboard::u64 rei = estado_principal.bit_pieces[l][R];
+            const int ala_rei = (rei & Bitboard::mask_ala_do_rei) ? 0 : (rei & Bitboard::mask_ala_da_dama) ? 1 : -1;
+            Bitboard::u64 t = peoes_proprios;
+            while (t) {
+                int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
+                if (!(Bitboard::mask_passados[l][casa] & peoes_inimigos) && !(Bitboard::mask_path[l][casa] & peoes_proprios)) {
+                    int f = PASSADO_BASE + Bitboard::fileiras[l][casa];
+                    cnt[f] += sign; if (occ) occ[f]++;
+                }
+                if ((Bitboard::mask_isolados[casa] & peoes_proprios) == 0) {
+                    cnt[ISOLADO_F] += sign; if (occ) occ[ISOLADO_F]++;
+                }
+                const int e = Eval::indice_escudo(l, casa);
+                const int ala_peao = (Consts::colunas[casa] >= COLUNA_F) ? 0 : 1;
+                if (e >= 0 && ala_peao == ala_rei) {
+                    cnt[ESCUDO_BASE + e] += sign; if (occ) occ[ESCUDO_BASE + e]++;
+                }
+            }
+            t = estado_principal.bit_pieces[l][T];
+            while (t) {
+                int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
+                if (!(Bitboard::mask_cols[casa] & peoes_proprios)) {
+                    int f = (Bitboard::mask_cols[casa] & peoes_inimigos) ? SEMI_ABERTA_F : ABERTA_F;
+                    cnt[f] += sign; if (occ) occ[f]++;
+                }
+            }
+            if (Bitboard::popcount(estado_principal.bit_pieces[l][B]) >= 2) {
+                cnt[PAR_BISPOS_F] += sign; if (occ) occ[PAR_BISPOS_F]++;
+            }
+
+            t = estado_principal.bit_pieces[l][C];
             while (t) {
                 int casa = Bitboard::bitscan(t); t &= Bitboard::not_mask[casa];
                 Bitboard::u64 att = Gen::bit_moves_cavalo[casa];
@@ -596,6 +669,20 @@ static void print_tuned_values(FILE* out) {
     fprintf(out, "\t#define KS_WEIGHT_B %d\n",   Eval::mg_score(Eval::ks_weight_b));
     fprintf(out, "\t#define KS_WEIGHT_T %d\n",   Eval::mg_score(Eval::ks_weight_t));
     fprintf(out, "\t#define KS_WEIGHT_D %d\n\n", Eval::mg_score(Eval::ks_weight_d));
+
+    fprintf(out, "\t#define PEAO_ISOLADO_MG %d\n",       Eval::mg_score(Eval::peao_isolado));
+    fprintf(out, "\t#define PEAO_ISOLADO_EG %d\n",       Eval::eg_score(Eval::peao_isolado));
+    fprintf(out, "\t#define COLUNA_SEMI_ABERTA_MG %d\n", Eval::mg_score(Eval::coluna_semi_aberta));
+    fprintf(out, "\t#define COLUNA_SEMI_ABERTA_EG %d\n", Eval::eg_score(Eval::coluna_semi_aberta));
+    fprintf(out, "\t#define COLUNA_ABERTA_MG %d\n",      Eval::mg_score(Eval::coluna_aberta));
+    fprintf(out, "\t#define COLUNA_ABERTA_EG %d\n",      Eval::eg_score(Eval::coluna_aberta));
+    fprintf(out, "\t#define BISHOP_PAIR_MG %d\n",        Eval::mg_score(Eval::par_de_bispos));
+    fprintf(out, "\t#define BISHOP_PAIR_EG %d\n\n",     Eval::eg_score(Eval::par_de_bispos));
+
+    print_mobility_array(out, "escudo_mg",       Eval::escudo,  6, true);
+    print_mobility_array(out, "escudo_eg",       Eval::escudo,  6, false);
+    print_mobility_array(out, "peao_passado_mg", Eval::passado, 8, true);
+    print_mobility_array(out, "peao_passado_eg", Eval::passado, 8, false);
 
     fprintf(out, "// ==== end tuned values ====\n");
 }

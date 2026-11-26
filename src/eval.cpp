@@ -11,7 +11,6 @@
 
 
 Eval::Score Eval::score_casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
-int Eval::passados[LADOS][CASAS_DO_TABULEIRO];
 
 const int Eval::phase_weights[6] = {
     PHASE_PEAO, PHASE_CAVALO, PHASE_BISPO, PHASE_TORRE, PHASE_DAMA, PHASE_REI
@@ -23,6 +22,12 @@ Eval::Score Eval::mobilidade_torre[15];
 Eval::Score Eval::mobilidade_dama[28];
 
 Eval::Score Eval::ks_weight_c, Eval::ks_weight_b, Eval::ks_weight_t, Eval::ks_weight_d;
+
+Eval::Score Eval::passado[8];
+Eval::Score Eval::peao_isolado;
+Eval::Score Eval::coluna_semi_aberta, Eval::coluna_aberta;
+Eval::Score Eval::par_de_bispos;
+Eval::Score Eval::escudo[6];
 
 static Bitboard::u64 king_zone[CASAS_DO_TABULEIRO];
 
@@ -45,10 +50,18 @@ void Eval::init_eval_tables(){
         score_casas[PRETAS][T][x] = make_score(Values::torre_score_mg[xf], Values::torre_score_eg[xf]);
         score_casas[PRETAS][D][x] = make_score(Values::dama_score_mg[xf], Values::dama_score_eg[xf]);
         score_casas[PRETAS][R][x] = make_score(Values::rei_score_mg[xf], Values::rei_score_eg[xf]);
-
-        passados[BRANCAS][x] = Values::peao_passado_score[Consts::flip[x]];
-        passados[PRETAS][x] = Values::peao_passado_score[x];
     }
+
+    for (int i = 0; i < 8; i++){
+        passado[i] = make_score(Values::peao_passado_mg[i], Values::peao_passado_eg[i]);
+    }
+    for (int i = 0; i < 6; i++){
+        escudo[i] = make_score(Values::escudo_mg[i], Values::escudo_eg[i]);
+    }
+    peao_isolado       = make_score(PEAO_ISOLADO_MG, PEAO_ISOLADO_EG);
+    coluna_semi_aberta = make_score(COLUNA_SEMI_ABERTA_MG, COLUNA_SEMI_ABERTA_EG);
+    coluna_aberta      = make_score(COLUNA_ABERTA_MG, COLUNA_ABERTA_EG);
+    par_de_bispos      = make_score(BISHOP_PAIR_MG, BISHOP_PAIR_EG);
 
     for (int i = 0; i < 9; i++){
         mobilidade_cavalo[i] = make_score(Values::mobilidade_cavalo_mg[i], Values::mobilidade_cavalo_eg[i]);
@@ -112,19 +125,36 @@ void Eval::atualizar_materiais(Estado &est){
     }
 }
 
-static int avaliar_peao(const Estado &est, const int l, const int casa, int &ala_do_rei, int &ala_da_dama){
-    int score = 0;
+int Eval::indice_escudo(int l, int casa){
+    const int fileira = Bitboard::fileiras[l][casa];
+    if (fileira != 1 && fileira != 2){
+        return -1;
+    }
+    const int coluna = Consts::colunas[casa];
+    if (coluna >= COLUNA_F){
+        return (fileira - 1) * 3 + (coluna - COLUNA_F);
+    }
+    if (coluna <= COLUNA_C){
+        return (fileira - 1) * 3 + (COLUNA_C - coluna);
+    }
+    return -1;
+}
+
+static Eval::Score avaliar_peao(const Estado &est, const int l, const int casa,
+                                Eval::Score &ala_do_rei, Eval::Score &ala_da_dama){
+    Eval::Score score = 0;
 
     if (!(Bitboard::mask_passados[l][casa] & est.bit_pieces[l^1][P]) && !(Bitboard::mask_path[l][casa] & est.bit_pieces[l][P])){
-        score += Eval::passados[l][casa];
+        score += Eval::passado[Bitboard::fileiras[l][casa]];
     }
 
     if ((Bitboard::mask_isolados[casa] & est.bit_pieces[l][P]) == 0){
-        score -= ISOLADO_SCORE;
+        score += Eval::peao_isolado;
     }
 
-    ala_do_rei = Values::defesa_ala_do_rei[l][casa];
-    ala_da_dama = Values::defesa_ala_da_dama[l][casa];
+    const int e = Eval::indice_escudo(l, casa);
+    ala_do_rei = (e >= 0 && Consts::colunas[casa] >= COLUNA_F) ? Eval::escudo[e] : 0;
+    ala_da_dama = (e >= 0 && Consts::colunas[casa] <= COLUNA_C) ? Eval::escudo[e] : 0;
 
     return score;
 }
@@ -150,8 +180,8 @@ static Eval::EntradaPeoes& estrutura_de_peoes(Estado &est){
 
     for (int l = 0; l < LADOS; l++){
         Eval::Score score = 0;
-        int ala_do_rei = 0;
-        int ala_da_dama = 0;
+        Eval::Score ala_do_rei = 0;
+        Eval::Score ala_da_dama = 0;
 
         Bitboard::u64 t1 = est.bit_pieces[l][P];
         while (t1){
@@ -159,30 +189,25 @@ static Eval::EntradaPeoes& estrutura_de_peoes(Estado &est){
             t1 &= Bitboard::not_mask[casa];
 
             score += Eval::score_casas[l][P][casa];
-            const int peao_b = avaliar_peao(est, l, casa, ala_do_rei, ala_da_dama);
-            score += Eval::make_score(peao_b, peao_b);
+            score += avaliar_peao(est, l, casa, ala_do_rei, ala_da_dama);
         }
 
         e.score[l] = score;
-        e.ala_do_rei[l] = (int16_t)ala_do_rei;
-        e.ala_da_dama[l] = (int16_t)ala_da_dama;
+        e.ala_do_rei[l] = ala_do_rei;
+        e.ala_da_dama[l] = ala_da_dama;
     }
 
     return e;
 }
 
-int avaliar_torre(const Estado &est, const int l, const int casa){
-    int score = 0;
-
+static Eval::Score avaliar_torre(const Estado &est, const int l, const int casa){
     if (!(Bitboard::mask_cols[casa] & est.bit_pieces[l][P])){
-        score = COLUNA_SEMI_ABERTA_BONUS;
-
         if (!(Bitboard::mask_cols[casa] & est.bit_pieces[l^1][P])){
-            return COLUNA_ABERTA_BONUS;
+            return Eval::coluna_aberta;
         }
+        return Eval::coluna_semi_aberta;
     }
-
-    return score;
+    return 0;
 }
 
 int Eval::avaliar(Estado &est){
@@ -238,7 +263,7 @@ int Eval::avaliar(Estado &est){
         }
 
         if (Bitboard::popcount(est.bit_pieces[l][B]) >= 2){
-            score[l] += make_score(BISHOP_PAIR_MG, BISHOP_PAIR_EG);
+            score[l] += par_de_bispos;
         }
 
         t1 = est.bit_pieces[l][T];
@@ -247,8 +272,7 @@ int Eval::avaliar(Estado &est){
             t1 &= Bitboard::not_mask[casa];
 
             score[l] += score_casas[l][T][casa];
-            const int torre_b = avaliar_torre(est, l, casa);
-            score[l] += make_score(torre_b, torre_b);
+            score[l] += avaliar_torre(est, l, casa);
             const Bitboard::u64 att = Gen::atacantes_torre(est, casa);
             score[l] += mobilidade_torre[Bitboard::popcount(att & nao_proprios)];
             pressao_rei += Bitboard::popcount(att & zona) * kw_t;
@@ -268,23 +292,14 @@ int Eval::avaliar(Estado &est){
         score[l] += make_score((pressao_rei * pressao_rei) / KS_SCALE, 0);
     }
 
-    int shield_w = 0;
-    if (est.bit_pieces[BRANCAS][R] & Bitboard::mask_ala_do_rei){
-        shield_w = peoes.ala_do_rei[BRANCAS];
+    for (int l = 0; l < LADOS; l++){
+        if (est.bit_pieces[l][R] & Bitboard::mask_ala_do_rei){
+            score[l] += peoes.ala_do_rei[l];
+        }
+        else if (est.bit_pieces[l][R] & Bitboard::mask_ala_da_dama){
+            score[l] += peoes.ala_da_dama[l];
+        }
     }
-    else if (est.bit_pieces[BRANCAS][R] & Bitboard::mask_ala_da_dama){
-        shield_w = peoes.ala_da_dama[BRANCAS];
-    }
-    score[BRANCAS] += make_score(shield_w, 0);
-
-    int shield_b = 0;
-    if (est.bit_pieces[PRETAS][R] & Bitboard::mask_ala_do_rei){
-        shield_b = peoes.ala_do_rei[PRETAS];
-    }
-    else if (est.bit_pieces[PRETAS][R] & Bitboard::mask_ala_da_dama){
-        shield_b = peoes.ala_da_dama[PRETAS];
-    }
-    score[PRETAS] += make_score(shield_b, 0);
 
     const Score diff = score[est.lado] - score[est.xlado];
     const int mg_diff = mg_score(diff);

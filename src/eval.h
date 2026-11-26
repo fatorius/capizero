@@ -23,7 +23,6 @@ namespace Eval{
     }
 
     extern Score score_casas[LADOS][TIPOS_DE_PIECES][CASAS_DO_TABULEIRO];
-    extern int passados[LADOS][CASAS_DO_TABULEIRO];
 
     extern const int phase_weights[6];
 
@@ -33,8 +32,8 @@ namespace Eval{
     struct EntradaPeoes{
         uint64_t peoes[LADOS];
         Score score[LADOS];
-        int16_t ala_do_rei[LADOS];
-        int16_t ala_da_dama[LADOS];
+        Score ala_do_rei[LADOS];
+        Score ala_da_dama[LADOS];
     };
 
     extern Score mobilidade_cavalo[9];
@@ -43,6 +42,18 @@ namespace Eval{
     extern Score mobilidade_dama[28];
 
     extern Score ks_weight_c, ks_weight_b, ks_weight_t, ks_weight_d;
+
+    // Termos de estrutura (valores em values.h), também tunados pelo capi_tuner_adam.
+    extern Score passado[8];                         // peão passado, por fileira relativa
+    extern Score peao_isolado;                       // por peão isolado
+    extern Score coluna_semi_aberta, coluna_aberta;  // por torre
+    extern Score par_de_bispos;
+    extern Score escudo[6];                          // peão do escudo do rei, ver indice_escudo
+
+    // Índice em escudo[] do peão do lado l em casa, ou -1 se a casa não é do
+    // escudo (2ª e 3ª fileiras relativas, colunas a-c ou f-h). Conta só na ala
+    // onde o rei está: f-h para o rei em f-h, a-c para o rei em a-c.
+    int indice_escudo(int l, int casa);
 
     // King-zone mask the evaluator uses for king-safety pressure (exposed for the tuner).
     uint64_t zona_do_rei(int casa);

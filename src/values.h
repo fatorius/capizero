@@ -18,10 +18,16 @@ namespace Values{
 
 	// VALORES DAS ESTRUTURAS
 	#define EN_PASSANT_SCORE 10
-	#define ISOLADO_SCORE 10
+	// Termos de estrutura tunados pelo capi_tuner_adam (mg / eg).
+	// Peão isolado: negativo = penalidade, somado por peão.
+	#define PEAO_ISOLADO_MG -10
+	#define PEAO_ISOLADO_EG -10
 
-	#define COLUNA_SEMI_ABERTA_BONUS 11
-	#define COLUNA_ABERTA_BONUS 40
+	// Torre em coluna semiaberta (sem peão próprio) ou aberta (sem peão nenhum).
+	#define COLUNA_SEMI_ABERTA_MG 11
+	#define COLUNA_SEMI_ABERTA_EG 11
+	#define COLUNA_ABERTA_MG 40
+	#define COLUNA_ABERTA_EG 40
 
 	#define BISHOP_PAIR_MG 15
 	#define BISHOP_PAIR_EG 45
@@ -186,52 +192,11 @@ namespace Values{
 	#define VERIFICACAO_DE_LANCES 4095
 
 
-	// tabelas de casas
-	const int defesa_ala_da_dama[2][64]=
-	{
-	{
-		0, 0, 0, 0, 0, 0, 0, 0,
-		8,11, 8, 0, 0, 0, 0, 0,
-		8, 6, 8, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0
-	},
-	{
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		8, 6, 8, 0, 0, 0, 0, 0,
-		8,11, 8, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0
-	}};
-
-	const int defesa_ala_do_rei[2][64]=
-	{
-	{
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 8,11, 8,
-		0, 0, 0, 0, 0, 8, 6, 8,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0
-	},
-	{
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 8, 6, 8,
-		0, 0, 0, 0, 0, 8,11, 8,
-		0, 0, 0, 0, 0, 0, 0, 0
-	}};
+	// Escudo do rei: peão na 2ª ou 3ª fileira (relativas) da ala onde o rei está.
+	// Índice (fileira relativa - 1) * 3 + coluna, com a coluna contada a partir
+	// do centro: f/c = 0, g/b = 1, h/a = 2.
+	const int escudo_mg[6] = {  8,  11,   8,   8,   6,   8 };
+	const int escudo_eg[6] = {  0,   0,   0,   0,   0,   0 };
 
 	const int peao_score_mg[64] = {
 		   82,   82,   82,   82,   82,   82,   82,   82,
@@ -359,17 +324,9 @@ namespace Values{
 		 -132,  -96, -102,  -41,   84,    4,    0,  -75
 	};
 
-	const int peao_passado_score[64] = 
-	{
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		60,  60,  60,  60  ,60, 60, 60, 60,
-		30, 30, 30, 30, 30, 30, 30, 30,
-		15, 15, 15, 15,15, 15, 15, 15, 
-		8, 8, 8, 8, 8, 8, 8, 8,
-		8, 8, 8, 8, 8, 8, 8, 8,
-		0, 0, 0, 0, 0, 0, 0, 0
-	};
+	// Peão passado por fileira relativa (0 = 1ª, 7 = 8ª).
+	const int peao_passado_mg[8] = {    0,    8,    8,   15,   30,   60,    0,    0 };
+	const int peao_passado_eg[8] = {    0,    8,    8,   15,   30,   60,    0,    0 };
 };
 
 #endif
